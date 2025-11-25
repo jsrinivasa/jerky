@@ -18,3 +18,22 @@ torchvision
 tqdm
 transforms3d
 wandb
+
+# VLM Control Dependencies
+pillow>=9.0.0
+
+# For LOCAL VLM (LLaVA - RECOMMENDED, no API needed):
+# Install these for local vision-language model inference:
+# transformers>=4.40.0
+# accelerate>=0.20.0
+# bitsandbytes>=0.41.0  # For 4-bit/8-bit quantization (saves memory)
+
+# For OpenVLA support (alternative local model):
+# Same as LLaVA above, plus:
+# sentencepiece  # For tokenization
+
+# For GPT-4V support (requires API key):
+# openai>=1.0.0
+
+# For Claude support (requires API key):
+# anthropic>=0.18.0

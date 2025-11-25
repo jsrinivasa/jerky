@@ -1,0 +1,89 @@
+# VLM Control Configuration
+# This file contains settings for natural language control of Mobile ALOHA
+
+# Model Configuration
+model:
+  # Model type: openvla, gpt4v, claude, test
+  type: "openvla"
+  
+  # Model path (for OpenVLA)
+  path: "openvla/openvla-7b"
+  
+  # Device: cuda or cpu
+  device: "cuda"
+  
+  # Quantization (for OpenVLA)
+  load_8bit: false
+  load_4bit: false
+
+# Control Configuration
+control:
+  # Enable mobile base control
+  enable_base: true
+  
+  # Enable arm control (WARNING: ensure safe operation)
+  enable_arms: false
+  
+  # Control loop frequency (Hz)
+  frequency: 10.0
+  
+  # Maximum steps per episode
+  max_steps: 100
+
+# Visualization
+visualization:
+  # Show visual feedback
+  enable: true
+  
+  # Verbose logging
+  verbose: true
+
+# API Configuration (for GPT-4V/Claude)
+api:
+  # OpenAI API key (or set OPENAI_API_KEY environment variable)
+  openai_key: ""
+  
+  # Anthropic API key (or set ANTHROPIC_API_KEY environment variable)
+  anthropic_key: ""
+  
+  # Model names
+  openai_model: "gpt-4-vision-preview"
+  anthropic_model: "claude-3-opus-20240229"
+
+# Safety Settings
+safety:
+  # Maximum linear velocity (m/s)
+  max_linear_velocity: 0.7
+  
+  # Maximum angular velocity (rad/s)
+  max_angular_velocity: 1.0
+  
+  # Emergency stop threshold (confidence below this triggers stop)
+  min_confidence: 0.3
+
+# Camera Configuration
+cameras:
+  # Primary camera for VLM input
+  primary: "cam_high"
+  
+  # Additional cameras to record
+  additional:
+    - "cam_left_wrist"
+    - "cam_right_wrist"
+
+# Task Presets
+task_presets:
+  explore:
+    description: "Explore the environment and identify objects"
+    max_steps: 200
+    frequency: 5.0
+  
+  navigate_forward:
+    description: "Move forward 2 meters"
+    max_steps: 50
+    frequency: 10.0
+  
+  turn_around:
+    description: "Turn 180 degrees"
+    max_steps: 30
+    frequency: 10.0
