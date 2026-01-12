@@ -12,11 +12,11 @@ Usage:
 
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
-from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
+from launch.substitutions import LaunchConfiguration, PathJoinSubstitution, PythonExpression
 from launch_ros.actions import Node
 from launch_ros.substitutions import FindPackageShare
 from launch.launch_description_sources import PythonLaunchDescriptionSource
-from launch.conditions import IfCondition
+from launch.conditions import IfCondition, UnlessCondition
 import os
 
 
@@ -54,6 +54,12 @@ def generate_launch_description():
         description='Launch RViz'
     )
     
+    use_rtabmap_arg = DeclareLaunchArgument(
+        'use_rtabmap',
+        default_value='false',
+        description='Use RTAB-Map for localization (requires camera). If false, assumes you have /odom from wheels.'
+    )
+    
     rtabmap_database_arg = DeclareLaunchArgument(
         'rtabmap_database',
         default_value='~/.ros/rtabmap.db',
@@ -89,6 +95,7 @@ def generate_launch_description():
     use_nav2 = LaunchConfiguration('use_nav2')
     use_sim_time = LaunchConfiguration('use_sim_time')
     use_rviz = LaunchConfiguration('use_rviz')
+    use_rtabmap = LaunchConfiguration('use_rtabmap')
     rtabmap_database = LaunchConfiguration('rtabmap_database')
     lookahead_distance = LaunchConfiguration('lookahead_distance')
     max_linear_velocity = LaunchConfiguration('max_linear_velocity')
@@ -97,6 +104,34 @@ def generate_launch_description():
     
     # Note: We don't need a separate map_server because RTAB-Map publishes
     # the map directly from its database when in localization mode
+    # If not using RTAB-Map, we use map_server to load the map from YAML
+    
+    # Map server (only when NOT using RTAB-Map)
+    map_server_node = Node(
+        package='nav2_map_server',
+        executable='map_server',
+        name='map_server',
+        output='screen',
+        parameters=[{
+            'yaml_filename': map_file,
+            'use_sim_time': use_sim_time
+        }],
+        condition=UnlessCondition(use_rtabmap)
+    )
+    
+    # Lifecycle manager for map server
+    map_lifecycle_node = Node(
+        package='nav2_lifecycle_manager',
+        executable='lifecycle_manager',
+        name='map_lifecycle_manager',
+        output='screen',
+        parameters=[{
+            'autostart': True,
+            'node_names': ['map_server'],
+            'use_sim_time': use_sim_time
+        }],
+        condition=UnlessCondition(use_rtabmap)
+    )
     
     # RTAB-Map in localization mode (uses the saved map)
     rtabmap_node = Node(
@@ -122,7 +157,8 @@ def generate_launch_description():
             ('rgb/camera_info', '/camera/rgb/camera_info'),
             ('depth/image', '/camera/depth_registered/image_raw'),
             ('odom', '/odom'),
-        ]
+        ],
+        condition=IfCondition(use_rtabmap)
     )
     
     # RGB-D Odometry
@@ -146,7 +182,8 @@ def generate_launch_description():
             ('rgb/image', '/camera/rgb/image_rect_color'),
             ('rgb/camera_info', '/camera/rgb/camera_info'),
             ('depth/image', '/camera/depth_registered/image_raw'),
-        ]
+        ],
+        condition=IfCondition(use_rtabmap)
     )
     
     # Simple Navigation Planner
@@ -188,6 +225,7 @@ def generate_launch_description():
         use_nav2_arg,
         use_sim_time_arg,
         use_rviz_arg,
+        use_rtabmap_arg,
         rtabmap_database_arg,
         lookahead_distance_arg,
         max_linear_velocity_arg,
@@ -195,6 +233,8 @@ def generate_launch_description():
         goal_tolerance_arg,
         
         # Nodes
+        map_server_node,
+        map_lifecycle_node,
         rgbd_odometry_node,
         rtabmap_node,
         nav_planner_node,

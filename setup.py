@@ -38,6 +38,7 @@ setup(
             'dual_arm_path_planner_example = scripts.dual_arm_path_planner_example:main',
             'sim_planner_interactive = scripts.sim_planner_interactive:main',
             'simple_nav_planner = aloha.simple_nav_planner:main',
+            'fake_odometry = aloha.fake_odometry:main',
         ],
     },
 )

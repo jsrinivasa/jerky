@@ -15,6 +15,7 @@ import rclpy
 from rclpy.node import Node
 from rclpy.action import ActionClient
 from rclpy.duration import Duration
+from rclpy.qos import QoSProfile, QoSDurabilityPolicy, QoSReliabilityPolicy, QoSHistoryPolicy
 
 from geometry_msgs.msg import PoseStamped, Twist, Point
 from nav_msgs.msg import Path, OccupancyGrid, Odometry
@@ -66,6 +67,7 @@ class SimpleNavPlanner(Node):
         self.declare_parameter('max_angular_velocity', 1.0)
         self.declare_parameter('goal_tolerance', 0.2)
         self.declare_parameter('path_resolution', 0.1)
+        self.declare_parameter('robot_radius', 0.35)  # Robot radius in meters (24in = 0.61m width, radius = 0.305m + safety margin)
         
         self.use_nav2 = self.get_parameter('use_nav2').value
         self.lookahead_distance = self.get_parameter('lookahead_distance').value
@@ -73,6 +75,7 @@ class SimpleNavPlanner(Node):
         self.max_angular_vel = self.get_parameter('max_angular_velocity').value
         self.goal_tolerance = self.get_parameter('goal_tolerance').value
         self.path_resolution = self.get_parameter('path_resolution').value
+        self.robot_radius = self.get_parameter('robot_radius').value
         
         # State
         self.state = NavigationState.IDLE
@@ -90,11 +93,19 @@ class SimpleNavPlanner(Node):
             10
         )
         
+        # Map subscription with TRANSIENT_LOCAL QoS to match map_server
+        map_qos = QoSProfile(
+            depth=10,
+            durability=QoSDurabilityPolicy.TRANSIENT_LOCAL,
+            reliability=QoSReliabilityPolicy.RELIABLE,
+            history=QoSHistoryPolicy.KEEP_LAST
+        )
+        
         self.map_sub = self.create_subscription(
             OccupancyGrid,
             '/map',
             self.map_callback,
-            10
+            map_qos
         )
         
         self.odom_sub = self.create_subscription(
