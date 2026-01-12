@@ -13,6 +13,7 @@ pexpect
 pyquaternion
 pyyaml
 rospkg
+scipy
 torch
 torchvision
 tqdm

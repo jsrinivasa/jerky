@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import argparse
+import csv
 import os
 import time
 
@@ -40,6 +41,12 @@ def main(args):
         actions = root['/action'][()]
         if IS_MOBILE:
             base_actions = root['/base_action'][()]
+    
+    # Setup CSV logging for base velocities
+    csv_filename = os.path.join(dataset_dir, f'replay_episodes_base_vel_{dataset_name}.csv')
+    csv_file = open(csv_filename, 'w', newline='')
+    csv_writer = csv.writer(csv_file)
+    csv_writer.writerow(['timestep', 'base_vel_x', 'base_vel_y', 'actual_dt', 'step_time'])
 
     node = create_interbotix_global_node('aloha')
 
@@ -54,20 +61,48 @@ def main(args):
     env.reset()
 
     time0 = time.time()
+    prev_time = time0
     DT = 1 / FPS
     if IS_MOBILE:
-        for action, base_action in zip(actions, base_actions):
+        for t, (action, base_action) in enumerate(zip(actions, base_actions)):
             time1 = time.time()
+            actual_dt = time1 - prev_time if t > 0 else DT
+            
             env.step(action, base_action, get_base_vel=True)
-            time.sleep(max(0, DT - (time.time() - time1)))
+            
+            step_time = time.time() - time1
+            time.sleep(max(0, DT - step_time))
+            prev_time = time.time()
+            
+            # Log to CSV
+            csv_writer.writerow([
+                t,
+                float(base_action[0]),
+                float(base_action[1]),
+                actual_dt,
+                step_time
+            ])
+            
+            print(f"Step {t}: base_action = [{base_action[0]:.6f}, {base_action[1]:.6f}], actual_dt = {actual_dt:.3f}s")
     else:
-        for action in actions:
+        for t, action in enumerate(actions):
             time1 = time.time()
+            actual_dt = time1 - prev_time if t > 0 else DT
+            
             env.step(action, None, get_base_vel=False)
-            time.sleep(max(0, DT - (time.time() - time1)))
+            
+            step_time = time.time() - time1
+            time.sleep(max(0, DT - step_time))
+            prev_time = time.time()
+    
     print(f'Avg fps: {len(actions) / (time.time() - time0)}')
+    
+    # Close CSV file
+    csv_file.close()
+    if IS_MOBILE:
+        print(f'Base velocity data saved to: {csv_filename}')
 
-    # open
+    # Open grippers
     move_grippers(
         [env.follower_bot_left, env.follower_bot_right],
         [FOLLOWER_GRIPPER_JOINT_OPEN] * 2,

@@ -59,14 +59,11 @@ class OpenVLAController(VLMController):
         print(f"Device: {device}")
         print(f"Verbose logging: {verbose_logging}")
         
-        try:
-            self._load_model(model_path, load_in_8bit, load_in_4bit)
-            print("OpenVLA model loaded successfully!")
-        except Exception as e:
-            print(f"Warning: Could not load OpenVLA model: {e}")
-            print("Falling back to dummy mode for testing")
-            self.model = None
-    
+
+        self._load_model(model_path, load_in_8bit, load_in_4bit)
+        print("OpenVLA model loaded successfully!")
+
+
     def _load_model(self, model_path: str, load_in_8bit: bool, load_in_4bit: bool):
         """Load the OpenVLA model and processor."""
         import sys
@@ -102,54 +99,58 @@ class OpenVLAController(VLMController):
             print(f"  CUDA device: {torch.cuda.get_device_name(0)}")
         print()
         
-        try:
-            from transformers import AutoModelForVision2Seq, AutoProcessor
+        # try:
+        from transformers import AutoModelForVision2Seq, AutoProcessor
+        
+        print(f"Loading OpenVLA from {model_path}...")
+        print(f"This will download the model (~14GB) on first use.")
+        print(f"Please be patient, this may take several minutes...\n")
+        
+        # Prepare quantization config
+        quantization_kwargs = {}
+        if load_in_8bit:
+            print("Using 8-bit quantization")
+            quantization_kwargs['load_in_8bit'] = True
+        elif load_in_4bit:
+            print("Using 4-bit quantization")
+            quantization_kwargs['load_in_4bit'] = True
+        
+        # Load processor
+        print("Step 1/2: Loading processor...")
+        self.processor = AutoProcessor.from_pretrained(
+            model_path,
+            trust_remote_code=True
+        )
+        print("  ✓ Processor loaded")
+        
+        # Load model
+        print("Step 2/2: Loading model (this is the slow part)...")
+        
+        # At line 131-137, modify the model loading to include use_cache and device_map parameters:
+        self.model = AutoModelForVision2Seq.from_pretrained(
+            model_path,
+            torch_dtype=torch.bfloat16 if self.device == "cuda" else torch.float32,
+            low_cpu_mem_usage=True,
+            trust_remote_code=True,
+            device_map="auto",  # Add this - handles device placement automatically
+            use_cache=False,     # Add this - prevents caching issues
+            # **quantization_kwargs
+        ).to(self.device)
+        
+        self.model.eval()
+        print("  ✓ Model loaded and ready!")
             
-            print(f"Loading OpenVLA from {model_path}...")
-            print(f"This will download the model (~14GB) on first use.")
-            print(f"Please be patient, this may take several minutes...\n")
-            
-            # Prepare quantization config
-            quantization_kwargs = {}
-            if load_in_8bit:
-                print("Using 8-bit quantization")
-                quantization_kwargs['load_in_8bit'] = True
-            elif load_in_4bit:
-                print("Using 4-bit quantization")
-                quantization_kwargs['load_in_4bit'] = True
-            
-            # Load processor
-            print("Step 1/2: Loading processor...")
-            self.processor = AutoProcessor.from_pretrained(
-                model_path,
-                trust_remote_code=True
-            )
-            print("  ✓ Processor loaded")
-            
-            # Load model
-            print("Step 2/2: Loading model (this is the slow part)...")
-            self.model = AutoModelForVision2Seq.from_pretrained(
-                model_path,
-                torch_dtype=torch.bfloat16 if self.device == "cuda" else torch.float32,
-                low_cpu_mem_usage=True,
-                trust_remote_code=True,
-                **quantization_kwargs
-            ).to(self.device)
-            
-            self.model.eval()
-            print("  ✓ Model loaded and ready!")
-            
-        except ImportError as e:
-            print(f"\n✗ Import Error: {e}")
-            raise
-        except Exception as e:
-            print(f"\n✗ Error loading model: {e}")
-            print(f"\nThis could be:")
-            print(f"  1. Model not found at {model_path}")
-            print(f"  2. Network issue downloading the model")
-            print(f"  3. Insufficient disk space (~14GB needed)")
-            print(f"  4. Insufficient VRAM (8GB+ recommended)")
-            raise
+        # except ImportError as e:
+        #     print(f"\n✗ Import Error: {e}")
+        #     raise
+        # except Exception as e:
+        #     print(f"\n✗ Error loading model: {e}")
+        #     print(f"\nThis could be:")
+        #     print(f"  1. Model not found at {model_path}")
+        #     print(f"  2. Network issue downloading the model")
+        #     print(f"  3. Insufficient disk space (~14GB needed)")
+        #     print(f"  4. Insufficient VRAM (8GB+ recommended)")
+        #     raise
     
     def predict_action(
         self,

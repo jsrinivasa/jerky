@@ -8,6 +8,8 @@ from aloha.constants import (
     IS_MOBILE,
 )
 from cv_bridge import CvBridge
+import rclpy
+from rclpy.executors import SingleThreadedExecutor
 from interbotix_xs_modules.xs_robot.arm import InterbotixManipulatorXS
 from interbotix_xs_modules.xs_robot.gravity_compensation import (
     InterbotixGravityCompensationInterface,
@@ -51,7 +53,29 @@ class ImageRecorder:
             node.create_subscription(Image, topic, callback_func, 20)
             if self.is_debug:
                 setattr(self, f'{cam_name}_timestamps', deque(maxlen=50))
-        time.sleep(0.5)
+        
+        # # Wait for all cameras to receive at least one image
+        # print("Waiting for camera images...")
+        # max_wait_time = 10.0  # seconds
+        # start_time = time.time()
+        # while time.time() - start_time < max_wait_time:
+        #     # Spin the node to process callbacks
+        #     if rclpy.ok():
+        #         rclpy.spin_once(node, timeout_sec=0.1)
+            
+        #     all_cameras_ready = all(
+        #         getattr(self, f'{cam_name}_image') is not None 
+        #         for cam_name in self.camera_names
+        #     )
+        #     if all_cameras_ready:
+        #         print(f"All {len(self.camera_names)} cameras ready!")
+        #         break
+        # else:
+        #     # Timeout reached, print status of each camera
+        #     for cam_name in self.camera_names:
+        #         img = getattr(self, f'{cam_name}_image')
+        #         print(f"{cam_name}: {'Ready' if img is not None else 'NOT READY'}")
+        #     raise RuntimeError(f"Timeout waiting for camera images after {max_wait_time}s")
 
     def image_cb(self, cam_name: str, data: Image):
         setattr(

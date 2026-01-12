@@ -14,8 +14,12 @@ setup(
     packages=find_packages(exclude='test'),
     data_files=[
         ('share/ament_index/resource_index/packages', ['resource/' + package_name]),
-        (os.path.join('share', package_name, 'launch'), glob(os.path.join('launch/*.launch.py'))),
-        (os.path.join('share', package_name, 'config'), glob('config/*.yaml')),
+        (os.path.join('share', package_name, 'launch'), glob(os.path.join('launch', '*.launch.py'))),
+        (os.path.join('share', package_name, 'config'), glob(os.path.join('config', '*.yaml'))),
+        (os.path.join('share', package_name, 'config', 'nav2'), glob(os.path.join('config', 'nav2', '*.yaml'))),
+        (os.path.join('share', package_name, 'rviz'), glob(os.path.join('rviz', '*.rviz'))),
+        (os.path.join('share', package_name, 'docs'), glob(os.path.join('docs', '*.md'))),
+        (os.path.join('share', package_name, 'maps'), glob(os.path.join('maps', '*'))),
         ('share/' + package_name, ['package.xml']),
     ],
     install_requires=['setuptools'],
@@ -29,6 +33,11 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
+            'quick_start_planner = scripts.quick_start_planner:main',
+            'path_planner_example = scripts.path_planner_example:main',
+            'dual_arm_path_planner_example = scripts.dual_arm_path_planner_example:main',
+            'sim_planner_interactive = scripts.sim_planner_interactive:main',
+            'simple_nav_planner = aloha.simple_nav_planner:main',
         ],
     },
 )

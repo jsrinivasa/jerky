@@ -1,0 +1,40 @@
+name: aloha_vlm
+channels:
+  - conda-forge
+  - pytorch
+  - nvidia
+dependencies:
+  - python=3.10
+  - pip
+  - numpy<2.0.0
+  - pytorch::pytorch>=2.0.0
+  - pytorch::torchvision
+  - pytorch::pytorch-cuda  # Will match your system's CUDA version
+  - pip:
+    - dm_control
+    - dm-env
+    - einops
+    - h5py
+    - IPython
+    - matplotlib
+    - modern_robotics
+    - mujoco
+    - opencv-python
+    - packaging
+    - pexpect
+    - pyquaternion
+    - pyyaml
+    - rospkg
+    - scipy
+    - tqdm
+    - transforms3d
+    - wandb
+    - pillow>=9.0.0
+    # VLM Dependencies for LLaVA
+    - transformers>=4.40.0
+    - accelerate>=0.20.0
+    - bitsandbytes>=0.41.0
+    - sentencepiece
+    # Optional API-based VLM support
+    # - openai>=1.0.0
+    # - anthropic>=0.18.0

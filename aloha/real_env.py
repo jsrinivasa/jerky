@@ -85,6 +85,7 @@ class RealEnv:
             True. Only applies when IS_MOBILE is True
         :raises ValueError: On providing False for setup_base but the robot is not mobile
         """
+        self.node = node
         self.follower_bot_left = InterbotixManipulatorXS(
             robot_model='vx300s',
             group_name='arm',
@@ -168,6 +169,8 @@ class RealEnv:
         return self.image_recorder.get_images()
 
     def get_base_vel(self):
+        # self.setup_base(self.node)
+
         linear_vel = self.base.base.get_linear_velocity().x
         angular_vel = self.base.base.get_angular_velocity().z
         return np.array([linear_vel, angular_vel])
@@ -250,6 +253,7 @@ class RealEnv:
         self.set_gripper_pose(left_action[-1], right_action[-1])
         if base_action is not None:
             base_action_linear, base_action_angular = base_action
+            print(f"Sending command to base: {base_action_linear}, {base_action_angular}")
             self.base.base.command_velocity_xyaw(x=base_action_linear, yaw=base_action_angular)
         if get_obs:
             obs = self.get_observation(get_base_vel)
@@ -280,7 +284,7 @@ def get_action(
 def make_real_env(
     node: InterbotixRobotNode = None,
     setup_robots: bool = True,
-    setup_base: bool = False,
+    setup_base: bool = True, # setting to true
     torque_base: bool = False,
 ):
     if node is None:

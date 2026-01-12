@@ -1,0 +1,61 @@
+Panels:
+  - Class: rviz_common/Displays
+    Name: Displays
+  - Class: rviz_common/Selection
+    Name: Selection
+  - Class: rviz_common/Tool Properties
+    Name: Tool Properties
+  - Class: rviz_common/Views
+    Name: Views
+
+Visualization Manager:
+  Displays:
+    - Class: rviz_common/Grid
+      Name: Grid
+      Reference Frame: map
+      
+    - Class: rviz_default_plugins/Map
+      Name: Map
+      Topic: /map
+      
+    - Class: rviz_default_plugins/RobotModel
+      Name: RobotModel
+      Description Topic: /robot_description
+      
+    - Class: rviz_default_plugins/TF
+      Name: TF
+      
+    - Class: rviz_default_plugins/Path
+      Name: Planned Path
+      Topic: /planned_path
+      Color: 0; 255; 0
+      
+    - Class: rviz_default_plugins/MarkerArray
+      Name: Navigation Markers
+      Topic: /nav_markers
+      
+    - Class: rviz_default_plugins/LaserScan
+      Name: LaserScan
+      Topic: /scan
+      
+    - Class: rviz_default_plugins/Camera
+      Name: Camera
+      Topic: /camera/rgb/image_rect_color
+
+  Tools:
+    - Class: rviz_default_plugins/Interact
+    - Class: rviz_default_plugins/MoveCamera
+    - Class: rviz_default_plugins/Select
+    - Class: rviz_default_plugins/FocusCamera
+    - Class: rviz_default_plugins/Measure
+    - Class: rviz_default_plugins/SetInitialPose
+      Topic: /initialpose
+    - Class: rviz_default_plugins/SetGoal
+      Topic: /goal_pose
+
+  Views:
+    Current:
+      Class: rviz_default_plugins/TopDownOrtho
+      Name: TopDownOrtho
+      Target Frame: map
+

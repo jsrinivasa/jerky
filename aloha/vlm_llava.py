@@ -269,7 +269,7 @@ class LLaVAController(VLMController):
 Current step: {step + 1}
 
 Analyze the image and decide the next action. Respond with:
-1. What you see
+1. Answer the user's task/question with what you see
 2. Next action: FORWARD, BACKWARD, TURN_LEFT, TURN_RIGHT, or STOP
 3. Reasoning for this action
 

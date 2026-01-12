@@ -1,0 +1,17 @@
+# VLM Control Dependencies for Natural Language Control
+# Install these in addition to the base requirements.txt
+
+# Core dependencies for LLaVA (recommended local VLM)
+transformers>=4.40.0
+accelerate>=0.20.0
+bitsandbytes>=0.41.0
+sentencepiece
+
+# For OpenVLA support (alternative local model)
+# Already covered by above dependencies
+
+# Optional: For GPT-4V support (requires API key)
+# openai>=1.0.0
+
+# Optional: For Claude support (requires API key)
+# anthropic>=0.18.0

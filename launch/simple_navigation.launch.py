@@ -1,0 +1,203 @@
+#!/usr/bin/env python3
+
+"""
+Simple Navigation Launch File
+
+Launches the simple navigation planner with map and localization.
+Use this with your saved map to navigate using RViz2's "2D Goal Pose" tool.
+
+Usage:
+    ros2 launch aloha simple_navigation.launch.py map_file:=<path_to_map.yaml>
+"""
+
+from launch import LaunchDescription
+from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
+from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
+from launch_ros.actions import Node
+from launch_ros.substitutions import FindPackageShare
+from launch.launch_description_sources import PythonLaunchDescriptionSource
+from launch.conditions import IfCondition
+import os
+
+
+def generate_launch_description():
+    
+    # Package paths
+    aloha_pkg = FindPackageShare('aloha')
+    
+    # Launch arguments
+    map_file_arg = DeclareLaunchArgument(
+        'map_file',
+        default_value=PathJoinSubstitution([
+            aloha_pkg,
+            'maps',
+            'my_map.yaml'
+        ]),
+        description='Path to the map YAML file'
+    )
+    
+    use_nav2_arg = DeclareLaunchArgument(
+        'use_nav2',
+        default_value='false',
+        description='Use Nav2 instead of simple planner (requires Nav2 to be running)'
+    )
+    
+    use_sim_time_arg = DeclareLaunchArgument(
+        'use_sim_time',
+        default_value='false',
+        description='Use simulation time'
+    )
+    
+    use_rviz_arg = DeclareLaunchArgument(
+        'use_rviz',
+        default_value='true',
+        description='Launch RViz'
+    )
+    
+    rtabmap_database_arg = DeclareLaunchArgument(
+        'rtabmap_database',
+        default_value='~/.ros/rtabmap.db',
+        description='Path to RTAB-Map database'
+    )
+    
+    lookahead_distance_arg = DeclareLaunchArgument(
+        'lookahead_distance',
+        default_value='0.5',
+        description='Lookahead distance for pure pursuit controller (meters)'
+    )
+    
+    max_linear_velocity_arg = DeclareLaunchArgument(
+        'max_linear_velocity',
+        default_value='0.3',
+        description='Maximum linear velocity (m/s)'
+    )
+    
+    max_angular_velocity_arg = DeclareLaunchArgument(
+        'max_angular_velocity',
+        default_value='1.0',
+        description='Maximum angular velocity (rad/s)'
+    )
+    
+    goal_tolerance_arg = DeclareLaunchArgument(
+        'goal_tolerance',
+        default_value='0.2',
+        description='Goal tolerance (meters)'
+    )
+    
+    # Launch configurations
+    map_file = LaunchConfiguration('map_file')
+    use_nav2 = LaunchConfiguration('use_nav2')
+    use_sim_time = LaunchConfiguration('use_sim_time')
+    use_rviz = LaunchConfiguration('use_rviz')
+    rtabmap_database = LaunchConfiguration('rtabmap_database')
+    lookahead_distance = LaunchConfiguration('lookahead_distance')
+    max_linear_velocity = LaunchConfiguration('max_linear_velocity')
+    max_angular_velocity = LaunchConfiguration('max_angular_velocity')
+    goal_tolerance = LaunchConfiguration('goal_tolerance')
+    
+    # Note: We don't need a separate map_server because RTAB-Map publishes
+    # the map directly from its database when in localization mode
+    
+    # RTAB-Map in localization mode (uses the saved map)
+    rtabmap_node = Node(
+        package='rtabmap_slam',
+        executable='rtabmap',
+        name='rtabmap',
+        output='screen',
+        parameters=[{
+            'database_path': rtabmap_database,
+            'frame_id': 'base_footprint',
+            'odom_frame_id': 'odom',
+            'subscribe_depth': True,
+            'subscribe_rgb': True,
+            'subscribe_scan': False,
+            'approx_sync': True,
+            'queue_size': 30,
+            'Mem/IncrementalMemory': 'false',  # Localization mode
+            'Mem/InitWMWithAllNodes': 'true',  # Load all nodes
+            'use_sim_time': use_sim_time,
+        }],
+        remappings=[
+            ('rgb/image', '/camera/rgb/image_rect_color'),
+            ('rgb/camera_info', '/camera/rgb/camera_info'),
+            ('depth/image', '/camera/depth_registered/image_raw'),
+            ('odom', '/odom'),
+        ]
+    )
+    
+    # RGB-D Odometry
+    rgbd_odometry_node = Node(
+        package='rtabmap_odom',
+        executable='rgbd_odometry',
+        name='rgbd_odometry',
+        output='screen',
+        parameters=[{
+            'frame_id': 'base_footprint',
+            'odom_frame_id': 'odom',
+            'publish_tf': True,
+            'approx_sync': True,
+            'queue_size': 30,
+            'Odom/Strategy': '0',
+            'Odom/ResetCountdown': '1',
+            'Odom/GuessMotion': 'true',
+            'use_sim_time': use_sim_time,
+        }],
+        remappings=[
+            ('rgb/image', '/camera/rgb/image_rect_color'),
+            ('rgb/camera_info', '/camera/rgb/camera_info'),
+            ('depth/image', '/camera/depth_registered/image_raw'),
+        ]
+    )
+    
+    # Simple Navigation Planner
+    nav_planner_node = Node(
+        package='aloha',
+        executable='simple_nav_planner',
+        name='simple_nav_planner',
+        output='screen',
+        parameters=[{
+            'use_nav2': use_nav2,
+            'lookahead_distance': lookahead_distance,
+            'max_linear_velocity': max_linear_velocity,
+            'max_angular_velocity': max_angular_velocity,
+            'goal_tolerance': goal_tolerance,
+            'use_sim_time': use_sim_time,
+        }]
+    )
+    
+    # RViz
+    rviz_config_file = PathJoinSubstitution([
+        aloha_pkg,
+        'rviz',
+        'navigation.rviz'
+    ])
+    
+    rviz_node = Node(
+        package='rviz2',
+        executable='rviz2',
+        name='rviz2',
+        arguments=['-d', rviz_config_file],
+        output='screen',
+        parameters=[{'use_sim_time': use_sim_time}],
+        condition=IfCondition(use_rviz)
+    )
+    
+    return LaunchDescription([
+        # Arguments
+        map_file_arg,
+        use_nav2_arg,
+        use_sim_time_arg,
+        use_rviz_arg,
+        rtabmap_database_arg,
+        lookahead_distance_arg,
+        max_linear_velocity_arg,
+        max_angular_velocity_arg,
+        goal_tolerance_arg,
+        
+        # Nodes
+        rgbd_odometry_node,
+        rtabmap_node,
+        nav_planner_node,
+        rviz_node,
+    ])
+
