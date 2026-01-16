@@ -27,6 +27,8 @@ import numpy as np
 import math
 from typing import List, Tuple, Optional
 from enum import Enum
+from scipy.interpolate import splprep, splev
+from scipy.optimize import minimize
 
 
 class NavigationState(Enum):
@@ -67,7 +69,13 @@ class SimpleNavPlanner(Node):
         self.declare_parameter('max_angular_velocity', 1.0)
         self.declare_parameter('goal_tolerance', 0.2)
         self.declare_parameter('path_resolution', 0.1)
-        self.declare_parameter('robot_radius', 0.35)  # Robot radius in meters (24in = 0.61m width, radius = 0.305m + safety margin)
+        self.declare_parameter('robot_radius', 0.3)  # Robot radius in meters (24in = 0.61m width, radius = 0.305m + safety margin)
+        self.declare_parameter('use_trajectory_optimization', True)
+        self.declare_parameter('smoothing_weight', 0.5)  # Higher = smoother but less accurate
+        self.declare_parameter('max_acceleration', 0.5)  # m/s^2
+        self.declare_parameter('enable_collision_avoidance', True)
+        self.declare_parameter('safety_distance', 0.5)  # Minimum distance to obstacles (meters)
+        self.declare_parameter('emergency_stop_distance', 0.3)  # Emergency stop distance (meters)
         
         self.use_nav2 = self.get_parameter('use_nav2').value
         self.lookahead_distance = self.get_parameter('lookahead_distance').value
@@ -76,14 +84,24 @@ class SimpleNavPlanner(Node):
         self.goal_tolerance = self.get_parameter('goal_tolerance').value
         self.path_resolution = self.get_parameter('path_resolution').value
         self.robot_radius = self.get_parameter('robot_radius').value
+        self.use_traj_opt = self.get_parameter('use_trajectory_optimization').value
+        self.smoothing_weight = self.get_parameter('smoothing_weight').value
+        self.max_acceleration = self.get_parameter('max_acceleration').value
+        self.enable_collision_avoidance = self.get_parameter('enable_collision_avoidance').value
+        self.safety_distance = self.get_parameter('safety_distance').value
+        self.emergency_stop_distance = self.get_parameter('emergency_stop_distance').value
         
         # State
         self.state = NavigationState.IDLE
         self.current_pose = None
         self.goal_pose = None
         self.current_path = None
+        self.raw_path = None  # Store unsmoothed path
+        self.optimized_trajectory = None  # Store trajectory with time stamps
         self.map_data = None
         self.path_index = 0
+        self.collision_detected = False
+        self.last_collision_check_time = self.get_clock().now()
         
         # Subscribers
         self.goal_sub = self.create_subscription(
@@ -118,7 +136,10 @@ class SimpleNavPlanner(Node):
         # Publishers
         self.cmd_vel_pub = self.create_publisher(Twist, '/cmd_vel', 10)
         self.path_pub = self.create_publisher(Path, '/planned_path', 10)
+        self.raw_path_pub = self.create_publisher(Path, '/raw_path', 10)
+        self.smoothed_path_pub = self.create_publisher(Path, '/smoothed_path', 10)
         self.marker_pub = self.create_publisher(MarkerArray, '/nav_markers', 10)
+        self.obstacle_marker_pub = self.create_publisher(MarkerArray, '/obstacle_markers', 10)
         
         # Nav2 Action Client (optional)
         if self.use_nav2:
@@ -131,6 +152,8 @@ class SimpleNavPlanner(Node):
         self.control_timer = self.create_timer(0.1, self.control_loop)
         
         self.get_logger().info('Simple Navigation Planner initialized')
+        self.get_logger().info(f'Robot radius: {self.robot_radius}m (24 inches wide)')
+        self.get_logger().info(f'Collision avoidance: {"Enabled" if self.enable_collision_avoidance else "Disabled"}')
         self.get_logger().info('Set a goal pose in RViz2 using "2D Goal Pose" tool')
     
     def goal_callback(self, msg: PoseStamped):
@@ -198,15 +221,33 @@ class SimpleNavPlanner(Node):
         )
         
         if path is None or len(path) < 2:
-            self.get_logger().error('Path planning failed!')
+            self.get_logger().error(
+                'Path planning failed! Check the messages above for detailed reasons. '
+                'Common causes: goal outside map bounds, goal in obstacle, no valid path exists, '
+                'start position in obstacle.'
+            )
             self.state = NavigationState.FAILED
             return
         
-        self.current_path = path
+        self.raw_path = path
+        
+        # Apply trajectory optimization if enabled
+        if self.use_traj_opt:
+            self.get_logger().info('Optimizing trajectory...')
+            smoothed_path = self.smooth_trajectory(path)
+            if smoothed_path is not None and len(smoothed_path) > 0:
+                self.current_path = smoothed_path
+                self.get_logger().info(f'Trajectory optimized: {len(path)} -> {len(smoothed_path)} waypoints')
+            else:
+                self.get_logger().warn('Trajectory optimization failed, using raw path')
+                self.current_path = path
+        else:
+            self.current_path = path
+        
         self.path_index = 0
         self.state = NavigationState.FOLLOWING
         
-        self.get_logger().info(f'Path planned with {len(path)} waypoints')
+        self.get_logger().info(f'Path planned with {len(self.current_path)} waypoints')
         self.publish_path_visualization()
     
     def plan_path(self, start: Point, goal: Point) -> Optional[List[Point]]:
@@ -221,20 +262,44 @@ class SimpleNavPlanner(Node):
             List of waypoints or None if planning failed
         """
         if self.map_data is None:
+            self.get_logger().error('Path planning failed: No map data available')
             return None
         
         # Convert world coordinates to grid coordinates
         start_grid = self.world_to_grid(start.x, start.y)
         goal_grid = self.world_to_grid(goal.x, goal.y)
         
-        if start_grid is None or goal_grid is None:
-            self.get_logger().error('Start or goal outside map bounds')
+        if start_grid is None:
+            self.get_logger().error(
+                f'Path planning failed: Start position ({start.x:.2f}, {start.y:.2f}) is outside map bounds. '
+                f'Map origin: ({self.map_data.info.origin.position.x:.2f}, {self.map_data.info.origin.position.y:.2f}), '
+                f'Map size: {self.map_data.info.width}x{self.map_data.info.height} cells, '
+                f'Resolution: {self.map_data.info.resolution:.3f}m/cell'
+            )
             return None
+        
+        if goal_grid is None:
+            self.get_logger().error(
+                f'Path planning failed: Goal position ({goal.x:.2f}, {goal.y:.2f}) is outside map bounds. '
+                f'Map origin: ({self.map_data.info.origin.position.x:.2f}, {self.map_data.info.origin.position.y:.2f}), '
+                f'Map size: {self.map_data.info.width}x{self.map_data.info.height} cells, '
+                f'Resolution: {self.map_data.info.resolution:.3f}m/cell'
+            )
+            return None
+        
+        self.get_logger().info(
+            f'Planning path from grid ({start_grid[0]}, {start_grid[1]}) to ({goal_grid[0]}, {goal_grid[1]})'
+        )
         
         # Simple A* implementation
         path_grid = self.astar(start_grid, goal_grid)
         
         if path_grid is None:
+            self.get_logger().error(
+                f'Path planning failed: A* algorithm could not find a valid path from '
+                f'({start.x:.2f}, {start.y:.2f}) to ({goal.x:.2f}, {goal.y:.2f}). '
+                f'The goal may be unreachable due to obstacles blocking all paths.'
+            )
             return None
         
         # Convert grid path back to world coordinates
@@ -251,6 +316,7 @@ class SimpleNavPlanner(Node):
         # Simplify path (remove intermediate points on straight lines)
         path_world = self.simplify_path(path_world)
         
+        self.get_logger().info(f'Path planning succeeded with {len(path_world)} waypoints')
         return path_world
     
     def astar(self, start: Tuple[int, int], goal: Tuple[int, int]) -> Optional[List[Tuple[int, int]]]:
@@ -267,13 +333,34 @@ class SimpleNavPlanner(Node):
         width = self.map_data.info.width
         height = self.map_data.info.height
         
+        # Check if start is valid
+        if not self.is_point_collision_free_grid(start[0], start[1]):
+            self.get_logger().error(
+                f'A* failed: Start cell ({start[0]}, {start[1]}) is occupied or too close to obstacles '
+                f'(within robot radius {self.robot_radius:.2f}m). '
+                f'Robot may be positioned inside or too close to an obstacle on the map.'
+            )
+            return None
+        
         # Check if goal is valid
-        if not self.is_free(goal[0], goal[1]):
-            self.get_logger().warn('Goal is in occupied space!')
+        if not self.is_point_collision_free_grid(goal[0], goal[1]):
+            self.get_logger().warn(
+                f'Goal cell ({goal[0]}, {goal[1]}) is occupied or too close to obstacles. '
+                f'Searching for nearest free cell with {self.robot_radius:.2f}m clearance...'
+            )
             # Try to find nearest free cell
+            original_goal = goal
             goal = self.find_nearest_free_cell(goal[0], goal[1])
             if goal is None:
+                self.get_logger().error(
+                    f'A* failed: Goal is in occupied space at ({original_goal[0]}, {original_goal[1]}) '
+                    f'and no free cells found within search radius. The goal may be completely surrounded by obstacles.'
+                )
                 return None
+            else:
+                self.get_logger().info(
+                    f'Adjusted goal from ({original_goal[0]}, {original_goal[1]}) to nearest free cell ({goal[0]}, {goal[1]})'
+                )
         
         # A* data structures
         open_set = {start}
@@ -297,6 +384,7 @@ class SimpleNavPlanner(Node):
                     current = came_from[current]
                     path.append(current)
                 path.reverse()
+                self.get_logger().info(f'A* succeeded after {iteration} iterations')
                 return path
             
             open_set.remove(current)
@@ -310,8 +398,8 @@ class SimpleNavPlanner(Node):
                 if not (0 <= neighbor[0] < width and 0 <= neighbor[1] < height):
                     continue
                 
-                # Check if free
-                if not self.is_free(neighbor[0], neighbor[1]):
+                # Check if free considering robot radius (inflate obstacles)
+                if not self.is_point_collision_free_grid(neighbor[0], neighbor[1]):
                     continue
                 
                 # Calculate cost
@@ -324,7 +412,19 @@ class SimpleNavPlanner(Node):
                     f_score[neighbor] = tentative_g_score + self.heuristic(neighbor, goal)
                     open_set.add(neighbor)
         
-        self.get_logger().error('A* failed to find path')
+        if iteration >= max_iterations:
+            self.get_logger().error(
+                f'A* failed: Maximum iterations ({max_iterations}) reached. '
+                f'Start: ({start[0]}, {start[1]}), Goal: ({goal[0]}, {goal[1]}). '
+                f'Path may be extremely long or computationally expensive.'
+            )
+        else:
+            self.get_logger().error(
+                f'A* failed: Open set exhausted after {iteration} iterations. '
+                f'No path exists between start ({start[0]}, {start[1]}) and goal ({goal[0]}, {goal[1]}). '
+                f'All possible routes are blocked by obstacles.'
+            )
+        
         return None
     
     def heuristic(self, a: Tuple[int, int], b: Tuple[int, int]) -> float:
@@ -351,15 +451,48 @@ class SimpleNavPlanner(Node):
         value = self.map_data.data[idx]
         return value < 50
     
+    def is_point_collision_free_grid(self, grid_x: int, grid_y: int) -> bool:
+        """
+        Check if a grid cell is collision-free considering robot radius.
+        This inflates obstacles by the robot's radius during path planning.
+        
+        Args:
+            grid_x, grid_y: Grid coordinates
+        
+        Returns:
+            True if cell is collision-free with robot radius
+        """
+        if self.map_data is None:
+            return False
+        
+        resolution = self.map_data.info.resolution
+        check_radius_cells = int(self.robot_radius / resolution)
+        
+        # Check circular area around point
+        for dx in range(-check_radius_cells, check_radius_cells + 1):
+            for dy in range(-check_radius_cells, check_radius_cells + 1):
+                if dx*dx + dy*dy <= check_radius_cells*check_radius_cells:
+                    if not self.is_free(grid_x + dx, grid_y + dy):
+                        return False
+        
+        return True
+    
     def find_nearest_free_cell(self, x: int, y: int, max_radius: int = 20) -> Optional[Tuple[int, int]]:
-        """Find nearest free cell to given position."""
+        """Find nearest free cell to given position with robot radius clearance."""
         for radius in range(1, max_radius):
             for dx in range(-radius, radius + 1):
                 for dy in range(-radius, radius + 1):
                     if abs(dx) == radius or abs(dy) == radius:
                         nx, ny = x + dx, y + dy
-                        if self.is_free(nx, ny):
+                        if self.is_point_collision_free_grid(nx, ny):
+                            self.get_logger().info(
+                                f'Found free cell at ({nx}, {ny}), distance {radius} cells from ({x}, {y})'
+                            )
                             return (nx, ny)
+        
+        self.get_logger().warn(
+            f'No free cell found within {max_radius} cells of ({x}, {y})'
+        )
         return None
     
     def world_to_grid(self, x: float, y: float) -> Optional[Tuple[int, int]]:
@@ -420,6 +553,163 @@ class SimpleNavPlanner(Node):
         simplified.append(path[-1])
         return simplified
     
+    def smooth_trajectory(self, path: List[Point]) -> Optional[List[Point]]:
+        """
+        Smooth trajectory using cubic B-spline interpolation.
+        
+        Args:
+            path: Raw path from A*
+        
+        Returns:
+            Smoothed path with more waypoints for better following
+        """
+        if len(path) < 3:
+            return path
+        
+        try:
+            # Extract coordinates
+            x_coords = [p.x for p in path]
+            y_coords = [p.y for p in path]
+            
+            # Create B-spline representation
+            # s parameter controls smoothness (higher = smoother)
+            # k is the degree of the spline (3 = cubic)
+            tck, u = splprep([x_coords, y_coords], s=self.smoothing_weight, k=min(3, len(path)-1))
+            
+            # Evaluate spline at many points for smooth trajectory
+            num_points = max(len(path) * 5, 50)  # At least 50 points
+            u_new = np.linspace(0, 1, num_points)
+            smoothed_coords = splev(u_new, tck)
+            
+            # Convert back to Point list
+            smoothed_path = []
+            for x, y in zip(smoothed_coords[0], smoothed_coords[1]):
+                # Check if point is in free space
+                if self.is_point_collision_free(x, y):
+                    p = Point()
+                    p.x = float(x)
+                    p.y = float(y)
+                    p.z = 0.0
+                    smoothed_path.append(p)
+                else:
+                    # If smoothed path goes through obstacle, fall back to raw path
+                    self.get_logger().warn('Smoothed path collides with obstacle, using raw path')
+                    return path
+            
+            # Optimize velocity profile
+            self.optimized_trajectory = self.optimize_velocity_profile(smoothed_path)
+            
+            return smoothed_path
+            
+        except Exception as e:
+            self.get_logger().error(f'Trajectory smoothing failed: {e}')
+            return path
+    
+    def is_point_collision_free(self, x: float, y: float) -> bool:
+        """
+        Check if a point is collision-free considering robot radius.
+        
+        Args:
+            x, y: World coordinates
+        
+        Returns:
+            True if point is collision-free
+        """
+        if self.map_data is None:
+            return True
+        
+        grid_pos = self.world_to_grid(x, y)
+        if grid_pos is None:
+            return False
+        
+        resolution = self.map_data.info.resolution
+        check_radius_cells = int(self.robot_radius / resolution)
+        
+        # Check circular area around point
+        for dx in range(-check_radius_cells, check_radius_cells + 1):
+            for dy in range(-check_radius_cells, check_radius_cells + 1):
+                if dx*dx + dy*dy <= check_radius_cells*check_radius_cells:
+                    if not self.is_free(grid_pos[0] + dx, grid_pos[1] + dy):
+                        return False
+        
+        return True
+    
+    def optimize_velocity_profile(self, path: List[Point]) -> List[Tuple[Point, float, float]]:
+        """
+        Optimize velocity profile for time-optimal trajectory.
+        
+        Args:
+            path: Smoothed path
+        
+        Returns:
+            List of (point, velocity, time) tuples
+        """
+        if len(path) < 2:
+            return [(path[0], 0.0, 0.0)]
+        
+        trajectory = []
+        current_time = 0.0
+        current_vel = 0.0
+        
+        for i in range(len(path) - 1):
+            p1 = path[i]
+            p2 = path[i + 1]
+            
+            # Calculate segment length
+            dx = p2.x - p1.x
+            dy = p2.y - p1.y
+            segment_length = math.sqrt(dx*dx + dy*dy)
+            
+            if segment_length < 0.001:
+                continue
+            
+            # Calculate curvature (rate of direction change)
+            if i > 0:
+                p0 = path[i - 1]
+                # Approximate curvature using three points
+                dx1 = p1.x - p0.x
+                dy1 = p1.y - p0.y
+                dx2 = p2.x - p1.x
+                dy2 = p2.y - p1.y
+                
+                angle1 = math.atan2(dy1, dx1)
+                angle2 = math.atan2(dy2, dx2)
+                angle_diff = abs(self.normalize_angle(angle2 - angle1))
+                
+                # Reduce velocity in curves
+                if segment_length > 0:
+                    curvature = angle_diff / segment_length
+                    max_vel_curve = min(self.max_linear_vel, math.sqrt(self.max_acceleration / max(curvature, 0.01)))
+                else:
+                    max_vel_curve = self.max_linear_vel
+            else:
+                max_vel_curve = self.max_linear_vel
+            
+            # Calculate target velocity considering acceleration limits
+            target_vel = max_vel_curve
+            
+            # Accelerate or decelerate based on current velocity
+            if target_vel > current_vel:
+                # Accelerate
+                delta_v = min(target_vel - current_vel, self.max_acceleration * 0.1)  # dt = 0.1s
+                current_vel += delta_v
+            else:
+                # Decelerate
+                delta_v = min(current_vel - target_vel, self.max_acceleration * 0.1)
+                current_vel -= delta_v
+            
+            # Calculate time for this segment
+            avg_vel = max(current_vel, 0.01)  # Avoid division by zero
+            segment_time = segment_length / avg_vel
+            
+            trajectory.append((p1, current_vel, current_time))
+            current_time += segment_time
+        
+        # Add final point
+        trajectory.append((path[-1], 0.0, current_time))
+        
+        return trajectory
+    
     def control_loop(self):
         """Main control loop for path following."""
         if self.state != NavigationState.FOLLOWING:
@@ -435,8 +725,31 @@ class SimpleNavPlanner(Node):
             self.get_logger().info('Goal reached!')
             return
         
+        # Check for collisions if enabled
+        if self.enable_collision_avoidance:
+            collision_info = self.check_collision_ahead()
+            if collision_info['emergency_stop']:
+                self.stop_robot()
+                self.get_logger().warn(
+                    f'Emergency stop! Obstacle detected at {collision_info["distance"]:.2f}m',
+                    throttle_duration_sec=1.0
+                )
+                self.collision_detected = True
+                self.visualize_obstacles(collision_info)
+                return
+            elif collision_info['reduce_speed']:
+                self.collision_detected = True
+                self.visualize_obstacles(collision_info)
+            else:
+                self.collision_detected = False
+        
         # Pure pursuit control
         cmd_vel = self.pure_pursuit_control()
+        
+        # Apply collision avoidance adjustments
+        if self.enable_collision_avoidance and self.collision_detected:
+            cmd_vel = self.adjust_velocity_for_obstacles(cmd_vel, collision_info)
+        
         self.cmd_vel_pub.publish(cmd_vel)
     
     def reached_goal(self) -> bool:
@@ -534,58 +847,311 @@ class SimpleNavPlanner(Node):
         cmd = Twist()
         self.cmd_vel_pub.publish(cmd)
     
+    def check_collision_ahead(self) -> dict:
+        """
+        Check for obstacles ahead of the robot.
+        
+        Returns:
+            Dictionary with collision information:
+            - emergency_stop: bool
+            - reduce_speed: bool
+            - distance: float (distance to nearest obstacle)
+            - obstacle_positions: list of (x, y) positions
+        """
+        if self.current_pose is None or self.map_data is None:
+            return {
+                'emergency_stop': False,
+                'reduce_speed': False,
+                'distance': float('inf'),
+                'obstacle_positions': []
+            }
+        
+        robot_x = self.current_pose.position.x
+        robot_y = self.current_pose.position.y
+        robot_yaw = self.get_yaw_from_quaternion(self.current_pose.orientation)
+        
+        # Check multiple rays in front of the robot
+        min_distance = float('inf')
+        obstacle_positions = []
+        
+        # Check angles: straight ahead, +/- 30 degrees, +/- 60 degrees
+        check_angles = [0, -0.52, 0.52, -1.05, 1.05, -1.57, 1.57]  # radians
+        check_distance = max(self.safety_distance * 2, 1.0)  # Look ahead distance
+        
+        for angle_offset in check_angles:
+            check_angle = robot_yaw + angle_offset
+            
+            # Cast ray from robot center
+            for dist in np.linspace(0, check_distance, 20):
+                # Check points at different lateral offsets (robot width)
+                for lateral_offset in np.linspace(-self.robot_radius, self.robot_radius, 5):
+                    # Calculate check point
+                    check_x = robot_x + dist * math.cos(check_angle) + lateral_offset * math.cos(check_angle + math.pi/2)
+                    check_y = robot_y + dist * math.sin(check_angle) + lateral_offset * math.sin(check_angle + math.pi/2)
+                    
+                    # Check if this point is occupied
+                    if not self.is_point_collision_free(check_x, check_y):
+                        actual_dist = math.sqrt((check_x - robot_x)**2 + (check_y - robot_y)**2)
+                        if actual_dist < min_distance:
+                            min_distance = actual_dist
+                        obstacle_positions.append((check_x, check_y))
+        
+        # Determine action based on distance
+        emergency_stop = min_distance < self.emergency_stop_distance
+        reduce_speed = min_distance < self.safety_distance
+        
+        return {
+            'emergency_stop': emergency_stop,
+            'reduce_speed': reduce_speed,
+            'distance': min_distance,
+            'obstacle_positions': obstacle_positions
+        }
+    
+    def adjust_velocity_for_obstacles(self, cmd_vel: Twist, collision_info: dict) -> Twist:
+        """
+        Adjust velocity based on nearby obstacles.
+        
+        Args:
+            cmd_vel: Original velocity command
+            collision_info: Collision detection results
+        
+        Returns:
+            Adjusted velocity command
+        """
+        distance = collision_info['distance']
+        
+        if distance == float('inf'):
+            return cmd_vel
+        
+        # Scale velocity based on distance to obstacle
+        # Linear interpolation between emergency_stop_distance and safety_distance
+        if distance <= self.emergency_stop_distance:
+            scale = 0.0
+        elif distance >= self.safety_distance:
+            scale = 1.0
+        else:
+            # Linear scaling between emergency stop and safety distance
+            scale = (distance - self.emergency_stop_distance) / (self.safety_distance - self.emergency_stop_distance)
+            scale = max(0.0, min(1.0, scale))
+        
+        # Apply scaling with minimum speed
+        adjusted_cmd = Twist()
+        adjusted_cmd.linear.x = cmd_vel.linear.x * scale
+        adjusted_cmd.angular.z = cmd_vel.angular.z
+        
+        # Increase angular velocity to try to navigate around obstacle
+        if scale < 0.5:
+            adjusted_cmd.angular.z *= 1.5
+        
+        if scale < 1.0:
+            self.get_logger().info(
+                f'Obstacle at {distance:.2f}m - Reducing speed to {scale*100:.0f}%',
+                throttle_duration_sec=1.0
+            )
+        
+        return adjusted_cmd
+    
+    def visualize_obstacles(self, collision_info: dict):
+        """
+        Visualize detected obstacles in RViz.
+        
+        Args:
+            collision_info: Collision detection results
+        """
+        marker_array = MarkerArray()
+        stamp = self.get_clock().now().to_msg()
+        
+        # Delete old markers
+        delete_marker = Marker()
+        delete_marker.header.frame_id = 'map'
+        delete_marker.header.stamp = stamp
+        delete_marker.ns = 'obstacles'
+        delete_marker.id = 0
+        delete_marker.action = Marker.DELETEALL
+        marker_array.markers.append(delete_marker)
+        
+        # Safety zone circle
+        safety_circle = Marker()
+        safety_circle.header.frame_id = 'base_link'
+        safety_circle.header.stamp = stamp
+        safety_circle.ns = 'safety_zone'
+        safety_circle.id = 0
+        safety_circle.type = Marker.CYLINDER
+        safety_circle.action = Marker.ADD
+        safety_circle.pose.position.x = self.safety_distance / 2
+        safety_circle.pose.position.y = 0.0
+        safety_circle.pose.position.z = 0.0
+        safety_circle.pose.orientation.w = 1.0
+        safety_circle.scale.x = self.safety_distance
+        safety_circle.scale.y = self.robot_radius * 2.5
+        safety_circle.scale.z = 0.01
+        
+        # Color based on collision state
+        if collision_info['emergency_stop']:
+            safety_circle.color = ColorRGBA(r=1.0, g=0.0, b=0.0, a=0.3)
+        elif collision_info['reduce_speed']:
+            safety_circle.color = ColorRGBA(r=1.0, g=0.5, b=0.0, a=0.3)
+        else:
+            safety_circle.color = ColorRGBA(r=0.0, g=1.0, b=0.0, a=0.2)
+        
+        marker_array.markers.append(safety_circle)
+        
+        # Visualize detected obstacle points
+        for i, (obs_x, obs_y) in enumerate(collision_info['obstacle_positions'][:50]):  # Limit to 50 points
+            obs_marker = Marker()
+            obs_marker.header.frame_id = 'map'
+            obs_marker.header.stamp = stamp
+            obs_marker.ns = 'obstacles'
+            obs_marker.id = i + 1
+            obs_marker.type = Marker.SPHERE
+            obs_marker.action = Marker.ADD
+            obs_marker.pose.position.x = obs_x
+            obs_marker.pose.position.y = obs_y
+            obs_marker.pose.position.z = 0.1
+            obs_marker.pose.orientation.w = 1.0
+            obs_marker.scale.x = 0.1
+            obs_marker.scale.y = 0.1
+            obs_marker.scale.z = 0.1
+            obs_marker.color = ColorRGBA(r=1.0, g=0.0, b=0.0, a=0.7)
+            marker_array.markers.append(obs_marker)
+        
+        self.obstacle_marker_pub.publish(marker_array)
+    
     def publish_path_visualization(self):
-        """Publish path for visualization in RViz."""
+        """Publish path for visualization in RViz with both raw and smoothed paths."""
+        stamp = self.get_clock().now().to_msg()
+        
+        # Publish raw path if available
+        if self.raw_path is not None:
+            raw_path_msg = Path()
+            raw_path_msg.header.frame_id = 'map'
+            raw_path_msg.header.stamp = stamp
+            
+            for point in self.raw_path:
+                pose = PoseStamped()
+                pose.header = raw_path_msg.header
+                pose.pose.position = point
+                pose.pose.orientation.w = 1.0
+                raw_path_msg.poses.append(pose)
+            
+            self.raw_path_pub.publish(raw_path_msg)
+        
+        # Publish smoothed/current path
         if self.current_path is None:
             return
         
-        # Publish as Path message
-        path_msg = Path()
-        path_msg.header.frame_id = 'map'
-        path_msg.header.stamp = self.get_clock().now().to_msg()
+        smoothed_path_msg = Path()
+        smoothed_path_msg.header.frame_id = 'map'
+        smoothed_path_msg.header.stamp = stamp
         
         for point in self.current_path:
             pose = PoseStamped()
-            pose.header = path_msg.header
+            pose.header = smoothed_path_msg.header
             pose.pose.position = point
             pose.pose.orientation.w = 1.0
-            path_msg.poses.append(pose)
+            smoothed_path_msg.poses.append(pose)
         
-        self.path_pub.publish(path_msg)
+        self.smoothed_path_pub.publish(smoothed_path_msg)
+        self.path_pub.publish(smoothed_path_msg)  # Also publish to default topic
         
-        # Publish as markers for better visualization
+        # Publish enhanced markers
         marker_array = MarkerArray()
         
-        # Line strip for path
-        line_marker = Marker()
-        line_marker.header = path_msg.header
-        line_marker.ns = 'path'
-        line_marker.id = 0
-        line_marker.type = Marker.LINE_STRIP
-        line_marker.action = Marker.ADD
-        line_marker.scale.x = 0.05
-        line_marker.color = ColorRGBA(r=0.0, g=1.0, b=0.0, a=1.0)
+        # Raw path visualization (green line for planned path)
+        if self.raw_path is not None:
+            for i in range(len(self.raw_path) - 1):
+                line_marker = Marker()
+                line_marker.header.frame_id = 'map'
+                line_marker.header.stamp = stamp
+                line_marker.ns = 'raw_path'
+                line_marker.id = i
+                line_marker.type = Marker.LINE_STRIP
+                line_marker.action = Marker.ADD
+                line_marker.scale.x = 0.05
+                line_marker.color = ColorRGBA(r=0.0, g=1.0, b=0.0, a=0.7)
+                line_marker.points.append(self.raw_path[i])
+                line_marker.points.append(self.raw_path[i + 1])
+                marker_array.markers.append(line_marker)
+        
+        # Smoothed path visualization (blue line for optimized trajectory)
+        smooth_line = Marker()
+        smooth_line.header.frame_id = 'map'
+        smooth_line.header.stamp = stamp
+        smooth_line.ns = 'smoothed_path'
+        smooth_line.id = 0
+        smooth_line.type = Marker.LINE_STRIP
+        smooth_line.action = Marker.ADD
+        smooth_line.scale.x = 0.08
+        smooth_line.color = ColorRGBA(r=0.0, g=0.4, b=1.0, a=0.9)
+        smooth_line.pose.orientation.w = 1.0
         
         for point in self.current_path:
-            line_marker.points.append(point)
+            smooth_line.points.append(point)
         
-        marker_array.markers.append(line_marker)
+        marker_array.markers.append(smooth_line)
         
-        # Waypoint markers
-        for i, point in enumerate(self.current_path):
-            marker = Marker()
-            marker.header = path_msg.header
-            marker.ns = 'waypoints'
-            marker.id = i + 1
-            marker.type = Marker.SPHERE
-            marker.action = Marker.ADD
-            marker.pose.position = point
-            marker.pose.orientation.w = 1.0
-            marker.scale.x = 0.1
-            marker.scale.y = 0.1
-            marker.scale.z = 0.1
-            marker.color = ColorRGBA(r=1.0, g=0.5, b=0.0, a=1.0)
-            marker_array.markers.append(marker)
+        # Velocity profile markers (if trajectory optimization is enabled)
+        if self.optimized_trajectory is not None:
+            max_vel = max([v for _, v, _ in self.optimized_trajectory])
+            for i, (point, velocity, time) in enumerate(self.optimized_trajectory[::5]):  # Sample every 5th point
+                vel_marker = Marker()
+                vel_marker.header.frame_id = 'map'
+                vel_marker.header.stamp = stamp
+                vel_marker.ns = 'velocity_profile'
+                vel_marker.id = i + 1000
+                vel_marker.type = Marker.ARROW
+                vel_marker.action = Marker.ADD
+                vel_marker.pose.position = point
+                vel_marker.pose.orientation.w = 1.0
+                
+                # Scale arrow by velocity
+                scale = velocity / max_vel if max_vel > 0 else 0.0
+                vel_marker.scale.x = 0.2 * scale
+                vel_marker.scale.y = 0.05
+                vel_marker.scale.z = 0.05
+                
+                # Color by velocity (green = fast, red = slow)
+                vel_marker.color = ColorRGBA(
+                    r=1.0 - scale,
+                    g=scale,
+                    b=0.0,
+                    a=0.7
+                )
+                marker_array.markers.append(vel_marker)
+        
+        # Start and goal markers
+        if len(self.current_path) > 0:
+            # Start marker (blue sphere)
+            start_marker = Marker()
+            start_marker.header.frame_id = 'map'
+            start_marker.header.stamp = stamp
+            start_marker.ns = 'start_goal'
+            start_marker.id = 10000
+            start_marker.type = Marker.SPHERE
+            start_marker.action = Marker.ADD
+            start_marker.pose.position = self.current_path[0]
+            start_marker.pose.orientation.w = 1.0
+            start_marker.scale.x = 0.2
+            start_marker.scale.y = 0.2
+            start_marker.scale.z = 0.2
+            start_marker.color = ColorRGBA(r=0.0, g=0.0, b=1.0, a=1.0)
+            marker_array.markers.append(start_marker)
+            
+            # Goal marker (red sphere)
+            goal_marker = Marker()
+            goal_marker.header.frame_id = 'map'
+            goal_marker.header.stamp = stamp
+            goal_marker.ns = 'start_goal'
+            goal_marker.id = 10001
+            goal_marker.type = Marker.SPHERE
+            goal_marker.action = Marker.ADD
+            goal_marker.pose.position = self.current_path[-1]
+            goal_marker.pose.orientation.w = 1.0
+            goal_marker.scale.x = 0.25
+            goal_marker.scale.y = 0.25
+            goal_marker.scale.z = 0.25
+            goal_marker.color = ColorRGBA(r=1.0, g=0.0, b=0.0, a=1.0)
+            marker_array.markers.append(goal_marker)
         
         self.marker_pub.publish(marker_array)
 
