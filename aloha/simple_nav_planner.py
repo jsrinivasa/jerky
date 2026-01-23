@@ -96,12 +96,15 @@ class SimpleNavPlanner(Node):
         self.current_pose = None
         self.goal_pose = None
         self.current_path = None
-        self.raw_path = None  # Store unsmoothed path
+        self.raw_path = None  # Store raw A* path (for visualization)
         self.optimized_trajectory = None  # Store trajectory with time stamps
         self.map_data = None
+        self.inflated_map = None  # Pre-computed obstacle-inflated map for fast planning
         self.path_index = 0
         self.collision_detected = False
         self.last_collision_check_time = self.get_clock().now()
+        self.emergency_stop_time = None  # Track when emergency stop started
+        self.replan_attempts = 0  # Track replan attempts
         
         # Subscribers
         self.goal_sub = self.create_subscription(
@@ -135,11 +138,14 @@ class SimpleNavPlanner(Node):
         
         # Publishers
         self.cmd_vel_pub = self.create_publisher(Twist, '/cmd_vel', 10)
-        self.path_pub = self.create_publisher(Path, '/planned_path', 10)
-        self.raw_path_pub = self.create_publisher(Path, '/raw_path', 10)
-        self.smoothed_path_pub = self.create_publisher(Path, '/smoothed_path', 10)
+        self.path_pub = self.create_publisher(Path, '/planned_path', 10)  # Optimized path (main)
+        self.raw_path_pub = self.create_publisher(Path, '/raw_path', 10)  # A* path
+        self.smoothed_path_pub = self.create_publisher(Path, '/smoothed_path', 10)  # Optimized path (alt)
         self.marker_pub = self.create_publisher(MarkerArray, '/nav_markers', 10)
         self.obstacle_marker_pub = self.create_publisher(MarkerArray, '/obstacle_markers', 10)
+        
+        # Create timer to continuously publish path visualization
+        self.viz_timer = self.create_timer(0.5, self.continuous_path_visualization)
         
         # Nav2 Action Client (optional)
         if self.use_nav2:
@@ -153,7 +159,8 @@ class SimpleNavPlanner(Node):
         
         self.get_logger().info('Simple Navigation Planner initialized')
         self.get_logger().info(f'Robot radius: {self.robot_radius}m (24 inches wide)')
-        self.get_logger().info(f'Collision avoidance: {"Enabled" if self.enable_collision_avoidance else "Disabled"}')
+        self.get_logger().info(f'Path planning: Using robot radius of {self.robot_radius}m for obstacle inflation')
+        self.get_logger().info(f'Dynamic collision avoidance: {"Enabled" if self.enable_collision_avoidance else "Disabled"}')
         self.get_logger().info('Set a goal pose in RViz2 using "2D Goal Pose" tool')
     
     def goal_callback(self, msg: PoseStamped):
@@ -170,10 +177,11 @@ class SimpleNavPlanner(Node):
             self.plan_and_navigate()
     
     def map_callback(self, msg: OccupancyGrid):
-        """Store map data for path planning."""
+        """Store map data for path planning and create inflated map."""
         if self.map_data is None:
-            self.get_logger().info('Map received!')
+            self.get_logger().info('Map received! Creating inflated obstacle map...')
         self.map_data = msg
+        self.create_inflated_map()
     
     def odom_callback(self, msg: Odometry):
         """Update current robot pose."""
@@ -223,8 +231,6 @@ class SimpleNavPlanner(Node):
         if path is None or len(path) < 2:
             self.get_logger().error(
                 'Path planning failed! Check the messages above for detailed reasons. '
-                'Common causes: goal outside map bounds, goal in obstacle, no valid path exists, '
-                'start position in obstacle.'
             )
             self.state = NavigationState.FAILED
             return
@@ -287,8 +293,12 @@ class SimpleNavPlanner(Node):
             )
             return None
         
+        resolution = self.map_data.info.resolution
+        check_radius_cells = int(self.robot_radius / resolution)
+        
         self.get_logger().info(
-            f'Planning path from grid ({start_grid[0]}, {start_grid[1]}) to ({goal_grid[0]}, {goal_grid[1]})'
+            f'Planning path from grid ({start_grid[0]}, {start_grid[1]}) to ({goal_grid[0]}, {goal_grid[1]}). '
+            f'Inflating obstacles by {check_radius_cells} cells ({self.robot_radius:.2f}m)'
         )
         
         # Simple A* implementation
@@ -313,10 +323,10 @@ class SimpleNavPlanner(Node):
                 p.z = 0.0
                 path_world.append(p)
         
-        # Simplify path (remove intermediate points on straight lines)
-        path_world = self.simplify_path(path_world)
+        self.get_logger().info(f'A* path planning succeeded with {len(path_world)} raw waypoints')
         
-        self.get_logger().info(f'Path planning succeeded with {len(path_world)} waypoints')
+        # DON'T simplify - return the full A* path so we can see the jagged edges
+        # Smoothing will handle making it nice
         return path_world
     
     def astar(self, start: Tuple[int, int], goal: Tuple[int, int]) -> Optional[List[Tuple[int, int]]]:
@@ -368,7 +378,7 @@ class SimpleNavPlanner(Node):
         g_score = {start: 0}
         f_score = {start: self.heuristic(start, goal)}
         
-        max_iterations = 10000
+        max_iterations = 100000
         iteration = 0
         
         while open_set and iteration < max_iterations:
@@ -451,10 +461,50 @@ class SimpleNavPlanner(Node):
         value = self.map_data.data[idx]
         return value < 50
     
+    def create_inflated_map(self):
+        """
+        Pre-compute an inflated obstacle map for fast path planning.
+        This inflates obstacles by the robot's radius once, so we don't
+        need to check circles during A* search.
+        """
+        if self.map_data is None:
+            return
+        
+        import time
+        start_time = time.time()
+        
+        width = self.map_data.info.width
+        height = self.map_data.info.height
+        resolution = self.map_data.info.resolution
+        check_radius_cells = int(self.robot_radius / resolution)
+        
+        # Initialize inflated map as all free
+        self.inflated_map = np.zeros((height, width), dtype=bool)
+        
+        # Mark occupied cells in inflated map
+        for y in range(height):
+            for x in range(width):
+                if not self.is_free(x, y):
+                    # Inflate this obstacle
+                    for dy in range(-check_radius_cells, check_radius_cells + 1):
+                        for dx in range(-check_radius_cells, check_radius_cells + 1):
+                            if dx*dx + dy*dy <= check_radius_cells*check_radius_cells:
+                                nx, ny = x + dx, y + dy
+                                if 0 <= nx < width and 0 <= ny < height:
+                                    self.inflated_map[ny, nx] = True  # Occupied
+        
+        elapsed = time.time() - start_time
+        occupied_cells = np.sum(~self.inflated_map)
+        self.get_logger().info(
+            f'Inflated map created in {elapsed:.2f}s. '
+            f'Inflated obstacles by {check_radius_cells} cells ({self.robot_radius:.2f}m). '
+            f'Free cells: {occupied_cells}/{width*height}'
+        )
+    
     def is_point_collision_free_grid(self, grid_x: int, grid_y: int) -> bool:
         """
         Check if a grid cell is collision-free considering robot radius.
-        This inflates obstacles by the robot's radius during path planning.
+        Uses pre-computed inflated map for fast lookup.
         
         Args:
             grid_x, grid_y: Grid coordinates
@@ -462,20 +512,17 @@ class SimpleNavPlanner(Node):
         Returns:
             True if cell is collision-free with robot radius
         """
-        if self.map_data is None:
+        if self.inflated_map is None:
             return False
         
-        resolution = self.map_data.info.resolution
-        check_radius_cells = int(self.robot_radius / resolution)
+        width = self.map_data.info.width
+        height = self.map_data.info.height
         
-        # Check circular area around point
-        for dx in range(-check_radius_cells, check_radius_cells + 1):
-            for dy in range(-check_radius_cells, check_radius_cells + 1):
-                if dx*dx + dy*dy <= check_radius_cells*check_radius_cells:
-                    if not self.is_free(grid_x + dx, grid_y + dy):
-                        return False
+        if not (0 <= grid_x < width and 0 <= grid_y < height):
+            return False
         
-        return True
+        # Simple lookup in pre-computed inflated map
+        return not self.inflated_map[grid_y, grid_x]
     
     def find_nearest_free_cell(self, x: int, y: int, max_radius: int = 20) -> Optional[Tuple[int, int]]:
         """Find nearest free cell to given position with robot radius clearance."""
@@ -555,13 +602,13 @@ class SimpleNavPlanner(Node):
     
     def smooth_trajectory(self, path: List[Point]) -> Optional[List[Point]]:
         """
-        Smooth trajectory using cubic B-spline interpolation.
+        Smooth trajectory using cubic B-spline interpolation with rounded corners.
         
         Args:
             path: Raw path from A*
         
         Returns:
-            Smoothed path with more waypoints for better following
+            Smoothed path with rounded corners and many waypoints
         """
         if len(path) < 3:
             return path
@@ -572,19 +619,32 @@ class SimpleNavPlanner(Node):
             y_coords = [p.y for p in path]
             
             # Create B-spline representation
-            # s parameter controls smoothness (higher = smoother)
-            # k is the degree of the spline (3 = cubic)
-            tck, u = splprep([x_coords, y_coords], s=self.smoothing_weight, k=min(3, len(path)-1))
+            # s parameter controls smoothness - HIGHER = SMOOTHER with more rounded corners
+            # For truly smooth curves, we need s to be larger
+            # Default smoothing_weight is 0.5, but we want MORE smoothing
+            smoothing_factor = max(self.smoothing_weight * 2.0, 1.0)  # At least 1.0 for smooth curves
             
-            # Evaluate spline at many points for smooth trajectory
-            num_points = max(len(path) * 5, 50)  # At least 50 points
+            # k is the degree of the spline (3 = cubic for smooth curves)
+            k = min(3, len(path) - 1)
+            
+            self.get_logger().info(
+                f'Smoothing path with {len(path)} waypoints, smoothing_factor={smoothing_factor:.2f}',
+                throttle_duration_sec=2.0
+            )
+            
+            tck, u = splprep([x_coords, y_coords], s=smoothing_factor, k=k)
+            
+            # Evaluate spline at MANY points for truly smooth visualization
+            # More points = smoother appearance
+            num_points = max(len(path) * 10, 100)  # At least 100 points for smooth curves
             u_new = np.linspace(0, 1, num_points)
             smoothed_coords = splev(u_new, tck)
             
-            # Convert back to Point list
+            # Convert back to Point list and check for collisions
             smoothed_path = []
+            collision_count = 0
+            
             for x, y in zip(smoothed_coords[0], smoothed_coords[1]):
-                # Check if point is in free space
                 if self.is_point_collision_free(x, y):
                     p = Point()
                     p.x = float(x)
@@ -592,9 +652,43 @@ class SimpleNavPlanner(Node):
                     p.z = 0.0
                     smoothed_path.append(p)
                 else:
-                    # If smoothed path goes through obstacle, fall back to raw path
-                    self.get_logger().warn('Smoothed path collides with obstacle, using raw path')
+                    collision_count += 1
+            
+            # If too many collisions, try with less aggressive smoothing
+            collision_percentage = (collision_count / num_points) * 100
+            if collision_percentage > 5.0:
+                self.get_logger().warn(
+                    f'Smoothed path has {collision_percentage:.1f}% collision points. '
+                    f'Retrying with reduced smoothing (s={smoothing_factor/4:.2f})...'
+                )
+                # Retry with much less smoothing
+                reduced_smoothing = max(smoothing_factor / 4, 0.1)
+                tck, u = splprep([x_coords, y_coords], s=reduced_smoothing, k=k)
+                smoothed_coords = splev(u_new, tck)
+                
+                smoothed_path = []
+                for x, y in zip(smoothed_coords[0], smoothed_coords[1]):
+                    if self.is_point_collision_free(x, y):
+                        p = Point()
+                        p.x = float(x)
+                        p.y = float(y)
+                        p.z = 0.0
+                        smoothed_path.append(p)
+                
+                if len(smoothed_path) < 2:
+                    self.get_logger().warn('Even with reduced smoothing, path has collisions. Using raw path.')
                     return path
+                    
+                self.get_logger().info(f'Retry successful with reduced smoothing')
+            
+            if len(smoothed_path) < 2:
+                self.get_logger().warn('Smoothed path too short after collision filtering, using raw path')
+                return path
+            
+            self.get_logger().info(
+                f'Trajectory smoothed: {len(path)} -> {len(smoothed_path)} waypoints with rounded corners',
+                throttle_duration_sec=2.0
+            )
             
             # Optimize velocity profile
             self.optimized_trajectory = self.optimize_velocity_profile(smoothed_path)
@@ -730,18 +824,40 @@ class SimpleNavPlanner(Node):
             collision_info = self.check_collision_ahead()
             if collision_info['emergency_stop']:
                 self.stop_robot()
-                self.get_logger().warn(
-                    f'Emergency stop! Obstacle detected at {collision_info["distance"]:.2f}m',
-                    throttle_duration_sec=1.0
-                )
                 self.collision_detected = True
                 self.visualize_obstacles(collision_info)
+                
+                # Track how long we've been stopped
+                if self.emergency_stop_time is None:
+                    self.emergency_stop_time = self.get_clock().now()
+                    self.get_logger().warn(
+                        f'Emergency stop! Obstacle detected at {collision_info["distance"]:.2f}m'
+                    )
+                else:
+                    # If stopped for more than 2 seconds, try to replan
+                    time_stopped = (self.get_clock().now() - self.emergency_stop_time).nanoseconds / 1e9
+                    if time_stopped > 2.0 and self.replan_attempts < 3:
+                        self.get_logger().warn(
+                            f'Stuck for {time_stopped:.1f}s, attempting to replan (attempt {self.replan_attempts + 1}/3)'
+                        )
+                        if self.attempt_replan_around_obstacle():
+                            self.emergency_stop_time = None
+                            self.replan_attempts = 0
+                            self.get_logger().info('Replan successful, resuming navigation')
+                        else:
+                            self.replan_attempts += 1
+                            self.emergency_stop_time = self.get_clock().now()  # Reset timer for next attempt
+                            if self.replan_attempts >= 3:
+                                self.get_logger().error('Failed to replan after 3 attempts, stopping navigation')
+                                self.state = NavigationState.FAILED
                 return
             elif collision_info['reduce_speed']:
                 self.collision_detected = True
                 self.visualize_obstacles(collision_info)
+                self.emergency_stop_time = None  # Clear emergency stop timer
             else:
                 self.collision_detected = False
+                self.emergency_stop_time = None  # Clear emergency stop timer
         
         # Pure pursuit control
         cmd_vel = self.pure_pursuit_control()
@@ -762,6 +878,46 @@ class SimpleNavPlanner(Node):
         distance = math.sqrt(dx**2 + dy**2)
         
         return distance < self.goal_tolerance
+    
+    def attempt_replan_around_obstacle(self) -> bool:
+        """
+        Attempt to replan path from current position to goal when stuck.
+        
+        Returns:
+            True if replanning succeeded, False otherwise
+        """
+        if self.current_pose is None or self.goal_pose is None:
+            return False
+        
+        self.get_logger().info('Replanning path from current position to avoid obstacle...')
+        
+        # Plan new path
+        new_path = self.plan_path(
+            self.current_pose.position,
+            self.goal_pose.pose.position
+        )
+        
+        if new_path is None or len(new_path) < 2:
+            self.get_logger().warn('Replanning failed - no valid path found')
+            return False
+        
+        # Update paths
+        self.raw_path = new_path
+        
+        # Apply trajectory optimization if enabled
+        if self.use_traj_opt:
+            smoothed_path = self.smooth_trajectory(new_path)
+            if smoothed_path is not None and len(smoothed_path) > 0:
+                self.current_path = smoothed_path
+            else:
+                self.current_path = new_path
+        else:
+            self.current_path = new_path
+        
+        self.path_index = 0
+        self.publish_path_visualization()
+        
+        return True
     
     def pure_pursuit_control(self) -> Twist:
         """
@@ -958,6 +1114,9 @@ class SimpleNavPlanner(Node):
         Args:
             collision_info: Collision detection results
         """
+        if self.current_pose is None:
+            return
+            
         marker_array = MarkerArray()
         stamp = self.get_clock().now().to_msg()
         
@@ -970,18 +1129,22 @@ class SimpleNavPlanner(Node):
         delete_marker.action = Marker.DELETEALL
         marker_array.markers.append(delete_marker)
         
-        # Safety zone circle
+        # Safety zone circle - use map frame and robot's current position
         safety_circle = Marker()
-        safety_circle.header.frame_id = 'base_link'
+        safety_circle.header.frame_id = 'map'
         safety_circle.header.stamp = stamp
         safety_circle.ns = 'safety_zone'
         safety_circle.id = 0
         safety_circle.type = Marker.CYLINDER
         safety_circle.action = Marker.ADD
-        safety_circle.pose.position.x = self.safety_distance / 2
-        safety_circle.pose.position.y = 0.0
+        
+        # Position at robot's current location
+        robot_yaw = self.get_yaw_from_quaternion(self.current_pose.orientation)
+        safety_circle.pose.position.x = self.current_pose.position.x + (self.safety_distance / 2) * math.cos(robot_yaw)
+        safety_circle.pose.position.y = self.current_pose.position.y + (self.safety_distance / 2) * math.sin(robot_yaw)
         safety_circle.pose.position.z = 0.0
         safety_circle.pose.orientation.w = 1.0
+        
         safety_circle.scale.x = self.safety_distance
         safety_circle.scale.y = self.robot_radius * 2.5
         safety_circle.scale.z = 0.01
@@ -1017,6 +1180,11 @@ class SimpleNavPlanner(Node):
         
         self.obstacle_marker_pub.publish(marker_array)
     
+    def continuous_path_visualization(self):
+        """Continuously publish path visualization for RViz."""
+        if self.state == NavigationState.FOLLOWING and self.current_path is not None:
+            self.publish_path_visualization()
+    
     def publish_path_visualization(self):
         """Publish path for visualization in RViz with both raw and smoothed paths."""
         stamp = self.get_clock().now().to_msg()
@@ -1035,6 +1203,10 @@ class SimpleNavPlanner(Node):
                 raw_path_msg.poses.append(pose)
             
             self.raw_path_pub.publish(raw_path_msg)
+            self.get_logger().info(
+                f'Published A* path with {len(self.raw_path)} waypoints (green line with spheres)',
+                throttle_duration_sec=2.0
+            )
         
         # Publish smoothed/current path
         if self.current_path is None:
@@ -1052,28 +1224,37 @@ class SimpleNavPlanner(Node):
             smoothed_path_msg.poses.append(pose)
         
         self.smoothed_path_pub.publish(smoothed_path_msg)
-        self.path_pub.publish(smoothed_path_msg)  # Also publish to default topic
+        self.path_pub.publish(smoothed_path_msg)  # Also publish to default topic (robot follows this!)
         
         # Publish enhanced markers
         marker_array = MarkerArray()
         
-        # Raw path visualization (green line for planned path)
-        if self.raw_path is not None:
-            for i in range(len(self.raw_path) - 1):
-                line_marker = Marker()
-                line_marker.header.frame_id = 'map'
-                line_marker.header.stamp = stamp
-                line_marker.ns = 'raw_path'
-                line_marker.id = i
-                line_marker.type = Marker.LINE_STRIP
-                line_marker.action = Marker.ADD
-                line_marker.scale.x = 0.05
-                line_marker.color = ColorRGBA(r=0.0, g=1.0, b=0.0, a=0.7)
-                line_marker.points.append(self.raw_path[i])
-                line_marker.points.append(self.raw_path[i + 1])
-                marker_array.markers.append(line_marker)
+        # Clear old markers first
+        delete_all = Marker()
+        delete_all.header.frame_id = 'map'
+        delete_all.header.stamp = stamp
+        delete_all.action = Marker.DELETEALL
+        marker_array.markers.append(delete_all)
         
-        # Smoothed path visualization (blue line for optimized trajectory)
+        # Raw A* path visualization (thin green line)
+        if self.raw_path is not None and len(self.raw_path) > 1:
+            raw_line = Marker()
+            raw_line.header.frame_id = 'map'
+            raw_line.header.stamp = stamp
+            raw_line.ns = 'raw_path_line'
+            raw_line.id = 0
+            raw_line.type = Marker.LINE_STRIP
+            raw_line.action = Marker.ADD
+            raw_line.scale.x = 0.03  # Thin line
+            raw_line.color = ColorRGBA(r=0.0, g=1.0, b=0.0, a=0.6)  # Green
+            raw_line.pose.orientation.w = 1.0
+            
+            for point in self.raw_path:
+                raw_line.points.append(point)
+            
+            marker_array.markers.append(raw_line)
+        
+        # Optimized trajectory visualization (blue line - Robot follows this!)
         smooth_line = Marker()
         smooth_line.header.frame_id = 'map'
         smooth_line.header.stamp = stamp
@@ -1081,8 +1262,8 @@ class SimpleNavPlanner(Node):
         smooth_line.id = 0
         smooth_line.type = Marker.LINE_STRIP
         smooth_line.action = Marker.ADD
-        smooth_line.scale.x = 0.08
-        smooth_line.color = ColorRGBA(r=0.0, g=0.4, b=1.0, a=0.9)
+        smooth_line.scale.x = 0.06  # Thin line
+        smooth_line.color = ColorRGBA(r=0.0, g=0.8, b=1.0, a=0.9)  # Cyan/bright blue
         smooth_line.pose.orientation.w = 1.0
         
         for point in self.current_path:
@@ -1091,33 +1272,33 @@ class SimpleNavPlanner(Node):
         marker_array.markers.append(smooth_line)
         
         # Velocity profile markers (if trajectory optimization is enabled)
-        if self.optimized_trajectory is not None:
-            max_vel = max([v for _, v, _ in self.optimized_trajectory])
-            for i, (point, velocity, time) in enumerate(self.optimized_trajectory[::5]):  # Sample every 5th point
-                vel_marker = Marker()
-                vel_marker.header.frame_id = 'map'
-                vel_marker.header.stamp = stamp
-                vel_marker.ns = 'velocity_profile'
-                vel_marker.id = i + 1000
-                vel_marker.type = Marker.ARROW
-                vel_marker.action = Marker.ADD
-                vel_marker.pose.position = point
-                vel_marker.pose.orientation.w = 1.0
+        # if self.optimized_trajectory is not None:
+        #     max_vel = max([v for _, v, _ in self.optimized_trajectory])
+        #     for i, (point, velocity, time) in enumerate(self.optimized_trajectory[::5]):  # Sample every 5th point
+        #         vel_marker = Marker()
+        #         vel_marker.header.frame_id = 'map'
+        #         vel_marker.header.stamp = stamp
+        #         vel_marker.ns = 'velocity_profile'
+        #         vel_marker.id = i + 1000
+        #         vel_marker.type = Marker.ARROW
+        #         vel_marker.action = Marker.ADD
+        #         vel_marker.pose.position = point
+        #         vel_marker.pose.orientation.w = 1.0
                 
-                # Scale arrow by velocity
-                scale = velocity / max_vel if max_vel > 0 else 0.0
-                vel_marker.scale.x = 0.2 * scale
-                vel_marker.scale.y = 0.05
-                vel_marker.scale.z = 0.05
+        #         # Scale arrow by velocity
+        #         scale = velocity / max_vel if max_vel > 0 else 0.0
+        #         vel_marker.scale.x = 0.2 * scale
+        #         vel_marker.scale.y = 0.05
+        #         vel_marker.scale.z = 0.05
                 
-                # Color by velocity (green = fast, red = slow)
-                vel_marker.color = ColorRGBA(
-                    r=1.0 - scale,
-                    g=scale,
-                    b=0.0,
-                    a=0.7
-                )
-                marker_array.markers.append(vel_marker)
+        #         # Color by velocity (green = fast, red = slow)
+        #         vel_marker.color = ColorRGBA(
+        #             r=1.0 - scale,
+        #             g=scale,
+        #             b=0.0,
+        #             a=0.7
+        #         )
+        #         marker_array.markers.append(vel_marker)
         
         # Start and goal markers
         if len(self.current_path) > 0:
@@ -1152,6 +1333,57 @@ class SimpleNavPlanner(Node):
             goal_marker.scale.z = 0.25
             goal_marker.color = ColorRGBA(r=1.0, g=0.0, b=0.0, a=1.0)
             marker_array.markers.append(goal_marker)
+            
+            # Text label for A* path (near start)
+            if self.raw_path is not None and len(self.raw_path) > 2:
+                astar_label = Marker()
+                astar_label.header.frame_id = 'map'
+                astar_label.header.stamp = stamp
+                astar_label.ns = 'path_labels'
+                astar_label.id = 20000
+                astar_label.type = Marker.TEXT_VIEW_FACING
+                astar_label.action = Marker.ADD
+                astar_label.pose.position = self.raw_path[1]
+                astar_label.pose.position.z = 0.3
+                astar_label.pose.orientation.w = 1.0
+                astar_label.scale.z = 0.15
+                astar_label.color = ColorRGBA(r=0.0, g=1.0, b=0.0, a=1.0)
+                astar_label.text = "A* Path"
+                marker_array.markers.append(astar_label)
+            
+            # Text label for optimized trajectory (near start) - ROBOT FOLLOWS THIS
+            if len(self.current_path) > 2:
+                opt_label = Marker()
+                opt_label.header.frame_id = 'map'
+                opt_label.header.stamp = stamp
+                opt_label.ns = 'path_labels'
+                opt_label.id = 20001
+                opt_label.type = Marker.TEXT_VIEW_FACING
+                opt_label.action = Marker.ADD
+                opt_label.pose.position = self.current_path[1]
+                opt_label.pose.position.z = 0.5
+                opt_label.pose.orientation.w = 1.0
+                opt_label.scale.z = 0.2  # Larger text
+                opt_label.color = ColorRGBA(r=0.0, g=0.8, b=1.0, a=1.0)
+                opt_label.text = ">>> ROBOT FOLLOWS THIS PATH <<<"
+                marker_array.markers.append(opt_label)
+                
+                # Additional label at midpoint
+                mid_idx = len(self.current_path) // 2
+                opt_label2 = Marker()
+                opt_label2.header.frame_id = 'map'
+                opt_label2.header.stamp = stamp
+                opt_label2.ns = 'path_labels'
+                opt_label2.id = 20002
+                opt_label2.type = Marker.TEXT_VIEW_FACING
+                opt_label2.action = Marker.ADD
+                opt_label2.pose.position = self.current_path[mid_idx]
+                opt_label2.pose.position.z = 0.6
+                opt_label2.pose.orientation.w = 1.0
+                opt_label2.scale.z = 0.18
+                opt_label2.color = ColorRGBA(r=0.0, g=1.0, b=1.0, a=1.0)
+                opt_label2.text = "Optimized (Blue)"
+                marker_array.markers.append(opt_label2)
         
         self.marker_pub.publish(marker_array)
 

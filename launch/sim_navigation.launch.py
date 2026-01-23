@@ -26,7 +26,7 @@ def generate_launch_description():
     # Launch arguments
     map_file_arg = DeclareLaunchArgument(
         'map_file',
-        default_value='/home/aloha/interbotix_ws/src/my_robot_maps/maps/my_final_map.yaml',
+        default_value='/home/aloha/interbotix_ws/src/my_robot_maps/maps/my_final_map_moderate.yaml',
         description='Path to the map YAML file'
     )
     
@@ -72,6 +72,42 @@ def generate_launch_description():
         description='Robot radius for collision avoidance (meters). 24in width = 0.305m radius + safety margin'
     )
     
+    use_trajectory_optimization_arg = DeclareLaunchArgument(
+        'use_trajectory_optimization',
+        default_value='true',
+        description='Enable trajectory smoothing and optimization'
+    )
+    
+    smoothing_weight_arg = DeclareLaunchArgument(
+        'smoothing_weight',
+        default_value='0.5',
+        description='Trajectory smoothing weight (0.1-2.0). Higher = smoother curves with more rounded corners'
+    )
+    
+    max_acceleration_arg = DeclareLaunchArgument(
+        'max_acceleration',
+        default_value='0.5',
+        description='Maximum linear acceleration (m/s^2)'
+    )
+    
+    enable_collision_avoidance_arg = DeclareLaunchArgument(
+        'enable_collision_avoidance',
+        default_value='false',
+        description='Enable real-time collision avoidance (for dynamic obstacles)'
+    )
+    
+    safety_distance_arg = DeclareLaunchArgument(
+        'safety_distance',
+        default_value='0.5',
+        description='Minimum safety distance to obstacles (meters)'
+    )
+    
+    emergency_stop_distance_arg = DeclareLaunchArgument(
+        'emergency_stop_distance',
+        default_value='0.3',
+        description='Emergency stop distance to obstacles (meters)'
+    )
+    
     # Launch configurations
     map_file = LaunchConfiguration('map_file')
     use_sim_time = LaunchConfiguration('use_sim_time')
@@ -81,6 +117,12 @@ def generate_launch_description():
     max_angular_velocity = LaunchConfiguration('max_angular_velocity')
     goal_tolerance = LaunchConfiguration('goal_tolerance')
     robot_radius = LaunchConfiguration('robot_radius')
+    use_trajectory_optimization = LaunchConfiguration('use_trajectory_optimization')
+    smoothing_weight = LaunchConfiguration('smoothing_weight')
+    max_acceleration = LaunchConfiguration('max_acceleration')
+    enable_collision_avoidance = LaunchConfiguration('enable_collision_avoidance')
+    safety_distance = LaunchConfiguration('safety_distance')
+    emergency_stop_distance = LaunchConfiguration('emergency_stop_distance')
     
     # Static TF publishers for simulation
     # Publish map -> odom transform (robot starts at origin)
@@ -158,6 +200,12 @@ def generate_launch_description():
             'max_angular_velocity': max_angular_velocity,
             'goal_tolerance': goal_tolerance,
             'robot_radius': robot_radius,
+            'use_trajectory_optimization': use_trajectory_optimization,
+            'smoothing_weight': smoothing_weight,
+            'max_acceleration': max_acceleration,
+            'enable_collision_avoidance': enable_collision_avoidance,
+            'safety_distance': safety_distance,
+            'emergency_stop_distance': emergency_stop_distance,
             'use_sim_time': use_sim_time,
         }]
     )
@@ -189,6 +237,12 @@ def generate_launch_description():
         max_angular_velocity_arg,
         goal_tolerance_arg,
         robot_radius_arg,
+        use_trajectory_optimization_arg,
+        smoothing_weight_arg,
+        max_acceleration_arg,
+        enable_collision_avoidance_arg,
+        safety_distance_arg,
+        emergency_stop_distance_arg,
         
         # TF publishers
         map_to_odom_tf,

@@ -22,7 +22,7 @@ setup(
         (os.path.join('share', package_name, 'maps'), glob(os.path.join('maps', '*'))),
         ('share/' + package_name, ['package.xml']),
     ],
-    install_requires=['setuptools'],
+    install_requires=['setuptools', 'scipy', 'numpy'],
     zip_safe=True,
     author_email='tonyzhao@stanford.edu',
     author='Tony Zhao',
