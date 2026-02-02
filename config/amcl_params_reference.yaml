@@ -1,0 +1,113 @@
+# AMCL Parameters Reference
+# This is a reference file - actual parameters are in simple_navigation.launch.py
+# Adjust these in the launch file based on your robot's performance
+
+amcl:
+  ros__parameters:
+    # === Frames ===
+    base_frame_id: "base_footprint"
+    odom_frame_id: "odom"
+    global_frame_id: "map"
+    
+    # === Particle Filter ===
+    min_particles: 500          # Minimum number of particles
+    max_particles: 2000         # Maximum number of particles
+                                # Increase if localization is poor in large spaces
+                                # Decrease if CPU usage is too high
+    
+    # === Update Thresholds ===
+    update_min_d: 0.25          # Minimum linear movement (meters) before update
+    update_min_a: 0.2           # Minimum angular movement (radians) before update
+                                # Increase these if updates are too frequent
+                                # Decrease if localization is too slow to respond
+    
+    # === Motion Model (Differential Drive) ===
+    # These control how much to trust odometry
+    # Higher values = more noise = less trust in odometry
+    alpha1: 0.2                 # Rotation noise from rotation
+    alpha2: 0.2                 # Rotation noise from translation
+    alpha3: 0.2                 # Translation noise from translation
+    alpha4: 0.2                 # Translation noise from rotation
+    alpha5: 0.2                 # Strafe noise
+    
+    # Tuning guide:
+    # - If odometry is very accurate (encoders + IMU): decrease to 0.1
+    # - If odometry drifts: increase to 0.3-0.5
+    # - If robot has slippage: increase alpha3 and alpha4
+    
+    # === Laser Model ===
+    laser_model_type: "likelihood_field"  # Best for indoor environments
+    laser_max_range: 4.0        # Match your depth camera max range
+    laser_min_range: 0.45       # Match your depth camera min range
+    max_beams: 60               # Number of laser beams to use
+                                # Decrease if CPU usage is high
+                                # Increase for better accuracy (up to full scan)
+    
+    z_hit: 0.5                  # Weight for correct measurements
+    z_short: 0.05               # Weight for short readings (obstacles)
+    z_max: 0.05                 # Weight for max range readings
+    z_rand: 0.5                 # Weight for random readings
+    sigma_hit: 0.2              # Standard deviation for hit distribution
+    
+    # === Transform ===
+    tf_broadcast: true          # Publish map->odom transform
+    transform_tolerance: 1.0    # How long to wait for transform (seconds)
+                                # Increase if you get TF timeout warnings
+    
+    # === Recovery ===
+    recovery_alpha_slow: 0.0    # Slow recovery rate (disabled)
+    recovery_alpha_fast: 0.0    # Fast recovery rate (disabled)
+                                # Enable (0.001-0.01) if robot gets "lost" often
+    
+    # === Initial Pose ===
+    set_initial_pose: true      # Use provided initial pose
+    initial_pose:
+      x: 0.0
+      y: 0.0
+      z: 0.0
+      yaw: 0.0
+
+# === Depth to LaserScan Parameters ===
+depthimage_to_laserscan:
+  ros__parameters:
+    scan_height: 10             # Pixel rows to use (larger = more robust but slower)
+    scan_time: 0.033            # Time between scans (33ms = 30Hz)
+    range_min: 0.45             # D435i minimum depth
+    range_max: 4.0              # Conservative max for indoor navigation
+    output_frame: "camera_depth_optical_frame"
+    
+    # Tuning guide:
+    # - scan_height: 10-50 pixels (higher = more averaging, smoother but slower)
+    # - range_max: Reduce to 3.0m if you get too much noise in far readings
+    # - range_min: Don't go below 0.45m (camera spec limit)
+
+# === Common Tuning Scenarios ===
+
+# Scenario 1: Localization is too slow/laggy
+# Solution: Decrease update thresholds
+#   update_min_d: 0.15
+#   update_min_a: 0.1
+
+# Scenario 2: Localization is jittery
+# Solution: Increase update thresholds, reduce odometry noise
+#   update_min_d: 0.35
+#   update_min_a: 0.3
+#   alpha1-5: 0.1
+
+# Scenario 3: Robot gets lost easily
+# Solution: Increase particles, enable recovery
+#   max_particles: 4000
+#   recovery_alpha_slow: 0.001
+#   recovery_alpha_fast: 0.01
+
+# Scenario 4: High CPU usage
+# Solution: Reduce particles and laser beams
+#   max_particles: 1000
+#   min_particles: 250
+#   max_beams: 30
+
+# Scenario 5: Poor localization in feature-sparse areas
+# Solution: Increase scan height, use more laser beams
+#   scan_height: 30
+#   max_beams: 100
+
