@@ -221,7 +221,7 @@ def launch_setup(context, *args, **kwargs):
     mobile_cams = [
         LaunchConfiguration('cam_high_name'),
         LaunchConfiguration('cam_left_wrist_name'),
-        LaunchConfiguration('cam_right_wrist_name')
+        LaunchConfiguration('cam_right_wrist_name'),
     ]
     all_cams = mobile_cams + [LaunchConfiguration('cam_low_name')]
     camera_names = mobile_cams if is_mobile else all_cams
@@ -250,6 +250,29 @@ def launch_setup(context, *args, **kwargs):
     realsense_ros_launch_includes_group_action = GroupAction(
       condition=IfCondition(LaunchConfiguration('use_cameras')),
       actions=rs_actions,
+    )
+
+    cam_pov_node = Node(
+        package='realsense2_camera',
+        namespace=LaunchConfiguration('cam_pov_name'),
+        name='camera',
+        executable='realsense2_camera_node',
+        parameters=[
+            {'initial_reset': True},
+            ParameterFile(
+                param_file=PathJoinSubstitution([
+                    FindPackageShare('aloha'),
+                    'config',
+                    'rs_cam.yaml',
+                ]),
+                allow_substs=True,
+            )
+        ],
+        output='screen',
+        condition=AndCondition([
+            IfCondition(LaunchConfiguration('use_cameras')),
+            IfCondition(LaunchConfiguration('use_cam_pov')),
+        ]),
     )
 
     slate_base_node = Node(
@@ -314,6 +337,7 @@ def launch_setup(context, *args, **kwargs):
         '\n- launch_leaders: ', LaunchConfiguration('launch_leaders'),
         '\n- use_cameras: ', LaunchConfiguration('use_cameras'),
         '\n- is_mobile: ', LaunchConfiguration('is_mobile'),
+        '\n- use_cam_pov: ', LaunchConfiguration('use_cam_pov'),
         '\n- use_base: ', LaunchConfiguration('use_base'),
         '\n- use_joystick_teleop: ', LaunchConfiguration('use_joystick_teleop'),
     ])
@@ -351,6 +375,7 @@ def launch_setup(context, *args, **kwargs):
         follower_left_transform_broadcaster_node,
         follower_right_transform_broadcaster_node,
         realsense_ros_launch_includes_group_action,
+        cam_pov_node,
         slate_base_node,
         joystick_teleop_node,
         joy_node,
@@ -490,6 +515,20 @@ def generate_launch_description():
         DeclareLaunchArgument(
             'cam_right_wrist_name',
             default_value='cam_right_wrist',
+        )
+    )
+    declared_arguments.append(
+        DeclareLaunchArgument(
+            'cam_pov_name',
+            default_value='cam_pov',
+        )
+    )
+    declared_arguments.append(
+        DeclareLaunchArgument(
+            'use_cam_pov',
+            default_value='true',
+            choices=('true', 'false'),
+            description='if `true`, launches the POV camera node',
         )
     )
     declared_arguments.append(

@@ -10,6 +10,7 @@ from aloha.constants import (
 from cv_bridge import CvBridge
 import rclpy
 from rclpy.executors import SingleThreadedExecutor
+from interbotix_common_modules.common_robot.robot import get_interbotix_global_node
 from interbotix_xs_modules.xs_robot.arm import InterbotixManipulatorXS
 from interbotix_xs_modules.xs_robot.gravity_compensation import (
     InterbotixGravityCompensationInterface,
@@ -17,6 +18,7 @@ from interbotix_xs_modules.xs_robot.gravity_compensation import (
 from interbotix_xs_msgs.msg import JointGroupCommand, JointSingleCommand
 import numpy as np
 from rclpy.node import Node
+from rclpy.qos import QoSProfile, ReliabilityPolicy, DurabilityPolicy
 from sensor_msgs.msg import Image, JointState
 
 
@@ -31,7 +33,7 @@ class ImageRecorder:
         self.bridge = CvBridge()
 
         if is_mobile:
-            self.camera_names = ['cam_high', 'cam_left_wrist', 'cam_right_wrist']
+            self.camera_names = ['cam_high', 'cam_left_wrist', 'cam_right_wrist', 'cam_pov']
         else:
             self.camera_names = ['cam_high', 'cam_low', 'cam_left_wrist', 'cam_right_wrist']
 
@@ -47,10 +49,21 @@ class ImageRecorder:
                 callback_func = self.image_cb_cam_left_wrist
             elif cam_name == 'cam_right_wrist':
                 callback_func = self.image_cb_cam_right_wrist
+            elif cam_name == 'cam_pov':
+                callback_func = self.image_cb_cam_pov
             else:
                 raise NotImplementedError
-            topic = COLOR_IMAGE_TOPIC_NAME.format(cam_name)
-            node.create_subscription(Image, topic, callback_func, 20)
+            if cam_name == 'cam_pov':
+                topic = f'{cam_name}/camera/color/image_raw'
+                qos = QoSProfile(
+                    depth=20,
+                    reliability=ReliabilityPolicy.RELIABLE,
+                    durability=DurabilityPolicy.TRANSIENT_LOCAL,
+                )
+            else:
+                topic = COLOR_IMAGE_TOPIC_NAME.format(cam_name)
+                qos = 20
+            node.create_subscription(Image, topic, callback_func, qos)
             if self.is_debug:
                 setattr(self, f'{cam_name}_timestamps', deque(maxlen=50))
         
@@ -107,10 +120,17 @@ class ImageRecorder:
         cam_name = 'cam_right_wrist'
         return self.image_cb(cam_name, data)
 
+    def image_cb_cam_pov(self, data):
+        cam_name = 'cam_pov'
+        return self.image_cb(cam_name, data)
+
     def get_images(self):
         image_dict = {}
         for cam_name in self.camera_names:
-            image_dict[cam_name] = getattr(self, f'{cam_name}_image')
+            image = getattr(self, f'{cam_name}_image')
+            if image is None:
+                image = np.zeros((480, 640, 3), dtype='uint8')
+            image_dict[cam_name] = image
         return image_dict
 
     def print_diagnostics(self):
@@ -323,11 +343,27 @@ def postprocess_base_action(base_action):
     return np.array([linear_vel, angular_vel])
 
 
+def _gravity_comp_service_available(bot: InterbotixManipulatorXS) -> bool:
+    """Check if the gravity compensation service exists for this bot."""
+    node = get_interbotix_global_node()
+    if node is None:
+        return False
+    service_name = f'/{bot.robot_name}/gravity_compensation_enable'
+    available = [name for name, _ in node.get_service_names_and_types()]
+    return service_name in available
+
+
 def enable_gravity_compensation(bot: InterbotixManipulatorXS):
+    if not _gravity_comp_service_available(bot):
+        print(f'Gravity compensation service not available for {bot.robot_name}, skipping enable.')
+        return
     gravity_compensation = InterbotixGravityCompensationInterface(bot.core)
     gravity_compensation.enable()
 
 
 def disable_gravity_compensation(bot: InterbotixManipulatorXS):
+    if not _gravity_comp_service_available(bot):
+        print(f'Gravity compensation service not available for {bot.robot_name}, skipping disable.')
+        return
     gravity_compensation = InterbotixGravityCompensationInterface(bot.core)
     gravity_compensation.disable()
