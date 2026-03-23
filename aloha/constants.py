@@ -127,7 +127,7 @@ TASK_CONFIGS = {
     },
     'aloha_mobile_pick_object':{
         'dataset_dir': DATA_DIR + '/aloha_mobile_pick_object',
-        'episode_len': 600,
+        'episode_len': 3000,
         'camera_names': ['cam_high', 'cam_left_wrist', 'cam_right_wrist', 'cam_pov']
     },
 }

@@ -35,7 +35,7 @@ class ImageRecorder:
         if is_mobile:
             self.camera_names = ['cam_high', 'cam_left_wrist', 'cam_right_wrist', 'cam_pov']
         else:
-            self.camera_names = ['cam_high', 'cam_low', 'cam_left_wrist', 'cam_right_wrist']
+            self.camera_names = ['cam_high', 'cam_low', 'cam_left_wrist', 'cam_right_wrist', 'cam_pov']
 
         for cam_name in self.camera_names:
             setattr(self, f'{cam_name}_image', None)
@@ -94,7 +94,7 @@ class ImageRecorder:
         setattr(
             self,
             f'{cam_name}_image',
-            self.bridge.imgmsg_to_cv2(data, desired_encoding='passthrough')
+            self.bridge.imgmsg_to_cv2(data, desired_encoding='bgr8')
         )
         setattr(self, f'{cam_name}_secs', data.header.stamp.sec)
         setattr(self, f'{cam_name}_nsecs', data.header.stamp.nanosec)

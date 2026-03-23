@@ -223,6 +223,17 @@ def generate_launch_description():
         condition=IfCondition(static_condition)
     )
     
+    # base_footprint -> base_link transform
+    # The SLATE base driver publishes odom -> base_footprint, but AMCL and the
+    # rest of the nav stack reference base_link. Without this link the TF tree
+    # is broken and AMCL cannot resolve odom -> base_link.
+    base_footprint_to_base_link_tf = Node(
+        package='tf2_ros',
+        executable='static_transform_publisher',
+        name='base_footprint_to_base_link',
+        arguments=['0', '0', '0.1', '0', '0', '0', 'base_footprint', 'base_link'],
+    )
+    
     # Note: We don't need a separate map_server because RTAB-Map publishes
     # the map directly from its database when in localization mode
     # If not using RTAB-Map, we use map_server to load the map from YAML
@@ -269,7 +280,7 @@ def generate_launch_description():
             'subscribe_scan': False,
             'approx_sync': True,
             'queue_size': 100,  # Increased for better sync tolerance
-            'Mem/IncrementalMemory': 'false',  # Localization mode
+            'Mem/IncrementalMemory': 'true',  # Localization mode
             'Mem/InitWMWithAllNodes': 'true',  # Load all nodes
             'use_sim_time': use_sim_time,
         }],
@@ -310,31 +321,31 @@ def generate_launch_description():
     # ==================== AMCL Localization Setup ====================
     
     # Static transform: base_link -> camera_link (where cam_high is mounted)
-    # Corrected with +90° yaw (clockwise) to fix rotation
+    # Camera now points forward (pitch=0) instead of down
     camera_transform = Node(
         package='tf2_ros',
         executable='static_transform_publisher',
         name='camera_base_link',
-        arguments=['--x', '0.2098050', '--y', '0', '--z', '1.031778', 
-                   '--yaw', '1.5708', '--pitch', '0.645772', '--roll', '0',  # +90 degrees
+        arguments=['--x', '0.2098050', '--y', '0', '--z', '1.031778',
+                   '--yaw', '0', '--pitch', '0', '--roll', '0',
                    '--frame-id', 'base_link', '--child-frame-id', 'camera_link'],
         condition=IfCondition(use_amcl)
     )
     
     # Convert D435i depth image to a 2D laser scan for AMCL
-    # Camera is angled down, so we use rows from upper part of image (sees farther)
+    # Camera now points forward, so we use a horizontal slice from center of image
     depthimage_to_laserscan_node = Node(
         package='depthimage_to_laserscan',
         executable='depthimage_to_laserscan_node',
         name='depthimage_to_laserscan',
         output='screen',
         parameters=[{
-            'scan_height': 50,  # Use more rows for better averaging (camera angled down)
-            'scan_row_step': 1,  # Step between rows
-            'scan_time': 0.033,  # Time between scans (33ms = 30Hz)
-            'range_min': 0.45,  # Minimum range (meters) - D435i minimum depth
-            'range_max': 4.0,   # Maximum range (meters) - reasonable for indoor navigation
-            'output_frame': 'camera_depth_optical_frame',  # Frame ID for the scan
+            'scan_height': 300,
+            'scan_row_step': 1,
+            'scan_time': 0.033,
+            'range_min': 0.1,
+            'range_max': 3.0,
+            'output_frame': 'camera_link',
             'use_sim_time': use_sim_time,
         }],
         remappings=[
@@ -369,8 +380,8 @@ def generate_launch_description():
             
             # Laser model configuration
             'laser_model_type': 'likelihood_field',
-            'laser_max_range': 4.0,  # Match depth camera max range
-            'laser_min_range': 0.45,  # Match depth camera min range
+            'laser_max_range': 3.0,
+            'laser_min_range': 0.1,
             'max_beams': 60,
             'beam_skip_distance': 0.5,
             'beam_skip_error_threshold': 0.9,
@@ -511,6 +522,7 @@ def generate_launch_description():
         
         # Nodes
         map_to_odom_tf,
+        base_footprint_to_base_link_tf,
         map_server_node,
         map_lifecycle_node,
         rgbd_odometry_node,

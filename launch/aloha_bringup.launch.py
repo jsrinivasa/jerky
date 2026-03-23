@@ -14,6 +14,7 @@ from launch.actions import (
 )
 from launch.conditions import (
   IfCondition,
+  UnlessCondition,
 )
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import (
@@ -225,7 +226,34 @@ def launch_setup(context, *args, **kwargs):
     ]
     all_cams = mobile_cams + [LaunchConfiguration('cam_low_name')]
     camera_names = mobile_cams if is_mobile else all_cams
-    for camera_name in camera_names:
+
+    # cam_high: launch with depth explicitly enabled (for mapping / depthimage_to_laserscan)
+    rs_actions.append(
+        Node(
+            package='realsense2_camera',
+            namespace=LaunchConfiguration('cam_high_name'),
+            name='camera',
+            executable='realsense2_camera_node',
+            parameters=[
+                {'initial_reset': True},
+                {'enable_depth': True},
+                {'enable_color': True},
+                ParameterFile(
+                    param_file=PathJoinSubstitution([
+                        FindPackageShare('aloha'),
+                        'config',
+                        'rs_cam.yaml',
+                    ]),
+                    allow_substs=True,
+                )
+            ],
+            output='screen',
+            condition=IfCondition(LaunchConfiguration('use_cameras')),
+        ),
+    )
+
+    # Wrist cameras: shared config (no depth required)
+    for camera_name in [LaunchConfiguration('cam_left_wrist_name'), LaunchConfiguration('cam_right_wrist_name')]:
         rs_actions.append(
             Node(
                 package='realsense2_camera',
@@ -244,8 +272,35 @@ def launch_setup(context, *args, **kwargs):
                     )
                 ],
                 output='screen',
+                condition=IfCondition(LaunchConfiguration('use_cameras')),
             ),
         )
+
+    # cam_low (when not mobile)
+    rs_actions.append(
+        Node(
+            package='realsense2_camera',
+            namespace=LaunchConfiguration('cam_low_name'),
+            name='camera',
+            executable='realsense2_camera_node',
+            parameters=[
+                {'initial_reset': True},
+                ParameterFile(
+                    param_file=PathJoinSubstitution([
+                        FindPackageShare('aloha'),
+                        'config',
+                        'rs_cam.yaml',
+                    ]),
+                    allow_substs=True,
+                )
+            ],
+            output='screen',
+            condition=AndCondition([
+                IfCondition(LaunchConfiguration('use_cameras')),
+                UnlessCondition(LaunchConfiguration('is_mobile')),
+            ]),
+        ),
+    )
 
     realsense_ros_launch_includes_group_action = GroupAction(
       condition=IfCondition(LaunchConfiguration('use_cameras')),

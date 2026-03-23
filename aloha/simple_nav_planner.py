@@ -76,6 +76,7 @@ class SimpleNavPlanner(Node):
         self.declare_parameter('enable_collision_avoidance', True)
         self.declare_parameter('safety_distance', 0.5)  # Minimum distance to obstacles (meters)
         self.declare_parameter('emergency_stop_distance', 0.3)  # Emergency stop distance (meters)
+        self.declare_parameter('occupancy_threshold', 60)  # Cells with occupancy >= this are obstacles (0-100)
         
         self.use_nav2 = self.get_parameter('use_nav2').value
         self.lookahead_distance = self.get_parameter('lookahead_distance').value
@@ -90,6 +91,7 @@ class SimpleNavPlanner(Node):
         self.enable_collision_avoidance = self.get_parameter('enable_collision_avoidance').value
         self.safety_distance = self.get_parameter('safety_distance').value
         self.emergency_stop_distance = self.get_parameter('emergency_stop_distance').value
+        self.occupancy_threshold = self.get_parameter('occupancy_threshold').value
         
         # State
         self.state = NavigationState.IDLE
@@ -143,6 +145,7 @@ class SimpleNavPlanner(Node):
         self.smoothed_path_pub = self.create_publisher(Path, '/smoothed_path', 10)  # Optimized path (alt)
         self.marker_pub = self.create_publisher(MarkerArray, '/nav_markers', 10)
         self.obstacle_marker_pub = self.create_publisher(MarkerArray, '/obstacle_markers', 10)
+        self.inflated_map_pub = self.create_publisher(OccupancyGrid, '/inflated_map', 1)
         
         # Create timer to continuously publish path visualization
         self.viz_timer = self.create_timer(0.5, self.continuous_path_visualization)
@@ -456,21 +459,29 @@ class SimpleNavPlanner(Node):
         if idx >= len(self.map_data.data):
             return False
         
-        # Consider cells with occupancy < 50 as free
-        # Unknown cells (-1) are considered free
+        # Cells below occupancy_threshold are passable (free or light annotations)
+        # Unknown cells (-1) are also treated as passable
         value = self.map_data.data[idx]
-        return value < 50
+        return value < self.occupancy_threshold
     
     def create_inflated_map(self):
         """
         Pre-compute an inflated obstacle map for fast path planning.
-        This inflates obstacles by the robot's radius once, so we don't
-        need to check circles during A* search.
+        
+        Uses a two-stage approach to handle anti-aliased wall edges in
+        scale-mode maps (e.g., from PDF floor plans):
+          1. Identify wall cores: cells with occupancy >= 80
+          2. Dilate wall cores by a few pixels to catch anti-aliased edges
+          3. Inflate the result by the robot's radius for safe clearance
+        
+        This ensures wall fringes are blocked while isolated gray features
+        (text, annotations) remain passable.
         """
         if self.map_data is None:
             return
         
         import time
+        import cv2
         start_time = time.time()
         
         width = self.map_data.info.width
@@ -478,28 +489,53 @@ class SimpleNavPlanner(Node):
         resolution = self.map_data.info.resolution
         check_radius_cells = int(self.robot_radius / resolution)
         
-        # Initialize inflated map as all free
-        self.inflated_map = np.zeros((height, width), dtype=bool)
+        # Convert occupancy grid to numpy array
+        data = np.array(self.map_data.data, dtype=np.int8).reshape((height, width))
         
-        # Mark occupied cells in inflated map
-        for y in range(height):
-            for x in range(width):
-                if not self.is_free(x, y):
-                    # Inflate this obstacle
-                    for dy in range(-check_radius_cells, check_radius_cells + 1):
-                        for dx in range(-check_radius_cells, check_radius_cells + 1):
-                            if dx*dx + dy*dy <= check_radius_cells*check_radius_cells:
-                                nx, ny = x + dx, y + dy
-                                if 0 <= nx < width and 0 <= ny < height:
-                                    self.inflated_map[ny, nx] = True  # Occupied
+        # Stage 1: Find definite wall cores (occupancy >= 80)
+        wall_cores = (data >= 80).astype(np.uint8)
+        
+        # Stage 2: Dilate wall cores by 3 cells to catch anti-aliased edges
+        edge_kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (7, 7))
+        wall_with_edges = cv2.dilate(wall_cores, edge_kernel, iterations=1)
+        
+        # Stage 3: Inflate by robot radius for safe clearance
+        inflate_diameter = 2 * check_radius_cells + 1
+        inflate_kernel = cv2.getStructuringElement(
+            cv2.MORPH_ELLIPSE, (inflate_diameter, inflate_diameter)
+        )
+        inflated = cv2.dilate(wall_with_edges, inflate_kernel, iterations=1)
+        
+        self.inflated_map = inflated.astype(bool)
         
         elapsed = time.time() - start_time
-        occupied_cells = np.sum(~self.inflated_map)
+        free_cells = np.sum(~self.inflated_map)
         self.get_logger().info(
             f'Inflated map created in {elapsed:.2f}s. '
             f'Inflated obstacles by {check_radius_cells} cells ({self.robot_radius:.2f}m). '
-            f'Free cells: {occupied_cells}/{width*height}'
+            f'Free cells: {free_cells}/{width*height}'
         )
+        
+        # Publish inflated map for visualization in RViz
+        self.publish_inflated_map()
+    
+    def publish_inflated_map(self):
+        """Publish the inflated obstacle map as an OccupancyGrid for RViz visualization."""
+        if self.inflated_map is None or self.map_data is None:
+            return
+        
+        msg = OccupancyGrid()
+        msg.header.stamp = self.get_clock().now().to_msg()
+        msg.header.frame_id = 'map'
+        msg.info = self.map_data.info
+        
+        # Convert: True (occupied) -> 100, False (free) -> 0
+        flat = self.inflated_map.flatten().astype(np.int8)
+        flat[flat == 1] = 100
+        msg.data = flat.tolist()
+        
+        self.inflated_map_pub.publish(msg)
+        self.get_logger().info('Published inflated map on /inflated_map', throttle_duration_sec=10.0)
     
     def is_point_collision_free_grid(self, grid_x: int, grid_y: int) -> bool:
         """

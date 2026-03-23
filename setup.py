@@ -39,6 +39,8 @@ setup(
             'sim_planner_interactive = scripts.sim_planner_interactive:main',
             'simple_nav_planner = aloha.simple_nav_planner:main',
             'fake_odometry = aloha.fake_odometry:main',
+            'camera_static_tf_publisher = aloha.camera_static_tf_publisher:main',
+            'localization_monitor = aloha.localization_monitor:main',
         ],
     },
 )

@@ -17,6 +17,8 @@ $(var cam_high_name):
   camera:
     ros__parameters:
       serial_no: "230322275509"
+      enable_depth: true
+      enable_color: true
 
 $(var cam_right_wrist_name):
   camera:
