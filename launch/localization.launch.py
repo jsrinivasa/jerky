@@ -3,9 +3,10 @@
 """
 Standalone Localization Launch File
 
-Launches the localization stack (D405 camera + map server + AMCL) without any
-navigation planner. The D405 depth camera is converted to a 2D laser scan, and
-AMCL uses that scan + SLATE wheel odometry to localize on a previously saved map.
+Launches the localization stack (dual cameras + map server + AMCL) without any
+navigation planner. The D405 (forward) and D435i (backward) depth cameras are
+each converted to a 2D laser scan, merged into a single ~173 deg FOV scan, and
+AMCL uses that merged scan + SLATE wheel odometry to localize on a saved map.
 
 Prerequisites:
     # Terminal 1: Start the robot base (cameras optional - this launch starts D405)
@@ -147,9 +148,9 @@ def generate_launch_description():
         ],
     )
 
-    # ==================== RealSense D405 Camera ====================
+    # ==================== Front Camera (D405, forward-facing) =========
 
-    camera_node = Node(
+    camera_front_node = Node(
         package='realsense2_camera',
         namespace='cam_high',
         name='camera',
@@ -161,8 +162,42 @@ def generate_launch_description():
             'enable_depth': True,
             'enable_color': True,
             'align_depth.enable': True,
-            'depth_module.profile': '640,480,30',
-            'rgb_camera.profile': '640,480,30',
+            'depth_module.profile': '640,480,15',
+            'rgb_camera.profile': '640,480,15',
+            'enable_infra': False,
+            'enable_infra1': False,
+            'enable_infra2': False,
+        }],
+        condition=IfCondition(launch_camera),
+    )
+
+    # ==================== Rear Camera (D435i, backward-facing) ======
+
+    rear_camera_transform = Node(
+        package='tf2_ros',
+        executable='static_transform_publisher',
+        name='base_to_rear_camera_tf',
+        arguments=[
+            '--x', '0.0', '--y', '0', '--z', '1.4146',
+            '--yaw', '3.14159', '--pitch', '0', '--roll', '0',
+            '--frame-id', 'base_link', '--child-frame-id', 'rear_cam_link',
+        ],
+    )
+
+    camera_rear_node = Node(
+        package='realsense2_camera',
+        namespace='cam_rear',
+        name='rear_cam',
+        executable='realsense2_camera_node',
+        output='screen',
+        parameters=[{
+            'camera_name': 'rear_cam',
+            'initial_reset': True,
+            'serial_no': '349522070494',
+            'enable_depth': True,
+            'enable_color': False,
+            'align_depth.enable': False,
+            'depth_module.profile': '640,480,15',
             'enable_infra': False,
             'enable_infra1': False,
             'enable_infra2': False,
@@ -195,12 +230,12 @@ def generate_launch_description():
         }],
     )
 
-    # ==================== Depth to LaserScan ====================
+    # ==================== Depth to LaserScan (Front) ================
 
-    depthimage_to_laserscan_node = Node(
+    depthimage_to_laserscan_front = Node(
         package='depthimage_to_laserscan',
         executable='depthimage_to_laserscan_node',
-        name='depthimage_to_laserscan',
+        name='depthimage_to_laserscan_front',
         output='screen',
         parameters=[{
             'scan_height': 300,
@@ -214,8 +249,47 @@ def generate_launch_description():
         remappings=[
             ('depth', '/cam_high/camera/depth/image_rect_raw'),
             ('depth_camera_info', '/cam_high/camera/depth/camera_info'),
-            ('scan', '/scan'),
+            ('scan', '/scan_front'),
         ],
+    )
+
+    # ==================== Depth to LaserScan (Rear) =================
+
+    depthimage_to_laserscan_rear = Node(
+        package='depthimage_to_laserscan',
+        executable='depthimage_to_laserscan_node',
+        name='depthimage_to_laserscan_rear',
+        output='screen',
+        parameters=[{
+            'scan_height': 300,
+            'scan_row_step': 1,
+            'scan_time': 0.033,
+            'range_min': 0.1,
+            'range_max': 5.0,
+            'output_frame': 'rear_cam_link',
+            'use_sim_time': use_sim_time,
+        }],
+        remappings=[
+            ('depth', '/cam_rear/rear_cam/depth/image_rect_raw'),
+            ('depth_camera_info', '/cam_rear/rear_cam/depth/camera_info'),
+            ('scan', '/scan_rear'),
+        ],
+    )
+
+    # ==================== Laser Scan Merger ==========================
+
+    laser_scan_merger_node = Node(
+        package='aloha',
+        executable='laser_scan_merger',
+        name='laser_scan_merger',
+        output='screen',
+        parameters=[{
+            'target_frame': 'base_link',
+            'range_min': 0.1,
+            'range_max': 5.0,
+            'publish_rate': 15.0,
+            'use_sim_time': use_sim_time,
+        }],
     )
 
     # ==================== AMCL Localization ====================
@@ -242,11 +316,14 @@ def generate_launch_description():
             'global_frame_id': 'map',
             'odom_frame_id': 'odom',
 
-            # Laser model -- tuned for D405 depth-to-laserscan (scan_height=300)
+            # Laser model -- dual camera merged scan (front D405 + rear D435i)
+            # The merged scan is 360 deg but only ~170 deg has valid data,
+            # so max_beams must be high enough that enough samples land on
+            # valid beams (valid_ratio ~ 170/360 ~ 0.47).
             'laser_model_type': 'likelihood_field',
-            'laser_max_range': 3.0,
+            'laser_max_range': 5.0,
             'laser_min_range': 0.1,
-            'max_beams': 150,
+            'max_beams': 500,
             'beam_skip_distance': 0.5,
             'beam_skip_error_threshold': 0.9,
             'beam_skip_threshold': 0.3,
@@ -366,19 +443,23 @@ def generate_launch_description():
         camera_serial_arg,
         launch_camera_arg,
 
-        # Camera
-        camera_node,
+        # Cameras
+        camera_front_node,
+        camera_rear_node,
 
         # TF
         base_footprint_to_base_link_tf,
         camera_transform,
+        rear_camera_transform,
 
         # Map
         map_server_node,
         map_lifecycle_node,
 
         # Sensor processing
-        depthimage_to_laserscan_node,
+        depthimage_to_laserscan_front,
+        depthimage_to_laserscan_rear,
+        laser_scan_merger_node,
 
         # AMCL
         amcl_node,

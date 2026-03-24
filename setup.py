@@ -41,6 +41,8 @@ setup(
             'fake_odometry = aloha.fake_odometry:main',
             'camera_static_tf_publisher = aloha.camera_static_tf_publisher:main',
             'localization_monitor = aloha.localization_monitor:main',
+            'laser_scan_merger = aloha.laser_scan_merger:main',
+            'auto_localize = aloha.auto_localize:main',
         ],
     },
 )
