@@ -22,6 +22,8 @@ from nav_msgs.msg import Path, OccupancyGrid, Odometry
 from visualization_msgs.msg import Marker, MarkerArray
 from std_msgs.msg import ColorRGBA
 from nav2_msgs.action import NavigateToPose
+import tf2_ros
+from tf2_geometry_msgs import do_transform_pose_stamped
 
 import numpy as np
 import math
@@ -105,8 +107,19 @@ class SimpleNavPlanner(Node):
         self.path_index = 0
         self.collision_detected = False
         self.last_collision_check_time = self.get_clock().now()
-        self.emergency_stop_time = None  # Track when emergency stop started
-        self.replan_attempts = 0  # Track replan attempts
+        self.emergency_stop_time = None
+        self.replan_attempts = 0
+        self._prev_angular_z = 0.0
+
+        # Obstacle recovery state machine: wait → replan → rotate → replan …
+        self._obstacle_phase = 'wait'   # 'wait', 'rotate', 'replan'
+        self._rotate_start_time = None
+        self._rotate_vel = 0.0
+        self._replan_cooldown_until = None
+        
+        # TF for transforming odom-frame poses into the map frame
+        self._tf_buffer = tf2_ros.Buffer()
+        self._tf_listener = tf2_ros.TransformListener(self._tf_buffer, self)
         
         # Subscribers
         self.goal_sub = self.create_subscription(
@@ -140,12 +153,26 @@ class SimpleNavPlanner(Node):
         
         # Publishers
         self.cmd_vel_pub = self.create_publisher(Twist, '/cmd_vel', 10)
-        self.path_pub = self.create_publisher(Path, '/planned_path', 10)  # Optimized path (main)
-        self.raw_path_pub = self.create_publisher(Path, '/raw_path', 10)  # A* path
-        self.smoothed_path_pub = self.create_publisher(Path, '/smoothed_path', 10)  # Optimized path (alt)
+        path_qos = QoSProfile(
+            depth=1,
+            durability=QoSDurabilityPolicy.TRANSIENT_LOCAL,
+            reliability=QoSReliabilityPolicy.RELIABLE,
+            history=QoSHistoryPolicy.KEEP_LAST,
+        )
+        self.path_pub = self.create_publisher(Path, '/planned_path', path_qos)
+        self.raw_path_pub = self.create_publisher(Path, '/raw_path', path_qos)
+        self.smoothed_path_pub = self.create_publisher(Path, '/smoothed_path', path_qos)
         self.marker_pub = self.create_publisher(MarkerArray, '/nav_markers', 10)
         self.obstacle_marker_pub = self.create_publisher(MarkerArray, '/obstacle_markers', 10)
-        self.inflated_map_pub = self.create_publisher(OccupancyGrid, '/inflated_map', 1)
+        inflated_map_qos = QoSProfile(
+            depth=1,
+            durability=QoSDurabilityPolicy.TRANSIENT_LOCAL,
+            reliability=QoSReliabilityPolicy.RELIABLE,
+            history=QoSHistoryPolicy.KEEP_LAST,
+        )
+        self.inflated_map_pub = self.create_publisher(
+            OccupancyGrid, '/inflated_map', inflated_map_qos
+        )
         
         # Create timer to continuously publish path visualization
         self.viz_timer = self.create_timer(0.5, self.continuous_path_visualization)
@@ -168,6 +195,15 @@ class SimpleNavPlanner(Node):
     
     def goal_callback(self, msg: PoseStamped):
         """Handle new goal pose from RViz2."""
+        # Reject duplicate goals while actively following a path
+        if (self.state == NavigationState.FOLLOWING
+                and self.goal_pose is not None
+                and self.current_path is not None):
+            dx = msg.pose.position.x - self.goal_pose.pose.position.x
+            dy = msg.pose.position.y - self.goal_pose.pose.position.y
+            if math.sqrt(dx * dx + dy * dy) < 0.5:
+                return
+
         self.goal_pose = msg
         self.get_logger().info(
             f'New goal received: x={msg.pose.position.x:.2f}, '
@@ -187,8 +223,25 @@ class SimpleNavPlanner(Node):
         self.create_inflated_map()
     
     def odom_callback(self, msg: Odometry):
-        """Update current robot pose."""
-        self.current_pose = msg.pose.pose
+        """Update current robot pose in the map frame via TF."""
+        try:
+            pose_stamped = PoseStamped()
+            pose_stamped.header.frame_id = msg.header.frame_id
+            # Use Time(0) = latest available transform, avoids ExtrapolationException
+            # when odom and TF timestamps don't align exactly.
+            pose_stamped.header.stamp = rclpy.time.Time().to_msg()
+            pose_stamped.pose = msg.pose.pose
+            transformed = self._tf_buffer.transform(
+                pose_stamped, 'map', timeout=Duration(seconds=0.2)
+            )
+            self.current_pose = transformed.pose
+        except (tf2_ros.LookupException,
+                tf2_ros.ConnectivityException,
+                tf2_ros.ExtrapolationException) as e:
+            self.get_logger().warn(
+                f'TF odom→map failed ({type(e).__name__}), keeping last good pose',
+                throttle_duration_sec=5.0,
+            )
     
     def navigate_with_nav2(self, goal: PoseStamped):
         """Use Nav2 for navigation (requires Nav2 to be running)."""
@@ -215,7 +268,10 @@ class SimpleNavPlanner(Node):
     def plan_and_navigate(self):
         """Plan path and start navigation using simple planner."""
         if self.current_pose is None:
-            self.get_logger().warn('No odometry data yet!')
+            self.get_logger().warn(
+                'Cannot plan: no map-frame pose yet (waiting for odom→map TF). '
+                'Has the robot localized?'
+            )
             return
         
         if self.map_data is None:
@@ -346,14 +402,20 @@ class SimpleNavPlanner(Node):
         width = self.map_data.info.width
         height = self.map_data.info.height
         
-        # Check if start is valid
+        # Check if start is valid; snap to nearest free cell if blocked
         if not self.is_point_collision_free_grid(start[0], start[1]):
-            self.get_logger().error(
-                f'A* failed: Start cell ({start[0]}, {start[1]}) is occupied or too close to obstacles '
-                f'(within robot radius {self.robot_radius:.2f}m). '
-                f'Robot may be positioned inside or too close to an obstacle on the map.'
+            alt = self.find_nearest_free_cell(start[0], start[1], max_radius=30)
+            if alt is None:
+                self.get_logger().error(
+                    f'A* failed: Start cell ({start[0]}, {start[1]}) is occupied and no '
+                    f'free cell found within search radius.'
+                )
+                return None
+            self.get_logger().warn(
+                f'Start cell ({start[0]}, {start[1]}) is in inflated obstacle zone. '
+                f'Snapping to nearest free cell ({alt[0]}, {alt[1]}).'
             )
-            return None
+            start = alt
         
         # Check if goal is valid
         if not self.is_point_collision_free_grid(goal[0], goal[1]):
@@ -467,53 +529,54 @@ class SimpleNavPlanner(Node):
     def create_inflated_map(self):
         """
         Pre-compute an inflated obstacle map for fast path planning.
-        
-        Uses a two-stage approach to handle anti-aliased wall edges in
-        scale-mode maps (e.g., from PDF floor plans):
-          1. Identify wall cores: cells with occupancy >= 80
-          2. Dilate wall cores by a few pixels to catch anti-aliased edges
-          3. Inflate the result by the robot's radius for safe clearance
-        
-        This ensures wall fringes are blocked while isolated gray features
-        (text, annotations) remain passable.
+
+        Pipeline:
+          1. Threshold occupancy grid to get binary obstacle mask
+          2. Morphological opening to remove isolated noise pixels
+          3. Inflate remaining obstacles by robot radius
         """
         if self.map_data is None:
             return
-        
+
         import time
         import cv2
         start_time = time.time()
-        
+
         width = self.map_data.info.width
         height = self.map_data.info.height
         resolution = self.map_data.info.resolution
-        check_radius_cells = int(self.robot_radius / resolution)
-        
-        # Convert occupancy grid to numpy array
+        check_radius_cells = max(int(self.robot_radius / resolution), 1)
+
         data = np.array(self.map_data.data, dtype=np.int8).reshape((height, width))
-        
-        # Stage 1: Find definite wall cores (occupancy >= 80)
-        wall_cores = (data >= 80).astype(np.uint8)
-        
-        # Stage 2: Dilate wall cores by 3 cells to catch anti-aliased edges
-        edge_kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (7, 7))
-        wall_with_edges = cv2.dilate(wall_cores, edge_kernel, iterations=1)
-        
-        # Stage 3: Inflate by robot radius for safe clearance
+
+        obstacles_raw = (data >= self.occupancy_threshold).astype(np.uint8)
+        raw_count = int(np.sum(obstacles_raw))
+
+        # Stage 1: light opening removes isolated 1-2 pixel noise (e.g. arm
+        # artifacts baked into the map) while preserving real thin obstacles.
+        open_kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
+        obstacles_opened = cv2.morphologyEx(obstacles_raw, cv2.MORPH_OPEN, open_kernel)
+
+        # Stage 2: light closing reconnects hairline gaps in walls.
+        close_kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
+        obstacles_clean = cv2.morphologyEx(obstacles_opened, cv2.MORPH_CLOSE, close_kernel)
+        clean_count = int(np.sum(obstacles_clean))
+
         inflate_diameter = 2 * check_radius_cells + 1
         inflate_kernel = cv2.getStructuringElement(
             cv2.MORPH_ELLIPSE, (inflate_diameter, inflate_diameter)
         )
-        inflated = cv2.dilate(wall_with_edges, inflate_kernel, iterations=1)
-        
+        inflated = cv2.dilate(obstacles_clean, inflate_kernel, iterations=1)
+
         self.inflated_map = inflated.astype(bool)
-        
+
         elapsed = time.time() - start_time
-        free_cells = np.sum(~self.inflated_map)
+        free_cells = int(np.sum(~self.inflated_map))
         self.get_logger().info(
             f'Inflated map created in {elapsed:.2f}s. '
-            f'Inflated obstacles by {check_radius_cells} cells ({self.robot_radius:.2f}m). '
-            f'Free cells: {free_cells}/{width*height}'
+            f'Obstacles: {raw_count} raw → {clean_count} after denoise. '
+            f'Inflation: {check_radius_cells} cells ({self.robot_radius:.2f}m). '
+            f'Free cells: {free_cells}/{width * height}'
         )
         
         # Publish inflated map for visualization in RViz
@@ -676,12 +739,13 @@ class SimpleNavPlanner(Node):
             u_new = np.linspace(0, 1, num_points)
             smoothed_coords = splev(u_new, tck)
             
-            # Convert back to Point list and check for collisions
+            # Convert back to Point list and check for collisions using
+            # the inflated map (same source of truth as A*).
             smoothed_path = []
             collision_count = 0
-            
+
             for x, y in zip(smoothed_coords[0], smoothed_coords[1]):
-                if self.is_point_collision_free(x, y):
+                if not self._inflated_occupied(float(x), float(y)):
                     p = Point()
                     p.x = float(x)
                     p.y = float(y)
@@ -704,7 +768,7 @@ class SimpleNavPlanner(Node):
                 
                 smoothed_path = []
                 for x, y in zip(smoothed_coords[0], smoothed_coords[1]):
-                    if self.is_point_collision_free(x, y):
+                    if not self._inflated_occupied(float(x), float(y)):
                         p = Point()
                         p.x = float(x)
                         p.y = float(y)
@@ -855,55 +919,124 @@ class SimpleNavPlanner(Node):
             self.get_logger().info('Goal reached!')
             return
         
-        # Check for collisions if enabled
+        # ----- Collision avoidance with wait → replan → rotate recovery -----
+        collision_info = None
         if self.enable_collision_avoidance:
+            now = self.get_clock().now()
+
+            # After a successful replan, give the robot 2 s to start moving on
+            # the new path before re-checking for collisions.
+            if self._replan_cooldown_until is not None:
+                if now < self._replan_cooldown_until:
+                    cmd_vel = self.pure_pursuit_control()
+                    self.cmd_vel_pub.publish(cmd_vel)
+                    return
+                self._replan_cooldown_until = None
+
             collision_info = self.check_collision_ahead()
+
             if collision_info['emergency_stop']:
-                self.stop_robot()
                 self.collision_detected = True
                 self.visualize_obstacles(collision_info)
-                
-                # Track how long we've been stopped
+
+                # --- First detection: enter WAIT phase ---
                 if self.emergency_stop_time is None:
-                    self.emergency_stop_time = self.get_clock().now()
+                    self.emergency_stop_time = now
+                    self._obstacle_phase = 'wait'
+                    self.stop_robot()
                     self.get_logger().warn(
-                        f'Emergency stop! Obstacle detected at {collision_info["distance"]:.2f}m'
+                        f'Obstacle at {collision_info["distance"]:.2f}m — '
+                        f'waiting 3 s for it to clear...'
                     )
-                else:
-                    # If stopped for more than 2 seconds, try to replan
-                    time_stopped = (self.get_clock().now() - self.emergency_stop_time).nanoseconds / 1e9
-                    if time_stopped > 2.0 and self.replan_attempts < 3:
-                        self.get_logger().warn(
-                            f'Stuck for {time_stopped:.1f}s, attempting to replan (attempt {self.replan_attempts + 1}/3)'
+                    return
+
+                time_stopped = (now - self.emergency_stop_time).nanoseconds / 1e9
+
+                # --- WAIT phase: sit still, hope obstacle moves ---
+                if self._obstacle_phase == 'wait':
+                    self.stop_robot()
+                    if time_stopped >= 3.0:
+                        self._obstacle_phase = 'replan'
+                    return
+
+                # --- ROTATE phase: spin in place to try a different angle ---
+                if self._obstacle_phase == 'rotate':
+                    rotate_elapsed = (
+                        (now - self._rotate_start_time).nanoseconds / 1e9
+                    )
+                    if rotate_elapsed < 2.0:
+                        cmd = Twist()
+                        cmd.angular.z = self._rotate_vel
+                        self.cmd_vel_pub.publish(cmd)
+                    else:
+                        self.stop_robot()
+                        self._obstacle_phase = 'replan'
+                    return
+
+                # --- REPLAN phase: compute a new A* path around obstacle ---
+                if self._obstacle_phase == 'replan':
+                    self.stop_robot()
+                    self.replan_attempts += 1
+                    if self.replan_attempts <= 5:
+                        self.get_logger().info(
+                            f'Replan attempt {self.replan_attempts}/5...'
                         )
                         if self.attempt_replan_around_obstacle():
+                            self.get_logger().info(
+                                'Replan succeeded — resuming navigation'
+                            )
                             self.emergency_stop_time = None
                             self.replan_attempts = 0
-                            self.get_logger().info('Replan successful, resuming navigation')
-                        else:
-                            self.replan_attempts += 1
-                            self.emergency_stop_time = self.get_clock().now()  # Reset timer for next attempt
-                            if self.replan_attempts >= 3:
-                                self.get_logger().error('Failed to replan after 3 attempts, stopping navigation')
-                                self.state = NavigationState.FAILED
-                return
+                            self._obstacle_phase = 'wait'
+                            self._replan_cooldown_until = (
+                                now + Duration(seconds=2)
+                            )
+                            return
+                        # Failed — rotate before next attempt (alternate CW/CCW)
+                        self._obstacle_phase = 'rotate'
+                        self._rotate_start_time = now
+                        direction = (
+                            1.0 if self.replan_attempts % 2 == 0 else -1.0
+                        )
+                        self._rotate_vel = direction * 0.5
+                        self.get_logger().info(
+                            f'Replan failed — rotating '
+                            f'{"CCW" if direction > 0 else "CW"} to try from '
+                            f'a different angle'
+                        )
+                    else:
+                        self.get_logger().error(
+                            'All 5 replan attempts exhausted — stopping'
+                        )
+                        self.state = NavigationState.FAILED
+                    return
+
             elif collision_info['reduce_speed']:
                 self.collision_detected = True
                 self.visualize_obstacles(collision_info)
-                self.emergency_stop_time = None  # Clear emergency stop timer
+                self._reset_obstacle_state()
             else:
                 self.collision_detected = False
-                self.emergency_stop_time = None  # Clear emergency stop timer
-        
+                self._reset_obstacle_state()
+
         # Pure pursuit control
         cmd_vel = self.pure_pursuit_control()
-        
-        # Apply collision avoidance adjustments
-        if self.enable_collision_avoidance and self.collision_detected:
+
+        if (self.enable_collision_avoidance
+                and self.collision_detected
+                and collision_info is not None):
             cmd_vel = self.adjust_velocity_for_obstacles(cmd_vel, collision_info)
-        
+
         self.cmd_vel_pub.publish(cmd_vel)
     
+    def _reset_obstacle_state(self):
+        """Clear all obstacle-recovery state so the next detection starts fresh."""
+        self.emergency_stop_time = None
+        self.replan_attempts = 0
+        self._obstacle_phase = 'wait'
+        self._rotate_start_time = None
+        self._rotate_vel = 0.0
+
     def reached_goal(self) -> bool:
         """Check if robot reached the goal."""
         if self.goal_pose is None or self.current_pose is None:
@@ -958,45 +1091,56 @@ class SimpleNavPlanner(Node):
     def pure_pursuit_control(self) -> Twist:
         """
         Pure pursuit path following controller.
-        
-        Returns:
-            Twist command
+
+        Uses the standard pure pursuit curvature formula:
+            κ = 2·sin(α) / L
+            ω = v · κ
+        where α is the heading error to the lookahead point and L is the
+        actual distance to that point.  This is inherently stable and does
+        not require separate gain tuning.
         """
         cmd = Twist()
-        
+
         if self.current_path is None or len(self.current_path) == 0:
             return cmd
-        
-        # Find lookahead point
+
         lookahead_point = self.find_lookahead_point()
-        
         if lookahead_point is None:
-            # If no lookahead point, move to last point
             lookahead_point = self.current_path[-1]
-        
-        # Calculate control
+
         dx = lookahead_point.x - self.current_pose.position.x
         dy = lookahead_point.y - self.current_pose.position.y
-        
-        # Get robot yaw
+        L = math.sqrt(dx * dx + dy * dy)
+
+        if L < 0.05:
+            return cmd
+
         robot_yaw = self.get_yaw_from_quaternion(self.current_pose.orientation)
-        
-        # Calculate angle to lookahead point
-        angle_to_point = math.atan2(dy, dx)
-        angle_diff = self.normalize_angle(angle_to_point - robot_yaw)
-        
-        # Calculate velocities
-        distance = math.sqrt(dx**2 + dy**2)
-        
-        # Angular velocity (proportional control)
-        cmd.angular.z = np.clip(2.0 * angle_diff, -self.max_angular_vel, self.max_angular_vel)
-        
-        # Linear velocity (reduce when turning)
-        if abs(angle_diff) > 0.5:  # ~30 degrees
-            cmd.linear.x = 0.1  # Slow down for sharp turns
-        else:
-            cmd.linear.x = np.clip(distance, 0.0, self.max_linear_vel)
-        
+        alpha = self.normalize_angle(math.atan2(dy, dx) - robot_yaw)
+
+        # If facing almost backwards, turn in place first
+        if abs(alpha) > 1.0:
+            cmd.angular.z = np.clip(2.0 * alpha, -self.max_angular_vel, self.max_angular_vel)
+            cmd.linear.x = 0.0
+            self._prev_angular_z = cmd.angular.z
+            return cmd
+
+        # Standard pure pursuit with boosted curvature gain
+        curvature = 2.0 * math.sin(alpha) / L
+        gain = 3.0
+
+        # Linear velocity — reduce proportionally with heading error
+        cmd.linear.x = self.max_linear_vel * (1.0 - min(abs(alpha) / 1.0, 0.6))
+        cmd.linear.x = max(cmd.linear.x, 0.1)
+
+        raw_angular = gain * cmd.linear.x * curvature
+        raw_angular = np.clip(raw_angular, -self.max_angular_vel, self.max_angular_vel)
+
+        # Light low-pass filter (keeps 20% of previous command)
+        smoothed = 0.8 * raw_angular + 0.2 * self._prev_angular_z
+        self._prev_angular_z = smoothed
+        cmd.angular.z = smoothed
+
         return cmd
     
     def find_lookahead_point(self) -> Optional[Point]:
@@ -1039,10 +1183,28 @@ class SimpleNavPlanner(Node):
         cmd = Twist()
         self.cmd_vel_pub.publish(cmd)
     
+    def _inflated_occupied(self, wx: float, wy: float) -> bool:
+        """Check if a world-coordinate point is occupied in the denoised inflated map.
+
+        The inflated map already accounts for robot radius and has noise
+        removed, so a single cell lookup is sufficient (no extra radius sweep).
+        """
+        if self.inflated_map is None or self.map_data is None:
+            return False
+        grid = self.world_to_grid(wx, wy)
+        if grid is None:
+            return True  # out-of-bounds = treat as occupied
+        gx, gy = grid
+        if not (0 <= gx < self.map_data.info.width and 0 <= gy < self.map_data.info.height):
+            return True
+        return bool(self.inflated_map[gy, gx])
+
     def check_collision_ahead(self) -> dict:
         """
-        Check for obstacles ahead of the robot.
-        
+        Check for obstacles ahead of the robot using the **denoised inflated
+        map** (same map A* plans on).  This avoids false positives from raw-map
+        noise such as arm artifacts baked in during mapping.
+
         Returns:
             Dictionary with collision information:
             - emergency_stop: bool
@@ -1050,48 +1212,42 @@ class SimpleNavPlanner(Node):
             - distance: float (distance to nearest obstacle)
             - obstacle_positions: list of (x, y) positions
         """
-        if self.current_pose is None or self.map_data is None:
+        if self.current_pose is None or self.inflated_map is None:
             return {
                 'emergency_stop': False,
                 'reduce_speed': False,
                 'distance': float('inf'),
                 'obstacle_positions': []
             }
-        
+
         robot_x = self.current_pose.position.x
         robot_y = self.current_pose.position.y
         robot_yaw = self.get_yaw_from_quaternion(self.current_pose.orientation)
-        
-        # Check multiple rays in front of the robot
+
         min_distance = float('inf')
         obstacle_positions = []
-        
-        # Check angles: straight ahead, +/- 30 degrees, +/- 60 degrees
-        check_angles = [0, -0.52, 0.52, -1.05, 1.05, -1.57, 1.57]  # radians
-        check_distance = max(self.safety_distance * 2, 1.0)  # Look ahead distance
-        
+
+        check_angles = [0, -0.35, 0.35, -0.70, 0.70]
+        check_distance = max(self.safety_distance * 2, 1.0)
+
         for angle_offset in check_angles:
             check_angle = robot_yaw + angle_offset
-            
-            # Cast ray from robot center
-            for dist in np.linspace(0, check_distance, 20):
-                # Check points at different lateral offsets (robot width)
-                for lateral_offset in np.linspace(-self.robot_radius, self.robot_radius, 5):
-                    # Calculate check point
-                    check_x = robot_x + dist * math.cos(check_angle) + lateral_offset * math.cos(check_angle + math.pi/2)
-                    check_y = robot_y + dist * math.sin(check_angle) + lateral_offset * math.sin(check_angle + math.pi/2)
-                    
-                    # Check if this point is occupied
-                    if not self.is_point_collision_free(check_x, check_y):
-                        actual_dist = math.sqrt((check_x - robot_x)**2 + (check_y - robot_y)**2)
-                        if actual_dist < min_distance:
-                            min_distance = actual_dist
-                        obstacle_positions.append((check_x, check_y))
-        
-        # Determine action based on distance
+            for dist in np.linspace(0.05, check_distance, 20):
+                check_x = robot_x + dist * math.cos(check_angle)
+                check_y = robot_y + dist * math.sin(check_angle)
+
+                if self._inflated_occupied(check_x, check_y):
+                    actual_dist = math.sqrt(
+                        (check_x - robot_x) ** 2 + (check_y - robot_y) ** 2
+                    )
+                    if actual_dist < min_distance:
+                        min_distance = actual_dist
+                    obstacle_positions.append((check_x, check_y))
+                    break  # first hit along this ray is enough
+
         emergency_stop = min_distance < self.emergency_stop_distance
         reduce_speed = min_distance < self.safety_distance
-        
+
         return {
             'emergency_stop': emergency_stop,
             'reduce_speed': reduce_speed,
@@ -1218,7 +1374,7 @@ class SimpleNavPlanner(Node):
     
     def continuous_path_visualization(self):
         """Continuously publish path visualization for RViz."""
-        if self.state == NavigationState.FOLLOWING and self.current_path is not None:
+        if self.current_path is not None:
             self.publish_path_visualization()
     
     def publish_path_visualization(self):

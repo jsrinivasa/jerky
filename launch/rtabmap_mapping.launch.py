@@ -173,6 +173,7 @@ def generate_launch_description():
                     " --Vis/FeatureType 6"
                     " --Vis/MaxFeatures 500"
                     " --Vis/MinInliers 10"
+                    " --Vis/MinDepth 0.3"
                     " --Kp/MaxFeatures 500"
                     " --Kp/DetectorStrategy 6"
                     " --RGBD/OptimizeMaxError 3.0"
@@ -187,7 +188,7 @@ def generate_launch_description():
                     " --Grid/NormalsSegmentation true"
                     " --Grid/CellSize 0.05"
                     " --Grid/RangeMax 3.0"
-                    " --Grid/RangeMin 0.07"
+                    " --Grid/RangeMin 0.3"
                     " --Grid/NoiseFilteringRadius 0.1"
                     " --Grid/NoiseFilteringMinNeighbors 3"
                     "'",
