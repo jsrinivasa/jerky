@@ -8,18 +8,18 @@ and the simple_nav_planner into a single launch.  Pair with the
 navigate_mission script to auto-localize and drive to waypoints.
 
 Prerequisites:
-    # Build a map first:
-    ros2 launch aloha rtabmap_mapping.launch.py
-    # Save the 2D occupancy grid:
-    ros2 run nav2_map_server map_saver_cli -f ~/maps/my_map -t /rtabmap/map
+    # Build a map first (give it a name):
+    ros2 launch aloha rtabmap_mapping.launch.py map_name:=building16_east
+    # Save the 2D occupancy grid with the same name:
+    ros2 run nav2_map_server map_saver_cli -f ~/maps/building16_east -t /rtabmap/map
 
     # Start the robot base (cameras handled by this launch):
     ros2 launch aloha aloha_bringup.launch.py use_cameras:=false
 
 Usage:
-    # Terminal 2: launch localization + planning + RViz
+    # Terminal 2: launch localization + planning + RViz (use same map_name)
     ros2 launch aloha navigate_mission.launch.py \\
-        map_file:=/home/aloha/maps/building16p3.yaml
+        map_name:=building16_east
 
     # Terminal 3: run the autonomous mission
     ros2 run aloha navigate_mission
@@ -28,7 +28,11 @@ Usage:
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
 from launch.conditions import IfCondition
-from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
+from launch.substitutions import (
+    LaunchConfiguration,
+    PathJoinSubstitution,
+    PythonExpression,
+)
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch_ros.actions import Node
 from launch_ros.substitutions import FindPackageShare
@@ -40,10 +44,20 @@ def generate_launch_description():
 
     # ==================== Arguments =====================================
 
+    map_name_arg = DeclareLaunchArgument(
+        'map_name', default_value='rtabmap',
+        description='Session name.  Loads ~/maps/<map_name>.db for localization '
+                    'and ~/maps/<map_name>.yaml for A* planning.',
+    )
     map_file_arg = DeclareLaunchArgument(
         'map_file',
-        default_value=PathJoinSubstitution([aloha_pkg, 'maps', 'my_map.yaml']),
-        description='Path to the 2D occupancy grid YAML (for A* planning)',
+        default_value=PythonExpression([
+            "str(__import__('pathlib').Path.home() / 'maps' / ('",
+            LaunchConfiguration('map_name'),
+            "' + '.yaml'))",
+        ]),
+        description='Path to the 2D occupancy grid YAML (for A* planning). '
+                    'Derived from map_name by default; override to use a different file.',
     )
     use_rviz_arg = DeclareLaunchArgument(
         'use_rviz', default_value='true',
@@ -78,6 +92,7 @@ def generate_launch_description():
         launch_arguments=[
             ('use_rviz', LaunchConfiguration('use_rviz')),
             ('rtabmap_viz', LaunchConfiguration('rtabmap_viz')),
+            ('map_name', LaunchConfiguration('map_name')),
         ],
     )
 
@@ -106,6 +121,20 @@ def generate_launch_description():
         }],
     )
 
+    # ==================== Robot Pose Marker (large disc + heading arrow) ==
+
+    robot_pose_marker_node = Node(
+        package='aloha',
+        executable='robot_pose_marker',
+        name='robot_pose_marker',
+        output='screen',
+        parameters=[{
+            'robot_radius': 0.27,
+            'arrow_length': 0.6,
+            'publish_rate': 10.0,
+        }],
+    )
+
     # ==================== Simple Nav Planner =============================
 
     nav_planner_node = Node(
@@ -119,14 +148,14 @@ def generate_launch_description():
             'max_linear_velocity': LaunchConfiguration('max_linear_velocity'),
             'max_angular_velocity': LaunchConfiguration('max_angular_velocity'),
             'goal_tolerance': 0.25,
-            'robot_radius': 0.15,
+            'robot_radius': 0.27,
             'occupancy_threshold': 95,
             'use_trajectory_optimization': True,
             'smoothing_weight': 0.8,
             'max_acceleration': 0.5,
             'enable_collision_avoidance': True,
-            'safety_distance': 0.4,
-            'emergency_stop_distance': 0.1,
+            'safety_distance': 0.5,
+            'emergency_stop_distance': 0.2,
             'use_sim_time': use_sim_time,
         }],
         remappings=[
@@ -138,6 +167,7 @@ def generate_launch_description():
     # ==================== Launch Description =============================
 
     return LaunchDescription([
+        map_name_arg,
         map_file_arg,
         use_rviz_arg,
         rtabmap_viz_arg,
@@ -149,4 +179,5 @@ def generate_launch_description():
         map_server_node,
         map_lifecycle_node,
         nav_planner_node,
+        robot_pose_marker_node,
     ])

@@ -7,24 +7,34 @@ Builds a 3D map (and live 2D occupancy grid) using the cam_high D405 camera
 paired with wheel odometry from the SLATE base.  Run this alongside
 aloha_bringup (with use_cameras:=false so the camera is not double-claimed).
 
-The resulting RTAB-Map database (~/.ros/rtabmap.db) can later be used for
-RTAB-Map localization, and the 2D occupancy grid can be saved for
-AMCL / Nav2 navigation.
+Each mapping session is identified by a map_name.  The RTAB-Map database is
+saved to ~/maps/<map_name>.db.  After mapping, save the 2D grid with the
+SAME name so everything stays together:
+
+    ros2 run nav2_map_server map_saver_cli -f ~/maps/<map_name> -t /rtabmap/map
+
+You can later merge multiple databases with rtabmap-reprocess to build a
+large floor plan.
 
 Workflow:
   # Terminal 1 - start base + joystick (no cameras)
   ros2 launch aloha aloha_bringup.launch.py use_cameras:=false
 
-  # Terminal 2 - start mapping (drive around with joystick)
-  ros2 launch aloha rtabmap_mapping.launch.py
+  # Terminal 2 - start mapping (give your session a name)
+  ros2 launch aloha rtabmap_mapping.launch.py map_name:=building16_east
 
   # Terminal 3 - when mapping is finished, save the 2D occupancy grid
-  mkdir -p ~/maps
-  ros2 run nav2_map_server map_saver_cli -f ~/maps/my_map -t /rtabmap/map
+  ros2 run nav2_map_server map_saver_cli -f ~/maps/building16_east -t /rtabmap/map
+
+  # Files produced:
+  #   ~/maps/building16_east.db    (RTAB-Map 3D database - for localization & merging)
+  #   ~/maps/building16_east.pgm   (2D occupancy grid image)
+  #   ~/maps/building16_east.yaml  (2D occupancy grid metadata)
 
   # Later, for autonomous navigation:
-  ros2 launch aloha aloha_bringup.launch.py
-  ros2 launch aloha simple_navigation.launch.py map_file:=~/maps/my_map.yaml
+  ros2 launch aloha navigate_mission.launch.py \
+      map_name:=building16_east \
+      map_file:=~/maps/building16_east.yaml
 
 Tips for reliable mapping:
   - Drive slowly (~0.2 m/s) and smoothly; avoid sharp turns
@@ -33,15 +43,28 @@ Tips for reliable mapping:
   - Watch the RTAB-Map node output for loop closure detections
   - If RTAB-Map reports "rejected" loop closures, the map has ambiguity;
     drive more slowly through those areas
+
+Merging multiple maps:
+  rtabmap-reprocess --Mem/IncrementalMemory true \
+      ~/maps/session_a.db ~/maps/session_b.db ~/maps/merged.db
 """
 
 import os
 
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
+from launch.actions import (
+    DeclareLaunchArgument,
+    ExecuteProcess,
+    IncludeLaunchDescription,
+    LogInfo,
+)
 from launch.conditions import IfCondition
-from launch.substitutions import LaunchConfiguration, PythonExpression
+from launch.substitutions import (
+    LaunchConfiguration,
+    PathJoinSubstitution,
+    PythonExpression,
+)
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch_ros.actions import Node
 
@@ -75,6 +98,20 @@ def generate_launch_description():
             description='Run in localization mode (requires existing DB). '
                         'If false, runs in mapping mode.',
         ),
+        DeclareLaunchArgument(
+            'map_name', default_value='rtabmap',
+            description='Session name.  Database is saved to ~/maps/<map_name>.db. '
+                        'Use the same name when saving the 2D grid.',
+        ),
+
+        ExecuteProcess(cmd=['mkdir', '-p', os.path.expanduser('~/maps')]),
+
+        LogInfo(msg=[
+            'RTAB-Map database: ~/maps/',
+            LaunchConfiguration('map_name'),
+            '.db  —  Save 2D grid with:  ros2 run nav2_map_server map_saver_cli '
+            '-f ~/maps/', LaunchConfiguration('map_name'), ' -t /rtabmap/map',
+        ]),
 
         # -- base_footprint -> base_link static TF -------------------------
         # The SLATE driver publishes odom -> base_footprint.  RTAB-Map uses
@@ -161,6 +198,11 @@ def generate_launch_description():
                 ('rviz',               LaunchConfiguration('rviz')),
 
                 ('localization',       LaunchConfiguration('localization')),
+                ('database_path',     PythonExpression([
+                    "str(__import__('pathlib').Path.home() / 'maps' / ('",
+                    LaunchConfiguration('map_name'),
+                    "' + '.db'))",
+                ])),
 
                 ('args', PythonExpression([
                     "('--delete_db_on_start ' if '",

@@ -3,27 +3,25 @@
 """
 RTAB-Map Visual Localization Launch File
 
-Localizes on a previously built RTAB-Map database (~/.ros/rtabmap.db) using
-visual feature matching.  The camera sees visual landmarks it recorded during
-mapping and uses them to determine its position.  Publishes the map -> odom
-TF transform so Nav2 and other systems know where the robot is.
+Localizes on a previously built RTAB-Map database (~/maps/<map_name>.db)
+using visual feature matching.  The camera sees visual landmarks it recorded
+during mapping and uses them to determine its position.  Publishes the
+map -> odom TF transform so Nav2 and other systems know where the robot is.
 
 Prerequisites:
-    # Build a map first (drive around, then Ctrl-C to save):
-    ros2 launch aloha rtabmap_mapping.launch.py
+    # Build a map first (give it a name):
+    ros2 launch aloha rtabmap_mapping.launch.py map_name:=building16_east
+    ros2 run nav2_map_server map_saver_cli -f ~/maps/building16_east -t /rtabmap/map
 
     # Start the robot base (no cameras -- this launch handles the camera):
     ros2 launch aloha aloha_bringup.launch.py use_cameras:=false
 
 Usage:
-    # Localize on your existing map:
-    ros2 launch aloha rtabmap_localization.launch.py
+    # Localize on a specific map:
+    ros2 launch aloha rtabmap_localization.launch.py map_name:=building16_east
 
     # Without RViz (headless):
-    ros2 launch aloha rtabmap_localization.launch.py use_rviz:=false
-
-    # With RTAB-Map's own GUI (shows feature matching detail):
-    ros2 launch aloha rtabmap_localization.launch.py rtabmap_viz:=true
+    ros2 launch aloha rtabmap_localization.launch.py map_name:=building16_east use_rviz:=false
 """
 
 import os
@@ -50,6 +48,10 @@ def generate_launch_description():
         'rtabmap_viz', default_value='false',
         description='Launch RTAB-Map GUI (shows feature matching)',
     )
+    map_name_arg = DeclareLaunchArgument(
+        'map_name', default_value='rtabmap',
+        description='Session name.  Loads ~/maps/<map_name>.db for localization.',
+    )
 
     mapping_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
@@ -59,6 +61,7 @@ def generate_launch_description():
             ('localization', 'true'),
             ('rviz', 'false'),
             ('rtabmap_viz', LaunchConfiguration('rtabmap_viz')),
+            ('map_name', LaunchConfiguration('map_name')),
         ],
     )
 
@@ -78,6 +81,7 @@ def generate_launch_description():
     return LaunchDescription([
         use_rviz_arg,
         rtabmap_viz_arg,
+        map_name_arg,
         mapping_launch,
         rviz_node,
     ])

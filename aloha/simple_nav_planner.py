@@ -11,6 +11,8 @@ Author: ALOHA Team
 License: MIT
 """
 
+import time
+
 import rclpy
 from rclpy.node import Node
 from rclpy.action import ActionClient
@@ -104,12 +106,20 @@ class SimpleNavPlanner(Node):
         self.optimized_trajectory = None  # Store trajectory with time stamps
         self.map_data = None
         self.inflated_map = None  # Pre-computed obstacle-inflated map for fast planning
+        self.obstacle_map_raw = None  # Denoised but NOT inflated — for collision ray-casting
         self.path_index = 0
         self.collision_detected = False
         self.last_collision_check_time = self.get_clock().now()
         self.emergency_stop_time = None
         self.replan_attempts = 0
         self._prev_angular_z = 0.0
+        self._prev_linear_x = 0.0
+
+        # Temporal collision filtering: require N consecutive detections
+        self._collision_hit_streak = 0
+        self._collision_clear_streak = 0
+        self._COLLISION_CONFIRM_TICKS = 3   # ticks before acting on obstacle
+        self._COLLISION_CLEAR_TICKS = 3     # ticks before declaring "all clear"
 
         # Obstacle recovery state machine: wait → replan → rotate → replan …
         self._obstacle_phase = 'wait'   # 'wait', 'rotate', 'replan'
@@ -538,7 +548,6 @@ class SimpleNavPlanner(Node):
         if self.map_data is None:
             return
 
-        import time
         import cv2
         start_time = time.time()
 
@@ -569,6 +578,7 @@ class SimpleNavPlanner(Node):
         inflated = cv2.dilate(obstacles_clean, inflate_kernel, iterations=1)
 
         self.inflated_map = inflated.astype(bool)
+        self.obstacle_map_raw = obstacles_clean.astype(bool)
 
         elapsed = time.time() - start_time
         free_cells = int(np.sum(~self.inflated_map))
@@ -935,17 +945,30 @@ class SimpleNavPlanner(Node):
 
             collision_info = self.check_collision_ahead()
 
+            # --- Temporal filtering: avoid acting on single-frame noise ---
             if collision_info['emergency_stop']:
+                self._collision_hit_streak += 1
+                self._collision_clear_streak = 0
+            else:
+                self._collision_clear_streak += 1
+                if self._collision_clear_streak >= self._COLLISION_CLEAR_TICKS:
+                    self._collision_hit_streak = 0
+
+            confirmed_obstacle = (
+                self._collision_hit_streak >= self._COLLISION_CONFIRM_TICKS
+            )
+
+            if confirmed_obstacle:
                 self.collision_detected = True
                 self.visualize_obstacles(collision_info)
 
-                # --- First detection: enter WAIT phase ---
+                # --- First confirmed detection: enter WAIT phase ---
                 if self.emergency_stop_time is None:
                     self.emergency_stop_time = now
                     self._obstacle_phase = 'wait'
-                    self.stop_robot()
+                    self.stop_robot(immediate=True)
                     self.get_logger().warn(
-                        f'Obstacle at {collision_info["distance"]:.2f}m — '
+                        f'Obstacle confirmed at {collision_info["distance"]:.2f}m — '
                         f'waiting 3 s for it to clear...'
                     )
                     return
@@ -954,7 +977,7 @@ class SimpleNavPlanner(Node):
 
                 # --- WAIT phase: sit still, hope obstacle moves ---
                 if self._obstacle_phase == 'wait':
-                    self.stop_robot()
+                    self.stop_robot(immediate=True)
                     if time_stopped >= 3.0:
                         self._obstacle_phase = 'replan'
                     return
@@ -969,13 +992,13 @@ class SimpleNavPlanner(Node):
                         cmd.angular.z = self._rotate_vel
                         self.cmd_vel_pub.publish(cmd)
                     else:
-                        self.stop_robot()
+                        self.stop_robot(immediate=True)
                         self._obstacle_phase = 'replan'
                     return
 
                 # --- REPLAN phase: compute a new A* path around obstacle ---
                 if self._obstacle_phase == 'replan':
-                    self.stop_robot()
+                    self.stop_robot(immediate=True)
                     self.replan_attempts += 1
                     if self.replan_attempts <= 5:
                         self.get_logger().info(
@@ -988,11 +1011,11 @@ class SimpleNavPlanner(Node):
                             self.emergency_stop_time = None
                             self.replan_attempts = 0
                             self._obstacle_phase = 'wait'
+                            self._collision_hit_streak = 0
                             self._replan_cooldown_until = (
                                 now + Duration(seconds=2)
                             )
                             return
-                        # Failed — rotate before next attempt (alternate CW/CCW)
                         self._obstacle_phase = 'rotate'
                         self._rotate_start_time = now
                         direction = (
@@ -1014,8 +1037,7 @@ class SimpleNavPlanner(Node):
             elif collision_info['reduce_speed']:
                 self.collision_detected = True
                 self.visualize_obstacles(collision_info)
-                self._reset_obstacle_state()
-            else:
+            elif self._collision_clear_streak >= self._COLLISION_CLEAR_TICKS:
                 self.collision_detected = False
                 self._reset_obstacle_state()
 
@@ -1036,6 +1058,8 @@ class SimpleNavPlanner(Node):
         self._obstacle_phase = 'wait'
         self._rotate_start_time = None
         self._rotate_vel = 0.0
+        self._collision_hit_streak = 0
+        self._collision_clear_streak = 0
 
     def reached_goal(self) -> bool:
         """Check if robot reached the goal."""
@@ -1090,14 +1114,15 @@ class SimpleNavPlanner(Node):
     
     def pure_pursuit_control(self) -> Twist:
         """
-        Pure pursuit path following controller.
+        Pure pursuit path following controller with deceleration curve.
 
         Uses the standard pure pursuit curvature formula:
             κ = 2·sin(α) / L
             ω = v · κ
-        where α is the heading error to the lookahead point and L is the
-        actual distance to that point.  This is inherently stable and does
-        not require separate gain tuning.
+
+        Linear velocity is reduced smoothly as the robot approaches the goal
+        (deceleration ramp) and is also rate-limited between ticks to prevent
+        sudden speed changes that could tip the robot.
         """
         cmd = Twist()
 
@@ -1113,30 +1138,57 @@ class SimpleNavPlanner(Node):
         L = math.sqrt(dx * dx + dy * dy)
 
         if L < 0.05:
+            cmd.linear.x = 0.0
+            cmd.angular.z = 0.0
+            self._prev_linear_x = 0.0
+            self._prev_angular_z = 0.0
             return cmd
 
         robot_yaw = self.get_yaw_from_quaternion(self.current_pose.orientation)
         alpha = self.normalize_angle(math.atan2(dy, dx) - robot_yaw)
 
-        # If facing almost backwards, turn in place first
+        # Turn in place if facing almost backwards
         if abs(alpha) > 1.0:
             cmd.angular.z = np.clip(2.0 * alpha, -self.max_angular_vel, self.max_angular_vel)
             cmd.linear.x = 0.0
+            self._prev_linear_x = 0.0
             self._prev_angular_z = cmd.angular.z
             return cmd
 
-        # Standard pure pursuit with boosted curvature gain
+        # --- Desired linear velocity ---
+        # 1) Heading-error reduction
+        desired_v = self.max_linear_vel * (1.0 - min(abs(alpha) / 1.0, 0.6))
+
+        # 2) Goal-proximity deceleration ramp: v = max_vel * (dist / decel_radius)
+        #    Start slowing down within 3× the goal tolerance.
+        if self.goal_pose is not None:
+            gx = self.goal_pose.pose.position.x - self.current_pose.position.x
+            gy = self.goal_pose.pose.position.y - self.current_pose.position.y
+            dist_to_goal = math.sqrt(gx * gx + gy * gy)
+            decel_radius = max(self.goal_tolerance * 3.0, 0.6)
+            if dist_to_goal < decel_radius:
+                ramp = dist_to_goal / decel_radius
+                desired_v = min(desired_v, self.max_linear_vel * ramp)
+
+        desired_v = max(desired_v, 0.05)
+
+        # 3) Rate-limit: cap change per tick (0.1 s) to max_acceleration
+        dt = 0.1
+        max_dv = self.max_acceleration * dt
+        if desired_v > self._prev_linear_x:
+            cmd.linear.x = min(desired_v, self._prev_linear_x + max_dv)
+        else:
+            cmd.linear.x = max(desired_v, self._prev_linear_x - max_dv)
+
+        self._prev_linear_x = cmd.linear.x
+
+        # --- Angular velocity (pure pursuit) ---
         curvature = 2.0 * math.sin(alpha) / L
         gain = 3.0
-
-        # Linear velocity — reduce proportionally with heading error
-        cmd.linear.x = self.max_linear_vel * (1.0 - min(abs(alpha) / 1.0, 0.6))
-        cmd.linear.x = max(cmd.linear.x, 0.1)
 
         raw_angular = gain * cmd.linear.x * curvature
         raw_angular = np.clip(raw_angular, -self.max_angular_vel, self.max_angular_vel)
 
-        # Light low-pass filter (keeps 20% of previous command)
         smoothed = 0.8 * raw_angular + 0.2 * self._prev_angular_z
         self._prev_angular_z = smoothed
         cmd.angular.z = smoothed
@@ -1178,10 +1230,33 @@ class SimpleNavPlanner(Node):
             angle += 2 * math.pi
         return angle
     
-    def stop_robot(self):
-        """Stop the robot."""
+    def stop_robot(self, immediate: bool = False):
+        """Stop the robot, ramping down over ~250 ms to prevent tipping.
+
+        Args:
+            immediate: If True, send a single zero-velocity command with no ramp.
+                       Used for emergency stops where tipping risk is secondary.
+        """
+        if immediate or self._prev_linear_x < 0.02:
+            cmd = Twist()
+            self.cmd_vel_pub.publish(cmd)
+            self._prev_linear_x = 0.0
+            self._prev_angular_z = 0.0
+            return
+
+        steps = 5
+        dt = 0.05
+        for i in range(steps, 0, -1):
+            frac = i / steps
+            cmd = Twist()
+            cmd.linear.x = self._prev_linear_x * frac
+            cmd.angular.z = self._prev_angular_z * frac
+            self.cmd_vel_pub.publish(cmd)
+            time.sleep(dt)
         cmd = Twist()
         self.cmd_vel_pub.publish(cmd)
+        self._prev_linear_x = 0.0
+        self._prev_angular_z = 0.0
     
     def _inflated_occupied(self, wx: float, wy: float) -> bool:
         """Check if a world-coordinate point is occupied in the denoised inflated map.
@@ -1199,11 +1274,28 @@ class SimpleNavPlanner(Node):
             return True
         return bool(self.inflated_map[gy, gx])
 
+    def _raw_occupied(self, wx: float, wy: float) -> bool:
+        """Check if a world-coordinate point is occupied in the denoised RAW
+        map (before inflation).  This gives the true distance to physical
+        obstacles, unlike the inflated map which adds robot_radius padding."""
+        if self.obstacle_map_raw is None or self.map_data is None:
+            return False
+        grid = self.world_to_grid(wx, wy)
+        if grid is None:
+            return True
+        gx, gy = grid
+        if not (0 <= gx < self.map_data.info.width and 0 <= gy < self.map_data.info.height):
+            return True
+        return bool(self.obstacle_map_raw[gy, gx])
+
     def check_collision_ahead(self) -> dict:
         """
-        Check for obstacles ahead of the robot using the **denoised inflated
-        map** (same map A* plans on).  This avoids false positives from raw-map
-        noise such as arm artifacts baked in during mapping.
+        Cast narrow rays ahead of the robot against the **raw** (non-inflated)
+        obstacle map to measure true distance to physical obstacles.
+
+        Using the raw map instead of the inflated map prevents false triggers
+        when the robot is merely near the inflation zone of a wall that A*
+        already planned around.
 
         Returns:
             Dictionary with collision information:
@@ -1212,7 +1304,7 @@ class SimpleNavPlanner(Node):
             - distance: float (distance to nearest obstacle)
             - obstacle_positions: list of (x, y) positions
         """
-        if self.current_pose is None or self.inflated_map is None:
+        if self.current_pose is None or self.obstacle_map_raw is None:
             return {
                 'emergency_stop': False,
                 'reduce_speed': False,
@@ -1227,23 +1319,25 @@ class SimpleNavPlanner(Node):
         min_distance = float('inf')
         obstacle_positions = []
 
-        check_angles = [0, -0.35, 0.35, -0.70, 0.70]
-        check_distance = max(self.safety_distance * 2, 1.0)
+        check_angles = [0, -0.2, 0.2]
+        check_distance = max(self.safety_distance * 1.5, 0.8)
+        step = self.map_data.info.resolution
 
         for angle_offset in check_angles:
             check_angle = robot_yaw + angle_offset
-            for dist in np.linspace(0.05, check_distance, 20):
-                check_x = robot_x + dist * math.cos(check_angle)
-                check_y = robot_y + dist * math.sin(check_angle)
+            cos_a = math.cos(check_angle)
+            sin_a = math.sin(check_angle)
+            dist = self.robot_radius
+            while dist <= check_distance:
+                check_x = robot_x + dist * cos_a
+                check_y = robot_y + dist * sin_a
 
-                if self._inflated_occupied(check_x, check_y):
-                    actual_dist = math.sqrt(
-                        (check_x - robot_x) ** 2 + (check_y - robot_y) ** 2
-                    )
-                    if actual_dist < min_distance:
-                        min_distance = actual_dist
+                if self._raw_occupied(check_x, check_y):
+                    if dist < min_distance:
+                        min_distance = dist
                     obstacle_positions.append((check_x, check_y))
-                    break  # first hit along this ray is enough
+                    break
+                dist += step
 
         emergency_stop = min_distance < self.emergency_stop_distance
         reduce_speed = min_distance < self.safety_distance

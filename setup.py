@@ -43,6 +43,9 @@ setup(
             'localization_monitor = aloha.localization_monitor:main',
             'laser_scan_merger = aloha.laser_scan_merger:main',
             'auto_localize = aloha.auto_localize:main',
+            'navigate_mission = aloha.navigate_mission:main',
+            'robot_pose_marker = aloha.robot_pose_marker:main',
+            'auto_explore = aloha.auto_explore:main',
         ],
     },
 )
