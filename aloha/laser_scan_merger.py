@@ -64,7 +64,12 @@ class LaserScanMerger(Node):
         self.create_subscription(
             LaserScan, '/scan_rear', self._make_cb('rear'), qos)
 
-        self._pub = self.create_publisher(LaserScan, '/scan', 10)
+        scan_pub_qos = QoSProfile(
+            reliability=ReliabilityPolicy.BEST_EFFORT,
+            durability=DurabilityPolicy.VOLATILE,
+            depth=5,
+        )
+        self._pub = self.create_publisher(LaserScan, '/scan', scan_pub_qos)
         self.create_timer(1.0 / publish_rate, self._merge_and_publish)
 
         self.get_logger().info(

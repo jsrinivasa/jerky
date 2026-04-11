@@ -45,7 +45,9 @@ setup(
             'auto_localize = aloha.auto_localize:main',
             'navigate_mission = aloha.navigate_mission:main',
             'robot_pose_marker = aloha.robot_pose_marker:main',
+            'room_label_publisher = aloha.room_label_publisher:main',
             'auto_explore = aloha.auto_explore:main',
+            'navigate_to_room = aloha.navigate_to_room:main',
         ],
     },
 )

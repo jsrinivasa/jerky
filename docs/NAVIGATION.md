@@ -13,7 +13,7 @@ A straightforward path planning and navigation system for your ALOHA mobile base
 ## Prerequisites
 
 Make sure you have:
-1. A saved map (created using `rtabmap_mapping.launch.py`)
+1. A saved map
 2. D435i camera working
 3. Robot odometry publishing to `/odom`
 

@@ -1,0 +1,5006 @@
+[
+  {
+    "label": "1",
+    "map_x": 55.68,
+    "map_y": 28.659,
+    "svg_x": 4009.9,
+    "svg_y": -2134.0,
+    "tri_id": "AE74",
+    "category": "numbered_room"
+  },
+  {
+    "label": "1.1",
+    "map_x": 55.491,
+    "map_y": 27.135,
+    "svg_x": 4002.5,
+    "svg_y": -2074.0,
+    "tri_id": "AE6F",
+    "category": "named_space"
+  },
+  {
+    "label": "1.9",
+    "map_x": 55.433,
+    "map_y": 21.268,
+    "svg_x": 4000.2,
+    "svg_y": -1843.0,
+    "tri_id": "AE77",
+    "category": "named_space"
+  },
+  {
+    "label": "2",
+    "map_x": 55.615,
+    "map_y": 19.82,
+    "svg_x": 4007.3,
+    "svg_y": -1786.0,
+    "tri_id": "AE7A",
+    "category": "numbered_room"
+  },
+  {
+    "label": "2.9",
+    "map_x": 55.404,
+    "map_y": 14.08,
+    "svg_x": 3999.0,
+    "svg_y": -1560.0,
+    "tri_id": "AE7D",
+    "category": "named_space"
+  },
+  {
+    "label": "3",
+    "map_x": 55.615,
+    "map_y": 12.505,
+    "svg_x": 4007.3,
+    "svg_y": -1498.0,
+    "tri_id": "AE80",
+    "category": "numbered_room"
+  },
+  {
+    "label": "301",
+    "map_x": 3.429,
+    "map_y": -21.684,
+    "svg_x": 1953.0,
+    "svg_y": -152.0,
+    "tri_id": "24E94",
+    "category": "numbered_room"
+  },
+  {
+    "label": "303",
+    "map_x": -3.417,
+    "map_y": -21.684,
+    "svg_x": 1683.5,
+    "svg_y": -152.0,
+    "tri_id": "24E95",
+    "category": "numbered_room"
+  },
+  {
+    "label": "304",
+    "map_x": -37.062,
+    "map_y": 3.208,
+    "svg_x": 359.0,
+    "svg_y": -1132.0,
+    "tri_id": "253C8",
+    "category": "numbered_room"
+  },
+  {
+    "label": "306",
+    "map_x": -31.398,
+    "map_y": 1.138,
+    "svg_x": 582.0,
+    "svg_y": -1050.5,
+    "tri_id": "24E8B",
+    "category": "numbered_room"
+  },
+  {
+    "label": "308",
+    "map_x": -27.117,
+    "map_y": 1.126,
+    "svg_x": 750.5,
+    "svg_y": -1050.0,
+    "tri_id": "253C7",
+    "category": "numbered_room"
+  },
+  {
+    "label": "309",
+    "map_x": -22.939,
+    "map_y": 1.126,
+    "svg_x": 915.0,
+    "svg_y": -1050.0,
+    "tri_id": "253C6",
+    "category": "numbered_room"
+  },
+  {
+    "label": "310",
+    "map_x": -15.102,
+    "map_y": 3.043,
+    "svg_x": 1223.5,
+    "svg_y": -1125.5,
+    "tri_id": "24E8A",
+    "category": "numbered_room"
+  },
+  {
+    "label": "311",
+    "map_x": -15.14,
+    "map_y": -0.767,
+    "svg_x": 1222.0,
+    "svg_y": -975.5,
+    "tri_id": "24E89",
+    "category": "numbered_room"
+  },
+  {
+    "label": "312",
+    "map_x": -11.19,
+    "map_y": 3.793,
+    "svg_x": 1377.5,
+    "svg_y": -1155.0,
+    "tri_id": "24E88",
+    "category": "numbered_room"
+  },
+  {
+    "label": "313",
+    "map_x": -11.215,
+    "map_y": -0.068,
+    "svg_x": 1376.5,
+    "svg_y": -1003.0,
+    "tri_id": "253C5",
+    "category": "numbered_room"
+  },
+  {
+    "label": "314",
+    "map_x": -7.1,
+    "map_y": 1.138,
+    "svg_x": 1538.5,
+    "svg_y": -1050.5,
+    "tri_id": "24E87",
+    "category": "numbered_room"
+  },
+  {
+    "label": "317",
+    "map_x": 2.845,
+    "map_y": 2.904,
+    "svg_x": 1930.0,
+    "svg_y": -1120.0,
+    "tri_id": "24E84",
+    "category": "numbered_room"
+  },
+  {
+    "label": "317A",
+    "map_x": 3.899,
+    "map_y": -0.906,
+    "svg_x": 1971.5,
+    "svg_y": -970.0,
+    "tri_id": "24CEC",
+    "category": "numbered_room"
+  },
+  {
+    "label": "317B",
+    "map_x": 1.753,
+    "map_y": -0.906,
+    "svg_x": 1887.0,
+    "svg_y": -970.0,
+    "tri_id": "24CED",
+    "category": "numbered_room"
+  },
+  {
+    "label": "318",
+    "map_x": 6.91,
+    "map_y": 1.138,
+    "svg_x": 2090.0,
+    "svg_y": -1050.5,
+    "tri_id": "24E83",
+    "category": "numbered_room"
+  },
+  {
+    "label": "319",
+    "map_x": 11.19,
+    "map_y": 3.793,
+    "svg_x": 2258.5,
+    "svg_y": -1155.0,
+    "tri_id": "24E86",
+    "category": "numbered_room"
+  },
+  {
+    "label": "320",
+    "map_x": 11.228,
+    "map_y": -0.068,
+    "svg_x": 2260.0,
+    "svg_y": -1003.0,
+    "tri_id": "253C4",
+    "category": "numbered_room"
+  },
+  {
+    "label": "321",
+    "map_x": 16.956,
+    "map_y": 1.138,
+    "svg_x": 2485.5,
+    "svg_y": -1050.5,
+    "tri_id": "24E85",
+    "category": "numbered_room"
+  },
+  {
+    "label": "325",
+    "map_x": 26.711,
+    "map_y": 1.126,
+    "svg_x": 2869.5,
+    "svg_y": -1050.0,
+    "tri_id": "253C2",
+    "category": "numbered_room"
+  },
+  {
+    "label": "326",
+    "map_x": 31.22,
+    "map_y": 1.126,
+    "svg_x": 3047.0,
+    "svg_y": -1050.0,
+    "tri_id": "253C0",
+    "category": "numbered_room"
+  },
+  {
+    "label": "327",
+    "map_x": 28.476,
+    "map_y": -1.922,
+    "svg_x": 2939.0,
+    "svg_y": -930.0,
+    "tri_id": "253C3",
+    "category": "numbered_room"
+  },
+  {
+    "label": "328",
+    "map_x": 37.1,
+    "map_y": 3.208,
+    "svg_x": 3278.5,
+    "svg_y": -1132.0,
+    "tri_id": "253C1",
+    "category": "numbered_room"
+  },
+  {
+    "label": "340",
+    "map_x": 41.337,
+    "map_y": -18.096,
+    "svg_x": 3445.3,
+    "svg_y": -293.2,
+    "tri_id": "24E93",
+    "category": "numbered_room"
+  },
+  {
+    "label": "346",
+    "map_x": 23.637,
+    "map_y": -9.885,
+    "svg_x": 2748.5,
+    "svg_y": -616.5,
+    "tri_id": "24E9D",
+    "category": "numbered_room"
+  },
+  {
+    "label": "347",
+    "map_x": 23.637,
+    "map_y": -13.543,
+    "svg_x": 2748.5,
+    "svg_y": -472.5,
+    "tri_id": "24E9E",
+    "category": "numbered_room"
+  },
+  {
+    "label": "348",
+    "map_x": 19.979,
+    "map_y": -9.885,
+    "svg_x": 2604.5,
+    "svg_y": -616.5,
+    "tri_id": "24E9F",
+    "category": "numbered_room"
+  },
+  {
+    "label": "349",
+    "map_x": 19.979,
+    "map_y": -13.543,
+    "svg_x": 2604.5,
+    "svg_y": -472.5,
+    "tri_id": "24EA0",
+    "category": "numbered_room"
+  },
+  {
+    "label": "350",
+    "map_x": 2.159,
+    "map_y": -8.412,
+    "svg_x": 1903.0,
+    "svg_y": -674.5,
+    "tri_id": "24CFD",
+    "category": "numbered_room"
+  },
+  {
+    "label": "351",
+    "map_x": -2.185,
+    "map_y": -8.412,
+    "svg_x": 1732.0,
+    "svg_y": -674.5,
+    "tri_id": "24CFC",
+    "category": "numbered_room"
+  },
+  {
+    "label": "352",
+    "map_x": -2.185,
+    "map_y": -11.27,
+    "svg_x": 1732.0,
+    "svg_y": -562.0,
+    "tri_id": "24CFF",
+    "category": "numbered_room"
+  },
+  {
+    "label": "353",
+    "map_x": 2.159,
+    "map_y": -11.27,
+    "svg_x": 1903.0,
+    "svg_y": -562.0,
+    "tri_id": "24CFE",
+    "category": "numbered_room"
+  },
+  {
+    "label": "356",
+    "map_x": -19.979,
+    "map_y": -9.885,
+    "svg_x": 1031.5,
+    "svg_y": -616.5,
+    "tri_id": "24E99",
+    "category": "numbered_room"
+  },
+  {
+    "label": "357",
+    "map_x": -19.979,
+    "map_y": -13.543,
+    "svg_x": 1031.5,
+    "svg_y": -472.5,
+    "tri_id": "24E9A",
+    "category": "numbered_room"
+  },
+  {
+    "label": "358",
+    "map_x": -23.637,
+    "map_y": -9.885,
+    "svg_x": 887.5,
+    "svg_y": -616.5,
+    "tri_id": "24E9B",
+    "category": "numbered_room"
+  },
+  {
+    "label": "359",
+    "map_x": -23.637,
+    "map_y": -13.543,
+    "svg_x": 887.5,
+    "svg_y": -472.5,
+    "tri_id": "24E9C",
+    "category": "numbered_room"
+  },
+  {
+    "label": "360",
+    "map_x": -43.794,
+    "map_y": -21.671,
+    "svg_x": 94.0,
+    "svg_y": -152.5,
+    "tri_id": "24E96",
+    "category": "numbered_room"
+  },
+  {
+    "label": "361",
+    "map_x": -38.955,
+    "map_y": -19.842,
+    "svg_x": 284.5,
+    "svg_y": -224.5,
+    "tri_id": "24E97",
+    "category": "numbered_room"
+  },
+  {
+    "label": "363",
+    "map_x": -38.955,
+    "map_y": -23.525,
+    "svg_x": 284.5,
+    "svg_y": -79.5,
+    "tri_id": "24E98",
+    "category": "numbered_room"
+  },
+  {
+    "label": "370",
+    "map_x": -43.794,
+    "map_y": 23.922,
+    "svg_x": 94.0,
+    "svg_y": -1947.5,
+    "tri_id": "24EAB",
+    "category": "numbered_room"
+  },
+  {
+    "label": "371",
+    "map_x": -38.955,
+    "map_y": 25.776,
+    "svg_x": 284.5,
+    "svg_y": -2020.5,
+    "tri_id": "24EA9",
+    "category": "numbered_room"
+  },
+  {
+    "label": "373",
+    "map_x": -38.955,
+    "map_y": 22.093,
+    "svg_x": 284.5,
+    "svg_y": -1875.5,
+    "tri_id": "24EAA",
+    "category": "numbered_room"
+  },
+  {
+    "label": "376",
+    "map_x": -23.637,
+    "map_y": 12.136,
+    "svg_x": 887.5,
+    "svg_y": -1483.5,
+    "tri_id": "24EA6",
+    "category": "numbered_room"
+  },
+  {
+    "label": "377",
+    "map_x": -23.637,
+    "map_y": 15.794,
+    "svg_x": 887.5,
+    "svg_y": -1627.5,
+    "tri_id": "24EA8",
+    "category": "numbered_room"
+  },
+  {
+    "label": "378",
+    "map_x": -19.979,
+    "map_y": 12.136,
+    "svg_x": 1031.5,
+    "svg_y": -1483.5,
+    "tri_id": "24EA5",
+    "category": "numbered_room"
+  },
+  {
+    "label": "379",
+    "map_x": -19.979,
+    "map_y": 15.794,
+    "svg_x": 1031.5,
+    "svg_y": -1627.5,
+    "tri_id": "24EA7",
+    "category": "numbered_room"
+  },
+  {
+    "label": "380",
+    "map_x": -2.185,
+    "map_y": 10.816,
+    "svg_x": 1732.0,
+    "svg_y": -1431.5,
+    "tri_id": "24E91",
+    "category": "numbered_room"
+  },
+  {
+    "label": "381",
+    "map_x": -2.185,
+    "map_y": 14.27,
+    "svg_x": 1732.0,
+    "svg_y": -1567.5,
+    "tri_id": "24E92",
+    "category": "numbered_room"
+  },
+  {
+    "label": "382A",
+    "map_x": -2.909,
+    "map_y": 17.28,
+    "svg_x": 1703.5,
+    "svg_y": -1686.0,
+    "tri_id": "24CF6",
+    "category": "numbered_room"
+  },
+  {
+    "label": "382B",
+    "map_x": 0.0,
+    "map_y": 17.28,
+    "svg_x": 1818.0,
+    "svg_y": -1686.0,
+    "tri_id": "24CF5",
+    "category": "numbered_room"
+  },
+  {
+    "label": "382C",
+    "map_x": 2.909,
+    "map_y": 17.28,
+    "svg_x": 1932.5,
+    "svg_y": -1686.0,
+    "tri_id": "24CF4",
+    "category": "numbered_room"
+  },
+  {
+    "label": "383",
+    "map_x": 2.185,
+    "map_y": 14.27,
+    "svg_x": 1904.0,
+    "svg_y": -1567.5,
+    "tri_id": "24E90",
+    "category": "numbered_room"
+  },
+  {
+    "label": "384",
+    "map_x": 2.185,
+    "map_y": 10.816,
+    "svg_x": 1904.0,
+    "svg_y": -1431.5,
+    "tri_id": "24E8F",
+    "category": "numbered_room"
+  },
+  {
+    "label": "385",
+    "map_x": 0.0,
+    "map_y": 25.002,
+    "svg_x": 1818.0,
+    "svg_y": -1990.0,
+    "tri_id": "24CEF",
+    "category": "numbered_room"
+  },
+  {
+    "label": "390",
+    "map_x": 43.794,
+    "map_y": 23.922,
+    "svg_x": 3542.0,
+    "svg_y": -1947.5,
+    "tri_id": "24E8C",
+    "category": "numbered_room"
+  },
+  {
+    "label": "391",
+    "map_x": 38.955,
+    "map_y": 22.093,
+    "svg_x": 3351.5,
+    "svg_y": -1875.5,
+    "tri_id": "24E8D",
+    "category": "numbered_room"
+  },
+  {
+    "label": "393",
+    "map_x": 38.955,
+    "map_y": 25.776,
+    "svg_x": 3351.5,
+    "svg_y": -2020.5,
+    "tri_id": "24E8E",
+    "category": "numbered_room"
+  },
+  {
+    "label": "396",
+    "map_x": 19.979,
+    "map_y": 12.136,
+    "svg_x": 2604.5,
+    "svg_y": -1483.5,
+    "tri_id": "24EA2",
+    "category": "numbered_room"
+  },
+  {
+    "label": "397",
+    "map_x": 19.979,
+    "map_y": 15.794,
+    "svg_x": 2604.5,
+    "svg_y": -1627.5,
+    "tri_id": "24EA3",
+    "category": "numbered_room"
+  },
+  {
+    "label": "398",
+    "map_x": 23.637,
+    "map_y": 12.136,
+    "svg_x": 2748.5,
+    "svg_y": -1483.5,
+    "tri_id": "24EA1",
+    "category": "numbered_room"
+  },
+  {
+    "label": "399",
+    "map_x": 23.637,
+    "map_y": 15.794,
+    "svg_x": 2748.5,
+    "svg_y": -1627.5,
+    "tri_id": "24EA4",
+    "category": "numbered_room"
+  },
+  {
+    "label": "4",
+    "map_x": 55.607,
+    "map_y": 4.58,
+    "svg_x": 4007.0,
+    "svg_y": -1186.0,
+    "tri_id": "AE9B",
+    "category": "numbered_room"
+  },
+  {
+    "label": "5",
+    "map_x": 55.615,
+    "map_y": -2.735,
+    "svg_x": 4007.3,
+    "svg_y": -898.0,
+    "tri_id": "AE9E",
+    "category": "numbered_room"
+  },
+  {
+    "label": "6",
+    "map_x": 55.622,
+    "map_y": -10.66,
+    "svg_x": 4007.6,
+    "svg_y": -586.0,
+    "tri_id": "AEA1",
+    "category": "numbered_room"
+  },
+  {
+    "label": "6.1",
+    "map_x": 55.462,
+    "map_y": -12.235,
+    "svg_x": 4001.3,
+    "svg_y": -524.0,
+    "tri_id": "AEA7",
+    "category": "named_space"
+  },
+  {
+    "label": "7",
+    "map_x": 55.615,
+    "map_y": -17.975,
+    "svg_x": 4007.3,
+    "svg_y": -298.0,
+    "tri_id": "AEA4",
+    "category": "numbered_room"
+  },
+  {
+    "label": "7.1",
+    "map_x": 55.462,
+    "map_y": -19.423,
+    "svg_x": 4001.3,
+    "svg_y": -241.0,
+    "tri_id": "AEB6",
+    "category": "named_space"
+  },
+  {
+    "label": "7.9",
+    "map_x": 55.404,
+    "map_y": -25.29,
+    "svg_x": 3999.0,
+    "svg_y": -10.0,
+    "tri_id": "AEAA",
+    "category": "named_space"
+  },
+  {
+    "label": "8",
+    "map_x": 55.615,
+    "map_y": -26.814,
+    "svg_x": 4007.3,
+    "svg_y": 50.0,
+    "tri_id": "AEAD",
+    "category": "numbered_room"
+  },
+  {
+    "label": "8.5",
+    "map_x": 55.397,
+    "map_y": -28.643,
+    "svg_x": 3998.8,
+    "svg_y": 122.0,
+    "tri_id": "AEB0",
+    "category": "named_space"
+  },
+  {
+    "label": "9",
+    "map_x": 55.622,
+    "map_y": -30.015,
+    "svg_x": 4007.6,
+    "svg_y": 176.0,
+    "tri_id": "AEB3",
+    "category": "numbered_room"
+  },
+  {
+    "label": "A",
+    "map_x": -47.365,
+    "map_y": 41.698,
+    "svg_x": -46.6,
+    "svg_y": -2647.3,
+    "tri_id": "AECE",
+    "category": "named_space"
+  },
+  {
+    "label": "A.1",
+    "map_x": -45.993,
+    "map_y": 41.698,
+    "svg_x": 7.4,
+    "svg_y": -2647.3,
+    "tri_id": "AED1",
+    "category": "named_space"
+  },
+  {
+    "label": "A.2",
+    "map_x": -44.23,
+    "map_y": 41.698,
+    "svg_x": 76.9,
+    "svg_y": -2647.3,
+    "tri_id": "AED4",
+    "category": "named_space"
+  },
+  {
+    "label": "A.6",
+    "map_x": -41.326,
+    "map_y": 41.698,
+    "svg_x": 191.1,
+    "svg_y": -2647.3,
+    "tri_id": "AECB",
+    "category": "named_space"
+  },
+  {
+    "label": "A2-14",
+    "map_x": -41.966,
+    "map_y": 16.451,
+    "svg_x": 166.0,
+    "svg_y": -1653.4,
+    "tri_id": "24D79",
+    "category": "numbered_room"
+  },
+  {
+    "label": "A3-10",
+    "map_x": -36.915,
+    "map_y": 10.151,
+    "svg_x": 364.8,
+    "svg_y": -1405.3,
+    "tri_id": "24DB1",
+    "category": "numbered_room"
+  },
+  {
+    "label": "A3-2",
+    "map_x": -42.664,
+    "map_y": 11.731,
+    "svg_x": 138.5,
+    "svg_y": -1467.5,
+    "tri_id": "24DB2",
+    "category": "numbered_room"
+  },
+  {
+    "label": "A3-3",
+    "map_x": -41.15,
+    "map_y": 11.731,
+    "svg_x": 198.1,
+    "svg_y": -1467.5,
+    "tri_id": "283E1",
+    "category": "numbered_room"
+  },
+  {
+    "label": "A3-4",
+    "map_x": -38.575,
+    "map_y": 11.718,
+    "svg_x": 299.4,
+    "svg_y": -1467.0,
+    "tri_id": "26DE8",
+    "category": "numbered_room"
+  },
+  {
+    "label": "A3-5",
+    "map_x": -36.89,
+    "map_y": 11.718,
+    "svg_x": 365.8,
+    "svg_y": -1467.0,
+    "tri_id": "26DE6",
+    "category": "numbered_room"
+  },
+  {
+    "label": "A3-7",
+    "map_x": -42.664,
+    "map_y": 10.136,
+    "svg_x": 138.5,
+    "svg_y": -1404.7,
+    "tri_id": "24DB4",
+    "category": "numbered_room"
+  },
+  {
+    "label": "A3-8",
+    "map_x": -41.126,
+    "map_y": 10.136,
+    "svg_x": 199.0,
+    "svg_y": -1404.7,
+    "tri_id": "283E2",
+    "category": "numbered_room"
+  },
+  {
+    "label": "A3-9",
+    "map_x": -38.575,
+    "map_y": 10.151,
+    "svg_x": 299.4,
+    "svg_y": -1405.3,
+    "tri_id": "24DB3",
+    "category": "numbered_room"
+  },
+  {
+    "label": "A5-17",
+    "map_x": -42.105,
+    "map_y": -7.523,
+    "svg_x": 160.5,
+    "svg_y": -709.5,
+    "tri_id": "24E70",
+    "category": "numbered_room"
+  },
+  {
+    "label": "A5-18",
+    "map_x": -40.492,
+    "map_y": -7.523,
+    "svg_x": 224.0,
+    "svg_y": -709.5,
+    "tri_id": "24E6F",
+    "category": "numbered_room"
+  },
+  {
+    "label": "A5-19",
+    "map_x": -37.964,
+    "map_y": -7.523,
+    "svg_x": 323.5,
+    "svg_y": -709.5,
+    "tri_id": "24E74",
+    "category": "numbered_room"
+  },
+  {
+    "label": "A5-20",
+    "map_x": -36.351,
+    "map_y": -7.523,
+    "svg_x": 387.0,
+    "svg_y": -709.5,
+    "tri_id": "24E73",
+    "category": "numbered_room"
+  },
+  {
+    "label": "A5-22",
+    "map_x": -42.105,
+    "map_y": -9.047,
+    "svg_x": 160.5,
+    "svg_y": -649.5,
+    "tri_id": "24E6E",
+    "category": "numbered_room"
+  },
+  {
+    "label": "A5-23",
+    "map_x": -40.492,
+    "map_y": -9.047,
+    "svg_x": 224.0,
+    "svg_y": -649.5,
+    "tri_id": "24E6D",
+    "category": "numbered_room"
+  },
+  {
+    "label": "A5-24",
+    "map_x": -37.964,
+    "map_y": -9.047,
+    "svg_x": 323.5,
+    "svg_y": -649.5,
+    "tri_id": "24E76",
+    "category": "numbered_room"
+  },
+  {
+    "label": "A5-25",
+    "map_x": -36.351,
+    "map_y": -9.047,
+    "svg_x": 387.0,
+    "svg_y": -649.5,
+    "tri_id": "24E75",
+    "category": "numbered_room"
+  },
+  {
+    "label": "A6-1",
+    "map_x": -44.874,
+    "map_y": -12.095,
+    "svg_x": 51.5,
+    "svg_y": -529.5,
+    "tri_id": "24E78",
+    "category": "numbered_room"
+  },
+  {
+    "label": "A6-11",
+    "map_x": -44.861,
+    "map_y": -14.33,
+    "svg_x": 52.0,
+    "svg_y": -441.5,
+    "tri_id": "24E77",
+    "category": "numbered_room"
+  },
+  {
+    "label": "A6-13",
+    "map_x": -41.33,
+    "map_y": -14.495,
+    "svg_x": 191.0,
+    "svg_y": -435.0,
+    "tri_id": "24E7A",
+    "category": "numbered_room"
+  },
+  {
+    "label": "A6-15",
+    "map_x": -37.748,
+    "map_y": -14.711,
+    "svg_x": 332.0,
+    "svg_y": -426.5,
+    "tri_id": "24E79",
+    "category": "numbered_room"
+  },
+  {
+    "label": "A6-16",
+    "map_x": -44.861,
+    "map_y": -16.54,
+    "svg_x": 52.0,
+    "svg_y": -354.5,
+    "tri_id": "24CE8",
+    "category": "numbered_room"
+  },
+  {
+    "label": "B",
+    "map_x": -36.681,
+    "map_y": 41.698,
+    "svg_x": 374.0,
+    "svg_y": -2647.3,
+    "tri_id": "AEC5",
+    "category": "named_space"
+  },
+  {
+    "label": "B.3",
+    "map_x": -34.163,
+    "map_y": 41.698,
+    "svg_x": 473.1,
+    "svg_y": -2647.3,
+    "tri_id": "AEC8",
+    "category": "named_space"
+  },
+  {
+    "label": "B1-10",
+    "map_x": -27.879,
+    "map_y": 24.506,
+    "svg_x": 720.5,
+    "svg_y": -1970.5,
+    "tri_id": "24DAF",
+    "category": "numbered_room"
+  },
+  {
+    "label": "B1-14",
+    "map_x": -29.492,
+    "map_y": 22.982,
+    "svg_x": 657.0,
+    "svg_y": -1910.5,
+    "tri_id": "24DAA",
+    "category": "numbered_room"
+  },
+  {
+    "label": "B1-15",
+    "map_x": -27.879,
+    "map_y": 22.982,
+    "svg_x": 720.5,
+    "svg_y": -1910.5,
+    "tri_id": "24DA9",
+    "category": "numbered_room"
+  },
+  {
+    "label": "B1-17",
+    "map_x": -32.82,
+    "map_y": 22.423,
+    "svg_x": 526.0,
+    "svg_y": -1888.5,
+    "tri_id": "24D98",
+    "category": "numbered_room"
+  },
+  {
+    "label": "B1-19",
+    "map_x": -29.492,
+    "map_y": 21.458,
+    "svg_x": 657.0,
+    "svg_y": -1850.5,
+    "tri_id": "24DAC",
+    "category": "numbered_room"
+  },
+  {
+    "label": "B1-20",
+    "map_x": -27.879,
+    "map_y": 21.458,
+    "svg_x": 720.5,
+    "svg_y": -1850.5,
+    "tri_id": "24DAB",
+    "category": "numbered_room"
+  },
+  {
+    "label": "B1-4",
+    "map_x": -29.492,
+    "map_y": 26.03,
+    "svg_x": 657.0,
+    "svg_y": -2030.5,
+    "tri_id": "24DAE",
+    "category": "numbered_room"
+  },
+  {
+    "label": "B1-5",
+    "map_x": -27.879,
+    "map_y": 26.03,
+    "svg_x": 720.5,
+    "svg_y": -2030.5,
+    "tri_id": "24DAD",
+    "category": "numbered_room"
+  },
+  {
+    "label": "B1-7",
+    "map_x": -32.82,
+    "map_y": 24.862,
+    "svg_x": 526.0,
+    "svg_y": -1984.5,
+    "tri_id": "24D97",
+    "category": "numbered_room"
+  },
+  {
+    "label": "B1-9",
+    "map_x": -29.492,
+    "map_y": 24.506,
+    "svg_x": 657.0,
+    "svg_y": -1970.5,
+    "tri_id": "24DB0",
+    "category": "numbered_room"
+  },
+  {
+    "label": "B2-12",
+    "map_x": -34.16,
+    "map_y": 16.817,
+    "svg_x": 473.3,
+    "svg_y": -1667.8,
+    "tri_id": "24DC3",
+    "category": "numbered_room"
+  },
+  {
+    "label": "B2-13",
+    "map_x": -32.612,
+    "map_y": 16.817,
+    "svg_x": 534.2,
+    "svg_y": -1667.8,
+    "tri_id": "24DC1",
+    "category": "numbered_room"
+  },
+  {
+    "label": "B2-14",
+    "map_x": -31.075,
+    "map_y": 16.817,
+    "svg_x": 594.7,
+    "svg_y": -1667.8,
+    "tri_id": "283D9",
+    "category": "numbered_room"
+  },
+  {
+    "label": "B2-15",
+    "map_x": -29.533,
+    "map_y": 16.817,
+    "svg_x": 655.4,
+    "svg_y": -1667.8,
+    "tri_id": "24DBD",
+    "category": "numbered_room"
+  },
+  {
+    "label": "B2-17",
+    "map_x": -34.16,
+    "map_y": 15.715,
+    "svg_x": 473.3,
+    "svg_y": -1624.4,
+    "tri_id": "26DEA",
+    "category": "numbered_room"
+  },
+  {
+    "label": "B2-18",
+    "map_x": -32.612,
+    "map_y": 15.715,
+    "svg_x": 534.2,
+    "svg_y": -1624.4,
+    "tri_id": "24DB7",
+    "category": "numbered_room"
+  },
+  {
+    "label": "B2-19",
+    "map_x": -31.075,
+    "map_y": 15.715,
+    "svg_x": 594.7,
+    "svg_y": -1624.4,
+    "tri_id": "283DC",
+    "category": "numbered_room"
+  },
+  {
+    "label": "B2-20",
+    "map_x": -29.533,
+    "map_y": 15.715,
+    "svg_x": 655.4,
+    "svg_y": -1624.4,
+    "tri_id": "24DB8",
+    "category": "numbered_room"
+  },
+  {
+    "label": "B3-10",
+    "map_x": -29.443,
+    "map_y": 11.464,
+    "svg_x": 658.9,
+    "svg_y": -1457.0,
+    "tri_id": "24DB5",
+    "category": "numbered_room"
+  },
+  {
+    "label": "B3-2",
+    "map_x": -34.065,
+    "map_y": 12.635,
+    "svg_x": 477.0,
+    "svg_y": -1503.1,
+    "tri_id": "24DBC",
+    "category": "numbered_room"
+  },
+  {
+    "label": "B3-3",
+    "map_x": -32.507,
+    "map_y": 12.635,
+    "svg_x": 538.3,
+    "svg_y": -1503.1,
+    "tri_id": "24DBA",
+    "category": "numbered_room"
+  },
+  {
+    "label": "B3-4",
+    "map_x": -31.001,
+    "map_y": 12.634,
+    "svg_x": 597.6,
+    "svg_y": -1503.1,
+    "tri_id": "24DB6",
+    "category": "numbered_room"
+  },
+  {
+    "label": "B3-5",
+    "map_x": -29.443,
+    "map_y": 12.634,
+    "svg_x": 658.9,
+    "svg_y": -1503.1,
+    "tri_id": "283DF",
+    "category": "numbered_room"
+  },
+  {
+    "label": "B3-7",
+    "map_x": -34.139,
+    "map_y": 11.464,
+    "svg_x": 474.1,
+    "svg_y": -1457.0,
+    "tri_id": "24DBB",
+    "category": "numbered_room"
+  },
+  {
+    "label": "B3-8",
+    "map_x": -32.507,
+    "map_y": 11.464,
+    "svg_x": 538.3,
+    "svg_y": -1457.0,
+    "tri_id": "24DB9",
+    "category": "numbered_room"
+  },
+  {
+    "label": "B3-9",
+    "map_x": -31.001,
+    "map_y": 11.464,
+    "svg_x": 597.6,
+    "svg_y": -1457.0,
+    "tri_id": "283E0",
+    "category": "numbered_room"
+  },
+  {
+    "label": "B5-22",
+    "map_x": -33.188,
+    "map_y": -9.555,
+    "svg_x": 511.5,
+    "svg_y": -629.5,
+    "tri_id": "24E82",
+    "category": "numbered_room"
+  },
+  {
+    "label": "B5-23",
+    "map_x": -31.664,
+    "map_y": -9.555,
+    "svg_x": 571.5,
+    "svg_y": -629.5,
+    "tri_id": "24E80",
+    "category": "numbered_room"
+  },
+  {
+    "label": "B5-24",
+    "map_x": -30.14,
+    "map_y": -9.555,
+    "svg_x": 631.5,
+    "svg_y": -629.5,
+    "tri_id": "24E7E",
+    "category": "numbered_room"
+  },
+  {
+    "label": "B5-25",
+    "map_x": -28.616,
+    "map_y": -9.555,
+    "svg_x": 691.5,
+    "svg_y": -629.5,
+    "tri_id": "24E7C",
+    "category": "numbered_room"
+  },
+  {
+    "label": "B6-12",
+    "map_x": -33.188,
+    "map_y": -13.695,
+    "svg_x": 511.5,
+    "svg_y": -466.5,
+    "tri_id": "24E64",
+    "category": "numbered_room"
+  },
+  {
+    "label": "B6-13",
+    "map_x": -31.664,
+    "map_y": -13.695,
+    "svg_x": 571.5,
+    "svg_y": -466.5,
+    "tri_id": "24E62",
+    "category": "numbered_room"
+  },
+  {
+    "label": "B6-14",
+    "map_x": -30.14,
+    "map_y": -13.695,
+    "svg_x": 631.5,
+    "svg_y": -466.5,
+    "tri_id": "24E60",
+    "category": "numbered_room"
+  },
+  {
+    "label": "B6-15",
+    "map_x": -28.616,
+    "map_y": -13.695,
+    "svg_x": 691.5,
+    "svg_y": -466.5,
+    "tri_id": "24E5E",
+    "category": "numbered_room"
+  },
+  {
+    "label": "B6-17",
+    "map_x": -33.188,
+    "map_y": -15.308,
+    "svg_x": 511.5,
+    "svg_y": -403.0,
+    "tri_id": "24E63",
+    "category": "numbered_room"
+  },
+  {
+    "label": "B6-18",
+    "map_x": -31.664,
+    "map_y": -15.308,
+    "svg_x": 571.5,
+    "svg_y": -403.0,
+    "tri_id": "24E61",
+    "category": "numbered_room"
+  },
+  {
+    "label": "B6-19",
+    "map_x": -30.14,
+    "map_y": -15.308,
+    "svg_x": 631.5,
+    "svg_y": -403.0,
+    "tri_id": "24E5F",
+    "category": "numbered_room"
+  },
+  {
+    "label": "B6-2",
+    "map_x": -33.188,
+    "map_y": -11.168,
+    "svg_x": 511.5,
+    "svg_y": -566.0,
+    "tri_id": "24E81",
+    "category": "numbered_room"
+  },
+  {
+    "label": "B6-20",
+    "map_x": -28.616,
+    "map_y": -15.308,
+    "svg_x": 691.5,
+    "svg_y": -403.0,
+    "tri_id": "24E5D",
+    "category": "numbered_room"
+  },
+  {
+    "label": "B6-3",
+    "map_x": -31.664,
+    "map_y": -11.168,
+    "svg_x": 571.5,
+    "svg_y": -566.0,
+    "tri_id": "24E7F",
+    "category": "numbered_room"
+  },
+  {
+    "label": "B6-4",
+    "map_x": -30.14,
+    "map_y": -11.168,
+    "svg_x": 631.5,
+    "svg_y": -566.0,
+    "tri_id": "24E7D",
+    "category": "numbered_room"
+  },
+  {
+    "label": "B6-5",
+    "map_x": -28.616,
+    "map_y": -11.168,
+    "svg_x": 691.5,
+    "svg_y": -566.0,
+    "tri_id": "24E7B",
+    "category": "numbered_room"
+  },
+  {
+    "label": "B7-10",
+    "map_x": -27.892,
+    "map_y": -20.299,
+    "svg_x": 720.0,
+    "svg_y": -206.5,
+    "tri_id": "24E4B",
+    "category": "numbered_room"
+  },
+  {
+    "label": "B7-14",
+    "map_x": -29.505,
+    "map_y": -21.823,
+    "svg_x": 656.5,
+    "svg_y": -146.5,
+    "tri_id": "24E46",
+    "category": "numbered_room"
+  },
+  {
+    "label": "B7-15",
+    "map_x": -27.892,
+    "map_y": -21.823,
+    "svg_x": 720.0,
+    "svg_y": -146.5,
+    "tri_id": "24E45",
+    "category": "numbered_room"
+  },
+  {
+    "label": "B7-17",
+    "map_x": -32.833,
+    "map_y": -22.623,
+    "svg_x": 525.5,
+    "svg_y": -115.0,
+    "tri_id": "24E72",
+    "category": "numbered_room"
+  },
+  {
+    "label": "B7-19",
+    "map_x": -29.505,
+    "map_y": -23.347,
+    "svg_x": 656.5,
+    "svg_y": -86.5,
+    "tri_id": "24E48",
+    "category": "numbered_room"
+  },
+  {
+    "label": "B7-20",
+    "map_x": -27.892,
+    "map_y": -23.347,
+    "svg_x": 720.0,
+    "svg_y": -86.5,
+    "tri_id": "24E47",
+    "category": "numbered_room"
+  },
+  {
+    "label": "B7-4",
+    "map_x": -29.505,
+    "map_y": -18.775,
+    "svg_x": 656.5,
+    "svg_y": -266.5,
+    "tri_id": "24E4A",
+    "category": "numbered_room"
+  },
+  {
+    "label": "B7-5",
+    "map_x": -27.892,
+    "map_y": -18.775,
+    "svg_x": 720.0,
+    "svg_y": -266.5,
+    "tri_id": "24E49",
+    "category": "numbered_room"
+  },
+  {
+    "label": "B7-7",
+    "map_x": -32.833,
+    "map_y": -20.185,
+    "svg_x": 525.5,
+    "svg_y": -211.0,
+    "tri_id": "24E71",
+    "category": "numbered_room"
+  },
+  {
+    "label": "B7-9",
+    "map_x": -29.505,
+    "map_y": -20.299,
+    "svg_x": 656.5,
+    "svg_y": -206.5,
+    "tri_id": "24E4C",
+    "category": "numbered_room"
+  },
+  {
+    "label": "BREAK RM.",
+    "map_x": 1.585,
+    "map_y": 0.805,
+    "svg_x": 1880.4,
+    "svg_y": -1037.4,
+    "tri_id": "7D7B",
+    "category": "named_space"
+  },
+  {
+    "label": "C",
+    "map_x": -27.544,
+    "map_y": 41.698,
+    "svg_x": 733.7,
+    "svg_y": -2647.3,
+    "tri_id": "AEC2",
+    "category": "named_space"
+  },
+  {
+    "label": "C-1",
+    "map_x": -1.308,
+    "map_y": 1.138,
+    "svg_x": 1766.5,
+    "svg_y": -1050.5,
+    "tri_id": "253BF",
+    "category": "corridor"
+  },
+  {
+    "label": "C-2",
+    "map_x": -42.867,
+    "map_y": 1.126,
+    "svg_x": 130.5,
+    "svg_y": -1050.0,
+    "tri_id": "253C9",
+    "category": "corridor"
+  },
+  {
+    "label": "C-3",
+    "map_x": 42.092,
+    "map_y": 1.126,
+    "svg_x": 3475.0,
+    "svg_y": -1050.0,
+    "tri_id": "253CA",
+    "category": "corridor"
+  },
+  {
+    "label": "C-4",
+    "map_x": 5.741,
+    "map_y": 4.961,
+    "svg_x": 2044.0,
+    "svg_y": -1201.0,
+    "tri_id": "253BD",
+    "category": "corridor"
+  },
+  {
+    "label": "C-5",
+    "map_x": 5.106,
+    "map_y": -9.733,
+    "svg_x": 2019.0,
+    "svg_y": -622.5,
+    "tri_id": "253BE",
+    "category": "corridor"
+  },
+  {
+    "label": "C1-1",
+    "map_x": -25.06,
+    "map_y": 28.189,
+    "svg_x": 831.5,
+    "svg_y": -2115.5,
+    "tri_id": "24DA6",
+    "category": "numbered_room"
+  },
+  {
+    "label": "C1-10",
+    "map_x": -19.154,
+    "map_y": 26.665,
+    "svg_x": 1064.0,
+    "svg_y": -2055.5,
+    "tri_id": "24DA3",
+    "category": "numbered_room"
+  },
+  {
+    "label": "C1-11",
+    "map_x": -25.06,
+    "map_y": 24.074,
+    "svg_x": 831.5,
+    "svg_y": -1953.5,
+    "tri_id": "24D92",
+    "category": "numbered_room"
+  },
+  {
+    "label": "C1-12",
+    "map_x": -23.447,
+    "map_y": 24.074,
+    "svg_x": 895.0,
+    "svg_y": -1953.5,
+    "tri_id": "24D91",
+    "category": "numbered_room"
+  },
+  {
+    "label": "C1-14",
+    "map_x": -20.767,
+    "map_y": 24.074,
+    "svg_x": 1000.5,
+    "svg_y": -1953.5,
+    "tri_id": "24D8C",
+    "category": "numbered_room"
+  },
+  {
+    "label": "C1-15",
+    "map_x": -19.154,
+    "map_y": 24.074,
+    "svg_x": 1064.0,
+    "svg_y": -1953.5,
+    "tri_id": "24D8B",
+    "category": "numbered_room"
+  },
+  {
+    "label": "C1-16",
+    "map_x": -25.06,
+    "map_y": 22.55,
+    "svg_x": 831.5,
+    "svg_y": -1893.5,
+    "tri_id": "24D94",
+    "category": "numbered_room"
+  },
+  {
+    "label": "C1-17",
+    "map_x": -23.447,
+    "map_y": 22.55,
+    "svg_x": 895.0,
+    "svg_y": -1893.5,
+    "tri_id": "24D93",
+    "category": "numbered_room"
+  },
+  {
+    "label": "C1-19",
+    "map_x": -20.767,
+    "map_y": 22.55,
+    "svg_x": 1000.5,
+    "svg_y": -1893.5,
+    "tri_id": "24D8E",
+    "category": "numbered_room"
+  },
+  {
+    "label": "C1-2",
+    "map_x": -23.447,
+    "map_y": 28.189,
+    "svg_x": 895.0,
+    "svg_y": -2115.5,
+    "tri_id": "24DA5",
+    "category": "numbered_room"
+  },
+  {
+    "label": "C1-20",
+    "map_x": -19.154,
+    "map_y": 22.55,
+    "svg_x": 1064.0,
+    "svg_y": -1893.5,
+    "tri_id": "24D8D",
+    "category": "numbered_room"
+  },
+  {
+    "label": "C1-21",
+    "map_x": -25.06,
+    "map_y": 21.026,
+    "svg_x": 831.5,
+    "svg_y": -1833.5,
+    "tri_id": "24D90",
+    "category": "numbered_room"
+  },
+  {
+    "label": "C1-22",
+    "map_x": -23.447,
+    "map_y": 21.026,
+    "svg_x": 895.0,
+    "svg_y": -1833.5,
+    "tri_id": "24D8F",
+    "category": "numbered_room"
+  },
+  {
+    "label": "C1-24",
+    "map_x": -20.767,
+    "map_y": 21.026,
+    "svg_x": 1000.5,
+    "svg_y": -1833.5,
+    "tri_id": "24D8A",
+    "category": "numbered_room"
+  },
+  {
+    "label": "C1-25",
+    "map_x": -19.154,
+    "map_y": 21.026,
+    "svg_x": 1064.0,
+    "svg_y": -1833.5,
+    "tri_id": "24D89",
+    "category": "numbered_room"
+  },
+  {
+    "label": "C1-4",
+    "map_x": -20.767,
+    "map_y": 28.189,
+    "svg_x": 1000.5,
+    "svg_y": -2115.5,
+    "tri_id": "24DA2",
+    "category": "numbered_room"
+  },
+  {
+    "label": "C1-5",
+    "map_x": -19.154,
+    "map_y": 28.189,
+    "svg_x": 1064.0,
+    "svg_y": -2115.5,
+    "tri_id": "24DA1",
+    "category": "numbered_room"
+  },
+  {
+    "label": "C1-6",
+    "map_x": -25.06,
+    "map_y": 26.665,
+    "svg_x": 831.5,
+    "svg_y": -2055.5,
+    "tri_id": "24DA8",
+    "category": "numbered_room"
+  },
+  {
+    "label": "C1-7",
+    "map_x": -23.447,
+    "map_y": 26.665,
+    "svg_x": 895.0,
+    "svg_y": -2055.5,
+    "tri_id": "24DA7",
+    "category": "numbered_room"
+  },
+  {
+    "label": "C1-9",
+    "map_x": -20.767,
+    "map_y": 26.665,
+    "svg_x": 1000.5,
+    "svg_y": -2055.5,
+    "tri_id": "24DA4",
+    "category": "numbered_room"
+  },
+  {
+    "label": "C2-4",
+    "map_x": -21.808,
+    "map_y": 18.118,
+    "svg_x": 959.5,
+    "svg_y": -1719.0,
+    "tri_id": "24CEE",
+    "category": "numbered_room"
+  },
+  {
+    "label": "C3-12",
+    "map_x": -23.637,
+    "map_y": 9.673,
+    "svg_x": 887.5,
+    "svg_y": -1386.5,
+    "tri_id": "24D03",
+    "category": "numbered_room"
+  },
+  {
+    "label": "C3-14",
+    "map_x": -19.979,
+    "map_y": 9.673,
+    "svg_x": 1031.5,
+    "svg_y": -1386.5,
+    "tri_id": "24D02",
+    "category": "numbered_room"
+  },
+  {
+    "label": "C3-22",
+    "map_x": -23.637,
+    "map_y": 7.806,
+    "svg_x": 887.5,
+    "svg_y": -1313.0,
+    "tri_id": "24D05",
+    "category": "numbered_room"
+  },
+  {
+    "label": "C3-24",
+    "map_x": -19.979,
+    "map_y": 7.806,
+    "svg_x": 1031.5,
+    "svg_y": -1313.0,
+    "tri_id": "24D04",
+    "category": "numbered_room"
+  },
+  {
+    "label": "C5-12",
+    "map_x": -23.637,
+    "map_y": -7.409,
+    "svg_x": 887.5,
+    "svg_y": -714.0,
+    "tri_id": "24D11",
+    "category": "numbered_room"
+  },
+  {
+    "label": "C5-14",
+    "map_x": -19.979,
+    "map_y": -7.409,
+    "svg_x": 1031.5,
+    "svg_y": -714.0,
+    "tri_id": "24D10",
+    "category": "numbered_room"
+  },
+  {
+    "label": "C5-7",
+    "map_x": -23.637,
+    "map_y": -5.555,
+    "svg_x": 887.5,
+    "svg_y": -787.0,
+    "tri_id": "24D0F",
+    "category": "numbered_room"
+  },
+  {
+    "label": "C5-9",
+    "map_x": -19.979,
+    "map_y": -5.555,
+    "svg_x": 1031.5,
+    "svg_y": -787.0,
+    "tri_id": "24D0E",
+    "category": "numbered_room"
+  },
+  {
+    "label": "C6-23",
+    "map_x": -21.808,
+    "map_y": -15.854,
+    "svg_x": 959.5,
+    "svg_y": -381.5,
+    "tri_id": "24D12",
+    "category": "numbered_room"
+  },
+  {
+    "label": "C7-10",
+    "map_x": -19.154,
+    "map_y": -20.299,
+    "svg_x": 1064.0,
+    "svg_y": -206.5,
+    "tri_id": "24E2F",
+    "category": "numbered_room"
+  },
+  {
+    "label": "C7-12",
+    "map_x": -25.06,
+    "map_y": -21.823,
+    "svg_x": 831.5,
+    "svg_y": -146.5,
+    "tri_id": "24E6C",
+    "category": "numbered_room"
+  },
+  {
+    "label": "C7-13",
+    "map_x": -23.447,
+    "map_y": -21.823,
+    "svg_x": 895.0,
+    "svg_y": -146.5,
+    "tri_id": "24E6B",
+    "category": "numbered_room"
+  },
+  {
+    "label": "C7-14",
+    "map_x": -20.767,
+    "map_y": -21.823,
+    "svg_x": 1000.5,
+    "svg_y": -146.5,
+    "tri_id": "24E6A",
+    "category": "numbered_room"
+  },
+  {
+    "label": "C7-15",
+    "map_x": -19.154,
+    "map_y": -21.823,
+    "svg_x": 1064.0,
+    "svg_y": -146.5,
+    "tri_id": "24E69",
+    "category": "numbered_room"
+  },
+  {
+    "label": "C7-17",
+    "map_x": -25.06,
+    "map_y": -24.414,
+    "svg_x": 831.5,
+    "svg_y": -44.5,
+    "tri_id": "24E42",
+    "category": "numbered_room"
+  },
+  {
+    "label": "C7-18",
+    "map_x": -23.447,
+    "map_y": -24.414,
+    "svg_x": 895.0,
+    "svg_y": -44.5,
+    "tri_id": "24E41",
+    "category": "numbered_room"
+  },
+  {
+    "label": "C7-19",
+    "map_x": -20.767,
+    "map_y": -24.414,
+    "svg_x": 1000.5,
+    "svg_y": -44.5,
+    "tri_id": "24E3E",
+    "category": "numbered_room"
+  },
+  {
+    "label": "C7-2",
+    "map_x": -25.06,
+    "map_y": -18.775,
+    "svg_x": 831.5,
+    "svg_y": -266.5,
+    "tri_id": "24E32",
+    "category": "numbered_room"
+  },
+  {
+    "label": "C7-20",
+    "map_x": -19.154,
+    "map_y": -24.414,
+    "svg_x": 1064.0,
+    "svg_y": -44.5,
+    "tri_id": "24E3D",
+    "category": "numbered_room"
+  },
+  {
+    "label": "C7-22",
+    "map_x": -25.06,
+    "map_y": -25.938,
+    "svg_x": 831.5,
+    "svg_y": 15.5,
+    "tri_id": "24E44",
+    "category": "numbered_room"
+  },
+  {
+    "label": "C7-23",
+    "map_x": -23.447,
+    "map_y": -25.938,
+    "svg_x": 895.0,
+    "svg_y": 15.5,
+    "tri_id": "24E43",
+    "category": "numbered_room"
+  },
+  {
+    "label": "C7-24",
+    "map_x": -20.767,
+    "map_y": -25.938,
+    "svg_x": 1000.5,
+    "svg_y": 15.5,
+    "tri_id": "24E40",
+    "category": "numbered_room"
+  },
+  {
+    "label": "C7-25",
+    "map_x": -19.154,
+    "map_y": -25.938,
+    "svg_x": 1064.0,
+    "svg_y": 15.5,
+    "tri_id": "24E3F",
+    "category": "numbered_room"
+  },
+  {
+    "label": "C7-3",
+    "map_x": -23.447,
+    "map_y": -18.775,
+    "svg_x": 895.0,
+    "svg_y": -266.5,
+    "tri_id": "24E31",
+    "category": "numbered_room"
+  },
+  {
+    "label": "C7-4",
+    "map_x": -20.767,
+    "map_y": -18.775,
+    "svg_x": 1000.5,
+    "svg_y": -266.5,
+    "tri_id": "24E2E",
+    "category": "numbered_room"
+  },
+  {
+    "label": "C7-5",
+    "map_x": -19.154,
+    "map_y": -18.775,
+    "svg_x": 1064.0,
+    "svg_y": -266.5,
+    "tri_id": "24E2D",
+    "category": "numbered_room"
+  },
+  {
+    "label": "C7-7",
+    "map_x": -25.06,
+    "map_y": -20.299,
+    "svg_x": 831.5,
+    "svg_y": -206.5,
+    "tri_id": "24E34",
+    "category": "numbered_room"
+  },
+  {
+    "label": "C7-8",
+    "map_x": -23.447,
+    "map_y": -20.299,
+    "svg_x": 895.0,
+    "svg_y": -206.5,
+    "tri_id": "24E33",
+    "category": "numbered_room"
+  },
+  {
+    "label": "C7-9",
+    "map_x": -20.767,
+    "map_y": -20.299,
+    "svg_x": 1000.5,
+    "svg_y": -206.5,
+    "tri_id": "24E30",
+    "category": "numbered_room"
+  },
+  {
+    "label": "CONF. RM",
+    "map_x": 39.287,
+    "map_y": -18.275,
+    "svg_x": 3364.6,
+    "svg_y": -286.2,
+    "tri_id": "",
+    "category": "conference_room"
+  },
+  {
+    "label": "COPY/MAIL",
+    "map_x": 5.859,
+    "map_y": 0.805,
+    "svg_x": 2048.6,
+    "svg_y": -1037.4,
+    "tri_id": "7D7A",
+    "category": "named_space"
+  },
+  {
+    "label": "CRYSTAL PIER CONF. RM",
+    "map_x": -40.068,
+    "map_y": -19.743,
+    "svg_x": 240.7,
+    "svg_y": -228.4,
+    "tri_id": "7D76",
+    "category": "conference_room"
+  },
+  {
+    "label": "D",
+    "map_x": -18.391,
+    "map_y": 41.698,
+    "svg_x": 1094.0,
+    "svg_y": -2647.3,
+    "tri_id": "AEBF",
+    "category": "named_space"
+  },
+  {
+    "label": "D1-1",
+    "map_x": -16.626,
+    "map_y": 28.189,
+    "svg_x": 1163.5,
+    "svg_y": -2115.5,
+    "tri_id": "24D9E",
+    "category": "named_space"
+  },
+  {
+    "label": "D1-10",
+    "map_x": -10.872,
+    "map_y": 26.665,
+    "svg_x": 1390.0,
+    "svg_y": -2055.5,
+    "tri_id": "24D9B",
+    "category": "named_space"
+  },
+  {
+    "label": "D1-11",
+    "map_x": -16.626,
+    "map_y": 24.074,
+    "svg_x": 1163.5,
+    "svg_y": -1953.5,
+    "tri_id": "24D86",
+    "category": "named_space"
+  },
+  {
+    "label": "D1-12",
+    "map_x": -15.013,
+    "map_y": 24.074,
+    "svg_x": 1227.0,
+    "svg_y": -1953.5,
+    "tri_id": "24D85",
+    "category": "named_space"
+  },
+  {
+    "label": "D1-14",
+    "map_x": -12.485,
+    "map_y": 24.074,
+    "svg_x": 1326.5,
+    "svg_y": -1953.5,
+    "tri_id": "24D80",
+    "category": "named_space"
+  },
+  {
+    "label": "D1-15",
+    "map_x": -10.872,
+    "map_y": 24.074,
+    "svg_x": 1390.0,
+    "svg_y": -1953.5,
+    "tri_id": "24D7F",
+    "category": "named_space"
+  },
+  {
+    "label": "D1-16",
+    "map_x": -16.626,
+    "map_y": 22.55,
+    "svg_x": 1163.5,
+    "svg_y": -1893.5,
+    "tri_id": "24D88",
+    "category": "named_space"
+  },
+  {
+    "label": "D1-17",
+    "map_x": -15.013,
+    "map_y": 22.55,
+    "svg_x": 1227.0,
+    "svg_y": -1893.5,
+    "tri_id": "24D87",
+    "category": "named_space"
+  },
+  {
+    "label": "D1-19",
+    "map_x": -12.485,
+    "map_y": 22.55,
+    "svg_x": 1326.5,
+    "svg_y": -1893.5,
+    "tri_id": "24D82",
+    "category": "named_space"
+  },
+  {
+    "label": "D1-2",
+    "map_x": -15.013,
+    "map_y": 28.189,
+    "svg_x": 1227.0,
+    "svg_y": -2115.5,
+    "tri_id": "24D9D",
+    "category": "named_space"
+  },
+  {
+    "label": "D1-20",
+    "map_x": -10.872,
+    "map_y": 22.55,
+    "svg_x": 1390.0,
+    "svg_y": -1893.5,
+    "tri_id": "24D81",
+    "category": "named_space"
+  },
+  {
+    "label": "D1-21",
+    "map_x": -16.626,
+    "map_y": 21.026,
+    "svg_x": 1163.5,
+    "svg_y": -1833.5,
+    "tri_id": "24D84",
+    "category": "named_space"
+  },
+  {
+    "label": "D1-22",
+    "map_x": -15.013,
+    "map_y": 21.026,
+    "svg_x": 1227.0,
+    "svg_y": -1833.5,
+    "tri_id": "24D83",
+    "category": "named_space"
+  },
+  {
+    "label": "D1-24",
+    "map_x": -12.485,
+    "map_y": 21.026,
+    "svg_x": 1326.5,
+    "svg_y": -1833.5,
+    "tri_id": "24D7E",
+    "category": "named_space"
+  },
+  {
+    "label": "D1-25",
+    "map_x": -10.872,
+    "map_y": 21.026,
+    "svg_x": 1390.0,
+    "svg_y": -1833.5,
+    "tri_id": "24D7D",
+    "category": "named_space"
+  },
+  {
+    "label": "D1-4",
+    "map_x": -12.485,
+    "map_y": 28.189,
+    "svg_x": 1326.5,
+    "svg_y": -2115.5,
+    "tri_id": "24D9A",
+    "category": "named_space"
+  },
+  {
+    "label": "D1-5",
+    "map_x": -10.872,
+    "map_y": 28.189,
+    "svg_x": 1390.0,
+    "svg_y": -2115.5,
+    "tri_id": "24D99",
+    "category": "named_space"
+  },
+  {
+    "label": "D1-6",
+    "map_x": -16.626,
+    "map_y": 26.665,
+    "svg_x": 1163.5,
+    "svg_y": -2055.5,
+    "tri_id": "24DA0",
+    "category": "named_space"
+  },
+  {
+    "label": "D1-7",
+    "map_x": -15.013,
+    "map_y": 26.665,
+    "svg_x": 1227.0,
+    "svg_y": -2055.5,
+    "tri_id": "24D9F",
+    "category": "named_space"
+  },
+  {
+    "label": "D1-9",
+    "map_x": -12.485,
+    "map_y": 26.665,
+    "svg_x": 1326.5,
+    "svg_y": -2055.5,
+    "tri_id": "24D9C",
+    "category": "named_space"
+  },
+  {
+    "label": "D2-10",
+    "map_x": -10.682,
+    "map_y": 17.559,
+    "svg_x": 1397.5,
+    "svg_y": -1697.0,
+    "tri_id": "24DCE",
+    "category": "named_space"
+  },
+  {
+    "label": "D2-12",
+    "map_x": -15.254,
+    "map_y": 15.946,
+    "svg_x": 1217.5,
+    "svg_y": -1633.5,
+    "tri_id": "24DD3",
+    "category": "named_space"
+  },
+  {
+    "label": "D2-13",
+    "map_x": -13.73,
+    "map_y": 15.946,
+    "svg_x": 1277.5,
+    "svg_y": -1633.5,
+    "tri_id": "24DD1",
+    "category": "named_space"
+  },
+  {
+    "label": "D2-14",
+    "map_x": -12.206,
+    "map_y": 15.946,
+    "svg_x": 1337.5,
+    "svg_y": -1633.5,
+    "tri_id": "24DCF",
+    "category": "named_space"
+  },
+  {
+    "label": "D2-15",
+    "map_x": -10.682,
+    "map_y": 15.946,
+    "svg_x": 1397.5,
+    "svg_y": -1633.5,
+    "tri_id": "24DCD",
+    "category": "named_space"
+  },
+  {
+    "label": "D2-7",
+    "map_x": -15.254,
+    "map_y": 17.559,
+    "svg_x": 1217.5,
+    "svg_y": -1697.0,
+    "tri_id": "24DD4",
+    "category": "named_space"
+  },
+  {
+    "label": "D2-8",
+    "map_x": -13.73,
+    "map_y": 17.559,
+    "svg_x": 1277.5,
+    "svg_y": -1697.0,
+    "tri_id": "24DD2",
+    "category": "named_space"
+  },
+  {
+    "label": "D2-9",
+    "map_x": -12.206,
+    "map_y": 17.559,
+    "svg_x": 1337.5,
+    "svg_y": -1697.0,
+    "tri_id": "24DD0",
+    "category": "named_space"
+  },
+  {
+    "label": "D3-10",
+    "map_x": -10.707,
+    "map_y": 11.806,
+    "svg_x": 1396.5,
+    "svg_y": -1470.5,
+    "tri_id": "24DC5",
+    "category": "named_space"
+  },
+  {
+    "label": "D3-2",
+    "map_x": -15.28,
+    "map_y": 13.419,
+    "svg_x": 1216.5,
+    "svg_y": -1534.0,
+    "tri_id": "24DCC",
+    "category": "named_space"
+  },
+  {
+    "label": "D3-3",
+    "map_x": -13.755,
+    "map_y": 13.419,
+    "svg_x": 1276.5,
+    "svg_y": -1534.0,
+    "tri_id": "24DCA",
+    "category": "named_space"
+  },
+  {
+    "label": "D3-4",
+    "map_x": -12.231,
+    "map_y": 13.419,
+    "svg_x": 1336.5,
+    "svg_y": -1534.0,
+    "tri_id": "24DC8",
+    "category": "named_space"
+  },
+  {
+    "label": "D3-5",
+    "map_x": -10.707,
+    "map_y": 13.419,
+    "svg_x": 1396.5,
+    "svg_y": -1534.0,
+    "tri_id": "24DC6",
+    "category": "named_space"
+  },
+  {
+    "label": "D3-7",
+    "map_x": -15.28,
+    "map_y": 11.806,
+    "svg_x": 1216.5,
+    "svg_y": -1470.5,
+    "tri_id": "24DCB",
+    "category": "named_space"
+  },
+  {
+    "label": "D3-8",
+    "map_x": -13.755,
+    "map_y": 11.806,
+    "svg_x": 1276.5,
+    "svg_y": -1470.5,
+    "tri_id": "24DC9",
+    "category": "named_space"
+  },
+  {
+    "label": "D3-9",
+    "map_x": -12.231,
+    "map_y": 11.806,
+    "svg_x": 1336.5,
+    "svg_y": -1470.5,
+    "tri_id": "24DC7",
+    "category": "named_space"
+  },
+  {
+    "label": "D5-22",
+    "map_x": -15.28,
+    "map_y": -9.555,
+    "svg_x": 1216.5,
+    "svg_y": -629.5,
+    "tri_id": "24E5C",
+    "category": "named_space"
+  },
+  {
+    "label": "D5-23",
+    "map_x": -13.755,
+    "map_y": -9.555,
+    "svg_x": 1276.5,
+    "svg_y": -629.5,
+    "tri_id": "24E5A",
+    "category": "named_space"
+  },
+  {
+    "label": "D5-24",
+    "map_x": -12.231,
+    "map_y": -9.555,
+    "svg_x": 1336.5,
+    "svg_y": -629.5,
+    "tri_id": "24E58",
+    "category": "named_space"
+  },
+  {
+    "label": "D5-25",
+    "map_x": -10.707,
+    "map_y": -9.555,
+    "svg_x": 1396.5,
+    "svg_y": -629.5,
+    "tri_id": "24E56",
+    "category": "named_space"
+  },
+  {
+    "label": "D6-12",
+    "map_x": -15.254,
+    "map_y": -13.695,
+    "svg_x": 1217.5,
+    "svg_y": -466.5,
+    "tri_id": "24E54",
+    "category": "named_space"
+  },
+  {
+    "label": "D6-13",
+    "map_x": -13.73,
+    "map_y": -13.695,
+    "svg_x": 1277.5,
+    "svg_y": -466.5,
+    "tri_id": "24E52",
+    "category": "named_space"
+  },
+  {
+    "label": "D6-14",
+    "map_x": -12.206,
+    "map_y": -13.695,
+    "svg_x": 1337.5,
+    "svg_y": -466.5,
+    "tri_id": "24E50",
+    "category": "named_space"
+  },
+  {
+    "label": "D6-15",
+    "map_x": -10.682,
+    "map_y": -13.695,
+    "svg_x": 1397.5,
+    "svg_y": -466.5,
+    "tri_id": "24E4E",
+    "category": "named_space"
+  },
+  {
+    "label": "D6-17",
+    "map_x": -15.254,
+    "map_y": -15.308,
+    "svg_x": 1217.5,
+    "svg_y": -403.0,
+    "tri_id": "24E53",
+    "category": "named_space"
+  },
+  {
+    "label": "D6-18",
+    "map_x": -13.73,
+    "map_y": -15.308,
+    "svg_x": 1277.5,
+    "svg_y": -403.0,
+    "tri_id": "24E51",
+    "category": "named_space"
+  },
+  {
+    "label": "D6-19",
+    "map_x": -12.206,
+    "map_y": -15.308,
+    "svg_x": 1337.5,
+    "svg_y": -403.0,
+    "tri_id": "24E4F",
+    "category": "named_space"
+  },
+  {
+    "label": "D6-2",
+    "map_x": -15.28,
+    "map_y": -11.168,
+    "svg_x": 1216.5,
+    "svg_y": -566.0,
+    "tri_id": "24E5B",
+    "category": "named_space"
+  },
+  {
+    "label": "D6-20",
+    "map_x": -10.682,
+    "map_y": -15.308,
+    "svg_x": 1397.5,
+    "svg_y": -403.0,
+    "tri_id": "24E4D",
+    "category": "named_space"
+  },
+  {
+    "label": "D6-3",
+    "map_x": -13.755,
+    "map_y": -11.168,
+    "svg_x": 1276.5,
+    "svg_y": -566.0,
+    "tri_id": "24E59",
+    "category": "named_space"
+  },
+  {
+    "label": "D6-4",
+    "map_x": -12.231,
+    "map_y": -11.168,
+    "svg_x": 1336.5,
+    "svg_y": -566.0,
+    "tri_id": "24E57",
+    "category": "named_space"
+  },
+  {
+    "label": "D6-5",
+    "map_x": -10.707,
+    "map_y": -11.168,
+    "svg_x": 1396.5,
+    "svg_y": -566.0,
+    "tri_id": "24E55",
+    "category": "named_space"
+  },
+  {
+    "label": "D7-10",
+    "map_x": -10.872,
+    "map_y": -20.299,
+    "svg_x": 1390.0,
+    "svg_y": -206.5,
+    "tri_id": "24E27",
+    "category": "named_space"
+  },
+  {
+    "label": "D7-12",
+    "map_x": -16.626,
+    "map_y": -21.823,
+    "svg_x": 1163.5,
+    "svg_y": -146.5,
+    "tri_id": "24E68",
+    "category": "named_space"
+  },
+  {
+    "label": "D7-13",
+    "map_x": -15.013,
+    "map_y": -21.823,
+    "svg_x": 1227.0,
+    "svg_y": -146.5,
+    "tri_id": "24E67",
+    "category": "named_space"
+  },
+  {
+    "label": "D7-14",
+    "map_x": -12.485,
+    "map_y": -21.823,
+    "svg_x": 1326.5,
+    "svg_y": -146.5,
+    "tri_id": "24E66",
+    "category": "named_space"
+  },
+  {
+    "label": "D7-15",
+    "map_x": -10.872,
+    "map_y": -21.823,
+    "svg_x": 1390.0,
+    "svg_y": -146.5,
+    "tri_id": "24E65",
+    "category": "named_space"
+  },
+  {
+    "label": "D7-17",
+    "map_x": -16.626,
+    "map_y": -24.414,
+    "svg_x": 1163.5,
+    "svg_y": -44.5,
+    "tri_id": "24E3A",
+    "category": "named_space"
+  },
+  {
+    "label": "D7-18",
+    "map_x": -15.013,
+    "map_y": -24.414,
+    "svg_x": 1227.0,
+    "svg_y": -44.5,
+    "tri_id": "24E39",
+    "category": "named_space"
+  },
+  {
+    "label": "D7-19",
+    "map_x": -12.485,
+    "map_y": -24.414,
+    "svg_x": 1326.5,
+    "svg_y": -44.5,
+    "tri_id": "24E36",
+    "category": "named_space"
+  },
+  {
+    "label": "D7-2",
+    "map_x": -16.626,
+    "map_y": -18.775,
+    "svg_x": 1163.5,
+    "svg_y": -266.5,
+    "tri_id": "24E2A",
+    "category": "named_space"
+  },
+  {
+    "label": "D7-20",
+    "map_x": -10.872,
+    "map_y": -24.414,
+    "svg_x": 1390.0,
+    "svg_y": -44.5,
+    "tri_id": "24E35",
+    "category": "named_space"
+  },
+  {
+    "label": "D7-22",
+    "map_x": -16.626,
+    "map_y": -25.938,
+    "svg_x": 1163.5,
+    "svg_y": 15.5,
+    "tri_id": "24E3C",
+    "category": "named_space"
+  },
+  {
+    "label": "D7-23",
+    "map_x": -15.013,
+    "map_y": -25.938,
+    "svg_x": 1227.0,
+    "svg_y": 15.5,
+    "tri_id": "24E3B",
+    "category": "named_space"
+  },
+  {
+    "label": "D7-24",
+    "map_x": -12.485,
+    "map_y": -25.938,
+    "svg_x": 1326.5,
+    "svg_y": 15.5,
+    "tri_id": "24E38",
+    "category": "named_space"
+  },
+  {
+    "label": "D7-25",
+    "map_x": -10.872,
+    "map_y": -25.938,
+    "svg_x": 1390.0,
+    "svg_y": 15.5,
+    "tri_id": "24E37",
+    "category": "named_space"
+  },
+  {
+    "label": "D7-3",
+    "map_x": -15.013,
+    "map_y": -18.775,
+    "svg_x": 1227.0,
+    "svg_y": -266.5,
+    "tri_id": "24E29",
+    "category": "named_space"
+  },
+  {
+    "label": "D7-4",
+    "map_x": -12.485,
+    "map_y": -18.775,
+    "svg_x": 1326.5,
+    "svg_y": -266.5,
+    "tri_id": "24E26",
+    "category": "named_space"
+  },
+  {
+    "label": "D7-5",
+    "map_x": -10.872,
+    "map_y": -18.775,
+    "svg_x": 1390.0,
+    "svg_y": -266.5,
+    "tri_id": "24E25",
+    "category": "named_space"
+  },
+  {
+    "label": "D7-7",
+    "map_x": -16.626,
+    "map_y": -20.299,
+    "svg_x": 1163.5,
+    "svg_y": -206.5,
+    "tri_id": "24E2C",
+    "category": "named_space"
+  },
+  {
+    "label": "D7-8",
+    "map_x": -15.013,
+    "map_y": -20.299,
+    "svg_x": 1227.0,
+    "svg_y": -206.5,
+    "tri_id": "24E2B",
+    "category": "named_space"
+  },
+  {
+    "label": "D7-9",
+    "map_x": -12.485,
+    "map_y": -20.299,
+    "svg_x": 1326.5,
+    "svg_y": -206.5,
+    "tri_id": "24E28",
+    "category": "named_space"
+  },
+  {
+    "label": "DESERT POINT CONF. RM",
+    "map_x": -16.016,
+    "map_y": -0.547,
+    "svg_x": 1187.5,
+    "svg_y": -984.2,
+    "tri_id": "7D83",
+    "category": "conference_room"
+  },
+  {
+    "label": "DIEGO GARCIA ISLAND CONF. RM",
+    "map_x": -32.305,
+    "map_y": 1.84,
+    "svg_x": 546.3,
+    "svg_y": -1078.1,
+    "tri_id": "7D84",
+    "category": "conference_room"
+  },
+  {
+    "label": "DN",
+    "map_x": 0.928,
+    "map_y": -17.234,
+    "svg_x": 1854.5,
+    "svg_y": -327.2,
+    "tri_id": "6C34",
+    "category": "vertical_transport"
+  },
+  {
+    "label": "E",
+    "map_x": -9.239,
+    "map_y": 41.698,
+    "svg_x": 1454.3,
+    "svg_y": -2647.3,
+    "tri_id": "AEB9",
+    "category": "named_space"
+  },
+  {
+    "label": "E1-11",
+    "map_x": -7.151,
+    "map_y": 23.643,
+    "svg_x": 1536.5,
+    "svg_y": -1936.5,
+    "tri_id": "24D77",
+    "category": "named_space"
+  },
+  {
+    "label": "E1-24",
+    "map_x": -3.252,
+    "map_y": 21.56,
+    "svg_x": 1690.0,
+    "svg_y": -1854.5,
+    "tri_id": "24CF3",
+    "category": "named_space"
+  },
+  {
+    "label": "E1-25",
+    "map_x": -1.08,
+    "map_y": 21.56,
+    "svg_x": 1775.5,
+    "svg_y": -1854.5,
+    "tri_id": "24CF2",
+    "category": "named_space"
+  },
+  {
+    "label": "E1-6",
+    "map_x": -7.24,
+    "map_y": 27.148,
+    "svg_x": 1533.0,
+    "svg_y": -2074.5,
+    "tri_id": "24D7C",
+    "category": "named_space"
+  },
+  {
+    "label": "E2-16",
+    "map_x": -7.164,
+    "map_y": 14.943,
+    "svg_x": 1536.0,
+    "svg_y": -1594.0,
+    "tri_id": "24D96",
+    "category": "named_space"
+  },
+  {
+    "label": "E2-6",
+    "map_x": -7.164,
+    "map_y": 17.382,
+    "svg_x": 1536.0,
+    "svg_y": -1690.0,
+    "tri_id": "24D95",
+    "category": "named_space"
+  },
+  {
+    "label": "E3-20",
+    "map_x": -2.185,
+    "map_y": 7.844,
+    "svg_x": 1732.0,
+    "svg_y": -1314.5,
+    "tri_id": "24D01",
+    "category": "named_space"
+  },
+  {
+    "label": "E3-6",
+    "map_x": -7.24,
+    "map_y": 10.231,
+    "svg_x": 1533.0,
+    "svg_y": -1408.5,
+    "tri_id": "24D7A",
+    "category": "named_space"
+  },
+  {
+    "label": "E5-9",
+    "map_x": -2.185,
+    "map_y": -5.593,
+    "svg_x": 1732.0,
+    "svg_y": -785.5,
+    "tri_id": "24CFB",
+    "category": "named_space"
+  },
+  {
+    "label": "E6-1",
+    "map_x": -7.164,
+    "map_y": -11.562,
+    "svg_x": 1536.0,
+    "svg_y": -550.5,
+    "tri_id": "24E23",
+    "category": "named_space"
+  },
+  {
+    "label": "E6-11",
+    "map_x": -7.164,
+    "map_y": -14.0,
+    "svg_x": 1536.0,
+    "svg_y": -454.5,
+    "tri_id": "24E24",
+    "category": "named_space"
+  },
+  {
+    "label": "ELEC. RM",
+    "map_x": -38.311,
+    "map_y": 2.688,
+    "svg_x": 309.8,
+    "svg_y": -1111.5,
+    "tri_id": "7D87",
+    "category": "named_space"
+  },
+  {
+    "label": "ELEV.",
+    "map_x": -4.977,
+    "map_y": 0.881,
+    "svg_x": 1622.1,
+    "svg_y": -1040.4,
+    "tri_id": "7D7C",
+    "category": "vertical_transport"
+  },
+  {
+    "label": "ELEV1",
+    "map_x": -4.357,
+    "map_y": 3.691,
+    "svg_x": 1646.5,
+    "svg_y": -1151.0,
+    "tri_id": "253B0",
+    "category": "vertical_transport"
+  },
+  {
+    "label": "ELEV2",
+    "map_x": -4.357,
+    "map_y": 0.986,
+    "svg_x": 1646.5,
+    "svg_y": -1044.5,
+    "tri_id": "253AE",
+    "category": "vertical_transport"
+  },
+  {
+    "label": "ELEV3",
+    "map_x": -4.941,
+    "map_y": -1.58,
+    "svg_x": 1623.5,
+    "svg_y": -943.5,
+    "tri_id": "253AD",
+    "category": "vertical_transport"
+  },
+  {
+    "label": "F",
+    "map_x": -0.094,
+    "map_y": 41.698,
+    "svg_x": 1814.3,
+    "svg_y": -2647.3,
+    "tri_id": "AEBC",
+    "category": "named_space"
+  },
+  {
+    "label": "F1-14",
+    "map_x": 7.176,
+    "map_y": 23.643,
+    "svg_x": 2100.5,
+    "svg_y": -1936.5,
+    "tri_id": "24D73",
+    "category": "named_space"
+  },
+  {
+    "label": "F1-21",
+    "map_x": 1.092,
+    "map_y": 21.56,
+    "svg_x": 1861.0,
+    "svg_y": -1854.5,
+    "tri_id": "24CF1",
+    "category": "named_space"
+  },
+  {
+    "label": "F1-22",
+    "map_x": 3.264,
+    "map_y": 21.56,
+    "svg_x": 1946.5,
+    "svg_y": -1854.5,
+    "tri_id": "24CF0",
+    "category": "named_space"
+  },
+  {
+    "label": "F1-9",
+    "map_x": 7.075,
+    "map_y": 27.148,
+    "svg_x": 2096.5,
+    "svg_y": -2074.5,
+    "tri_id": "24D74",
+    "category": "named_space"
+  },
+  {
+    "label": "F2-10",
+    "map_x": 7.164,
+    "map_y": 17.382,
+    "svg_x": 2100.0,
+    "svg_y": -1690.0,
+    "tri_id": "24D75",
+    "category": "named_space"
+  },
+  {
+    "label": "F2-20",
+    "map_x": 7.164,
+    "map_y": 14.943,
+    "svg_x": 2100.0,
+    "svg_y": -1594.0,
+    "tri_id": "24D76",
+    "category": "named_space"
+  },
+  {
+    "label": "F3-21",
+    "map_x": 2.185,
+    "map_y": 7.844,
+    "svg_x": 1904.0,
+    "svg_y": -1314.5,
+    "tri_id": "24D00",
+    "category": "named_space"
+  },
+  {
+    "label": "F5-7",
+    "map_x": 2.159,
+    "map_y": -5.593,
+    "svg_x": 1903.0,
+    "svg_y": -785.5,
+    "tri_id": "24CFA",
+    "category": "named_space"
+  },
+  {
+    "label": "G",
+    "map_x": 9.036,
+    "map_y": 41.698,
+    "svg_x": 2173.7,
+    "svg_y": -2647.3,
+    "tri_id": "AEDD",
+    "category": "named_space"
+  },
+  {
+    "label": "G-LAND CONF. RM",
+    "map_x": -44.93,
+    "map_y": -20.962,
+    "svg_x": 49.3,
+    "svg_y": -180.4,
+    "tri_id": "7D75",
+    "category": "conference_room"
+  },
+  {
+    "label": "G1-1",
+    "map_x": 10.872,
+    "map_y": 28.189,
+    "svg_x": 2246.0,
+    "svg_y": -2115.5,
+    "tri_id": "24D4E",
+    "category": "named_space"
+  },
+  {
+    "label": "G1-10",
+    "map_x": 16.626,
+    "map_y": 26.665,
+    "svg_x": 2472.5,
+    "svg_y": -2055.5,
+    "tri_id": "24D4B",
+    "category": "named_space"
+  },
+  {
+    "label": "G1-11",
+    "map_x": 10.872,
+    "map_y": 24.074,
+    "svg_x": 2246.0,
+    "svg_y": -1953.5,
+    "tri_id": "24D1A",
+    "category": "named_space"
+  },
+  {
+    "label": "G1-12",
+    "map_x": 12.485,
+    "map_y": 24.074,
+    "svg_x": 2309.5,
+    "svg_y": -1953.5,
+    "tri_id": "24D19",
+    "category": "named_space"
+  },
+  {
+    "label": "G1-14",
+    "map_x": 15.013,
+    "map_y": 24.074,
+    "svg_x": 2409.0,
+    "svg_y": -1953.5,
+    "tri_id": "24D20",
+    "category": "named_space"
+  },
+  {
+    "label": "G1-15",
+    "map_x": 16.626,
+    "map_y": 24.074,
+    "svg_x": 2472.5,
+    "svg_y": -1953.5,
+    "tri_id": "24D1F",
+    "category": "named_space"
+  },
+  {
+    "label": "G1-16",
+    "map_x": 10.872,
+    "map_y": 22.55,
+    "svg_x": 2246.0,
+    "svg_y": -1893.5,
+    "tri_id": "24D1C",
+    "category": "named_space"
+  },
+  {
+    "label": "G1-17",
+    "map_x": 12.485,
+    "map_y": 22.55,
+    "svg_x": 2309.5,
+    "svg_y": -1893.5,
+    "tri_id": "24D1B",
+    "category": "named_space"
+  },
+  {
+    "label": "G1-19",
+    "map_x": 15.013,
+    "map_y": 22.55,
+    "svg_x": 2409.0,
+    "svg_y": -1893.5,
+    "tri_id": "24D22",
+    "category": "named_space"
+  },
+  {
+    "label": "G1-2",
+    "map_x": 12.485,
+    "map_y": 28.189,
+    "svg_x": 2309.5,
+    "svg_y": -2115.5,
+    "tri_id": "24D4D",
+    "category": "named_space"
+  },
+  {
+    "label": "G1-20",
+    "map_x": 16.626,
+    "map_y": 22.55,
+    "svg_x": 2472.5,
+    "svg_y": -1893.5,
+    "tri_id": "24D21",
+    "category": "named_space"
+  },
+  {
+    "label": "G1-21",
+    "map_x": 10.872,
+    "map_y": 21.026,
+    "svg_x": 2246.0,
+    "svg_y": -1833.5,
+    "tri_id": "24D18",
+    "category": "named_space"
+  },
+  {
+    "label": "G1-22",
+    "map_x": 12.485,
+    "map_y": 21.026,
+    "svg_x": 2309.5,
+    "svg_y": -1833.5,
+    "tri_id": "24D17",
+    "category": "named_space"
+  },
+  {
+    "label": "G1-24",
+    "map_x": 15.013,
+    "map_y": 21.026,
+    "svg_x": 2409.0,
+    "svg_y": -1833.5,
+    "tri_id": "24D1E",
+    "category": "named_space"
+  },
+  {
+    "label": "G1-25",
+    "map_x": 16.626,
+    "map_y": 21.026,
+    "svg_x": 2472.5,
+    "svg_y": -1833.5,
+    "tri_id": "24D1D",
+    "category": "named_space"
+  },
+  {
+    "label": "G1-4",
+    "map_x": 15.013,
+    "map_y": 28.189,
+    "svg_x": 2409.0,
+    "svg_y": -2115.5,
+    "tri_id": "24D4A",
+    "category": "named_space"
+  },
+  {
+    "label": "G1-5",
+    "map_x": 16.626,
+    "map_y": 28.189,
+    "svg_x": 2472.5,
+    "svg_y": -2115.5,
+    "tri_id": "24D49",
+    "category": "named_space"
+  },
+  {
+    "label": "G1-6",
+    "map_x": 10.872,
+    "map_y": 26.665,
+    "svg_x": 2246.0,
+    "svg_y": -2055.5,
+    "tri_id": "24D50",
+    "category": "named_space"
+  },
+  {
+    "label": "G1-7",
+    "map_x": 12.485,
+    "map_y": 26.665,
+    "svg_x": 2309.5,
+    "svg_y": -2055.5,
+    "tri_id": "24D4F",
+    "category": "named_space"
+  },
+  {
+    "label": "G1-9",
+    "map_x": 15.013,
+    "map_y": 26.665,
+    "svg_x": 2409.0,
+    "svg_y": -2055.5,
+    "tri_id": "24D4C",
+    "category": "named_space"
+  },
+  {
+    "label": "G2-11",
+    "map_x": 10.58,
+    "map_y": 15.946,
+    "svg_x": 2234.5,
+    "svg_y": -1633.5,
+    "tri_id": "24D5F",
+    "category": "named_space"
+  },
+  {
+    "label": "G2-12",
+    "map_x": 12.104,
+    "map_y": 15.946,
+    "svg_x": 2294.5,
+    "svg_y": -1633.5,
+    "tri_id": "24D5D",
+    "category": "named_space"
+  },
+  {
+    "label": "G2-13",
+    "map_x": 13.628,
+    "map_y": 15.946,
+    "svg_x": 2354.5,
+    "svg_y": -1633.5,
+    "tri_id": "24D5B",
+    "category": "named_space"
+  },
+  {
+    "label": "G2-14",
+    "map_x": 15.153,
+    "map_y": 15.946,
+    "svg_x": 2414.5,
+    "svg_y": -1633.5,
+    "tri_id": "24D59",
+    "category": "named_space"
+  },
+  {
+    "label": "G2-6",
+    "map_x": 10.58,
+    "map_y": 17.559,
+    "svg_x": 2234.5,
+    "svg_y": -1697.0,
+    "tri_id": "24D60",
+    "category": "named_space"
+  },
+  {
+    "label": "G2-7",
+    "map_x": 12.104,
+    "map_y": 17.559,
+    "svg_x": 2294.5,
+    "svg_y": -1697.0,
+    "tri_id": "24D5E",
+    "category": "named_space"
+  },
+  {
+    "label": "G2-8",
+    "map_x": 13.628,
+    "map_y": 17.559,
+    "svg_x": 2354.5,
+    "svg_y": -1697.0,
+    "tri_id": "24D5C",
+    "category": "named_space"
+  },
+  {
+    "label": "G2-9",
+    "map_x": 15.153,
+    "map_y": 17.559,
+    "svg_x": 2414.5,
+    "svg_y": -1697.0,
+    "tri_id": "24D5A",
+    "category": "named_space"
+  },
+  {
+    "label": "G3-1",
+    "map_x": 10.58,
+    "map_y": 13.419,
+    "svg_x": 2234.5,
+    "svg_y": -1534.0,
+    "tri_id": "24D58",
+    "category": "named_space"
+  },
+  {
+    "label": "G3-2",
+    "map_x": 12.104,
+    "map_y": 13.419,
+    "svg_x": 2294.5,
+    "svg_y": -1534.0,
+    "tri_id": "24D56",
+    "category": "named_space"
+  },
+  {
+    "label": "G3-3",
+    "map_x": 13.628,
+    "map_y": 13.419,
+    "svg_x": 2354.5,
+    "svg_y": -1534.0,
+    "tri_id": "24D54",
+    "category": "named_space"
+  },
+  {
+    "label": "G3-4",
+    "map_x": 15.153,
+    "map_y": 13.419,
+    "svg_x": 2414.5,
+    "svg_y": -1534.0,
+    "tri_id": "24D52",
+    "category": "named_space"
+  },
+  {
+    "label": "G3-6",
+    "map_x": 10.58,
+    "map_y": 11.806,
+    "svg_x": 2234.5,
+    "svg_y": -1470.5,
+    "tri_id": "24D57",
+    "category": "named_space"
+  },
+  {
+    "label": "G3-7",
+    "map_x": 12.104,
+    "map_y": 11.806,
+    "svg_x": 2294.5,
+    "svg_y": -1470.5,
+    "tri_id": "24D55",
+    "category": "named_space"
+  },
+  {
+    "label": "G3-8",
+    "map_x": 13.628,
+    "map_y": 11.806,
+    "svg_x": 2354.5,
+    "svg_y": -1470.5,
+    "tri_id": "24D53",
+    "category": "named_space"
+  },
+  {
+    "label": "G3-9",
+    "map_x": 15.153,
+    "map_y": 11.806,
+    "svg_x": 2414.5,
+    "svg_y": -1470.5,
+    "tri_id": "24D51",
+    "category": "named_space"
+  },
+  {
+    "label": "G5-21",
+    "map_x": 10.707,
+    "map_y": -9.555,
+    "svg_x": 2239.5,
+    "svg_y": -629.5,
+    "tri_id": "24E1A",
+    "category": "named_space"
+  },
+  {
+    "label": "G5-22",
+    "map_x": 12.231,
+    "map_y": -9.555,
+    "svg_x": 2299.5,
+    "svg_y": -629.5,
+    "tri_id": "24E18",
+    "category": "named_space"
+  },
+  {
+    "label": "G5-23",
+    "map_x": 13.755,
+    "map_y": -9.555,
+    "svg_x": 2359.5,
+    "svg_y": -629.5,
+    "tri_id": "24E16",
+    "category": "named_space"
+  },
+  {
+    "label": "G5-24",
+    "map_x": 15.28,
+    "map_y": -9.555,
+    "svg_x": 2419.5,
+    "svg_y": -629.5,
+    "tri_id": "24E14",
+    "category": "named_space"
+  },
+  {
+    "label": "G6-1",
+    "map_x": 10.707,
+    "map_y": -11.168,
+    "svg_x": 2239.5,
+    "svg_y": -566.0,
+    "tri_id": "24E19",
+    "category": "named_space"
+  },
+  {
+    "label": "G6-11",
+    "map_x": 10.669,
+    "map_y": -13.695,
+    "svg_x": 2238.0,
+    "svg_y": -466.5,
+    "tri_id": "24E12",
+    "category": "named_space"
+  },
+  {
+    "label": "G6-12",
+    "map_x": 12.193,
+    "map_y": -13.695,
+    "svg_x": 2298.0,
+    "svg_y": -466.5,
+    "tri_id": "24E10",
+    "category": "named_space"
+  },
+  {
+    "label": "G6-13",
+    "map_x": 13.717,
+    "map_y": -13.695,
+    "svg_x": 2358.0,
+    "svg_y": -466.5,
+    "tri_id": "24E0E",
+    "category": "named_space"
+  },
+  {
+    "label": "G6-14",
+    "map_x": 15.242,
+    "map_y": -13.695,
+    "svg_x": 2418.0,
+    "svg_y": -466.5,
+    "tri_id": "24E0C",
+    "category": "named_space"
+  },
+  {
+    "label": "G6-16",
+    "map_x": 10.669,
+    "map_y": -15.308,
+    "svg_x": 2238.0,
+    "svg_y": -403.0,
+    "tri_id": "24E11",
+    "category": "named_space"
+  },
+  {
+    "label": "G6-17",
+    "map_x": 12.193,
+    "map_y": -15.308,
+    "svg_x": 2298.0,
+    "svg_y": -403.0,
+    "tri_id": "24E0F",
+    "category": "named_space"
+  },
+  {
+    "label": "G6-18",
+    "map_x": 13.717,
+    "map_y": -15.308,
+    "svg_x": 2358.0,
+    "svg_y": -403.0,
+    "tri_id": "24E0D",
+    "category": "named_space"
+  },
+  {
+    "label": "G6-19",
+    "map_x": 15.242,
+    "map_y": -15.308,
+    "svg_x": 2418.0,
+    "svg_y": -403.0,
+    "tri_id": "24E0B",
+    "category": "named_space"
+  },
+  {
+    "label": "G6-2",
+    "map_x": 12.231,
+    "map_y": -11.168,
+    "svg_x": 2299.5,
+    "svg_y": -566.0,
+    "tri_id": "24E17",
+    "category": "named_space"
+  },
+  {
+    "label": "G6-3",
+    "map_x": 13.755,
+    "map_y": -11.168,
+    "svg_x": 2359.5,
+    "svg_y": -566.0,
+    "tri_id": "24E15",
+    "category": "named_space"
+  },
+  {
+    "label": "G6-4",
+    "map_x": 15.28,
+    "map_y": -11.168,
+    "svg_x": 2419.5,
+    "svg_y": -566.0,
+    "tri_id": "24E13",
+    "category": "named_space"
+  },
+  {
+    "label": "G7-10",
+    "map_x": 16.626,
+    "map_y": -20.299,
+    "svg_x": 2472.5,
+    "svg_y": -206.5,
+    "tri_id": "24DF7",
+    "category": "named_space"
+  },
+  {
+    "label": "G7-12",
+    "map_x": 10.872,
+    "map_y": -21.823,
+    "svg_x": 2246.0,
+    "svg_y": -146.5,
+    "tri_id": "24E22",
+    "category": "named_space"
+  },
+  {
+    "label": "G7-13",
+    "map_x": 12.485,
+    "map_y": -21.823,
+    "svg_x": 2309.5,
+    "svg_y": -146.5,
+    "tri_id": "24E21",
+    "category": "named_space"
+  },
+  {
+    "label": "G7-14",
+    "map_x": 15.013,
+    "map_y": -21.823,
+    "svg_x": 2409.0,
+    "svg_y": -146.5,
+    "tri_id": "24E20",
+    "category": "named_space"
+  },
+  {
+    "label": "G7-15",
+    "map_x": 16.626,
+    "map_y": -21.823,
+    "svg_x": 2472.5,
+    "svg_y": -146.5,
+    "tri_id": "24E1F",
+    "category": "named_space"
+  },
+  {
+    "label": "G7-17",
+    "map_x": 10.872,
+    "map_y": -24.414,
+    "svg_x": 2246.0,
+    "svg_y": -44.5,
+    "tri_id": "24DD6",
+    "category": "named_space"
+  },
+  {
+    "label": "G7-18",
+    "map_x": 12.485,
+    "map_y": -24.414,
+    "svg_x": 2309.5,
+    "svg_y": -44.5,
+    "tri_id": "24DD5",
+    "category": "named_space"
+  },
+  {
+    "label": "G7-19",
+    "map_x": 15.013,
+    "map_y": -24.414,
+    "svg_x": 2409.0,
+    "svg_y": -44.5,
+    "tri_id": "24DDA",
+    "category": "named_space"
+  },
+  {
+    "label": "G7-2",
+    "map_x": 10.872,
+    "map_y": -18.775,
+    "svg_x": 2246.0,
+    "svg_y": -266.5,
+    "tri_id": "24DFA",
+    "category": "named_space"
+  },
+  {
+    "label": "G7-20",
+    "map_x": 16.626,
+    "map_y": -24.414,
+    "svg_x": 2472.5,
+    "svg_y": -44.5,
+    "tri_id": "24DD9",
+    "category": "named_space"
+  },
+  {
+    "label": "G7-22",
+    "map_x": 10.872,
+    "map_y": -25.938,
+    "svg_x": 2246.0,
+    "svg_y": 15.5,
+    "tri_id": "24DD8",
+    "category": "named_space"
+  },
+  {
+    "label": "G7-23",
+    "map_x": 12.485,
+    "map_y": -25.938,
+    "svg_x": 2309.5,
+    "svg_y": 15.5,
+    "tri_id": "24DD7",
+    "category": "named_space"
+  },
+  {
+    "label": "G7-24",
+    "map_x": 15.013,
+    "map_y": -25.938,
+    "svg_x": 2409.0,
+    "svg_y": 15.5,
+    "tri_id": "24DDC",
+    "category": "named_space"
+  },
+  {
+    "label": "G7-25",
+    "map_x": 16.626,
+    "map_y": -25.938,
+    "svg_x": 2472.5,
+    "svg_y": 15.5,
+    "tri_id": "24DDB",
+    "category": "named_space"
+  },
+  {
+    "label": "G7-3",
+    "map_x": 12.485,
+    "map_y": -18.775,
+    "svg_x": 2309.5,
+    "svg_y": -266.5,
+    "tri_id": "24DF9",
+    "category": "named_space"
+  },
+  {
+    "label": "G7-4",
+    "map_x": 15.013,
+    "map_y": -18.775,
+    "svg_x": 2409.0,
+    "svg_y": -266.5,
+    "tri_id": "24DF6",
+    "category": "named_space"
+  },
+  {
+    "label": "G7-5",
+    "map_x": 16.626,
+    "map_y": -18.775,
+    "svg_x": 2472.5,
+    "svg_y": -266.5,
+    "tri_id": "24DF5",
+    "category": "named_space"
+  },
+  {
+    "label": "G7-7",
+    "map_x": 10.872,
+    "map_y": -20.299,
+    "svg_x": 2246.0,
+    "svg_y": -206.5,
+    "tri_id": "24DFC",
+    "category": "named_space"
+  },
+  {
+    "label": "G7-8",
+    "map_x": 12.485,
+    "map_y": -20.299,
+    "svg_x": 2309.5,
+    "svg_y": -206.5,
+    "tri_id": "24DFB",
+    "category": "named_space"
+  },
+  {
+    "label": "G7-9",
+    "map_x": 15.013,
+    "map_y": -20.299,
+    "svg_x": 2409.0,
+    "svg_y": -206.5,
+    "tri_id": "24DF8",
+    "category": "named_space"
+  },
+  {
+    "label": "H",
+    "map_x": 18.188,
+    "map_y": 41.698,
+    "svg_x": 2534.0,
+    "svg_y": -2647.3,
+    "tri_id": "AE95",
+    "category": "named_space"
+  },
+  {
+    "label": "H1-1",
+    "map_x": 19.154,
+    "map_y": 28.189,
+    "svg_x": 2572.0,
+    "svg_y": -2115.5,
+    "tri_id": "24D42",
+    "category": "named_space"
+  },
+  {
+    "label": "H1-10",
+    "map_x": 25.06,
+    "map_y": 26.665,
+    "svg_x": 2804.5,
+    "svg_y": -2055.5,
+    "tri_id": "24D47",
+    "category": "named_space"
+  },
+  {
+    "label": "H1-11",
+    "map_x": 19.154,
+    "map_y": 24.074,
+    "svg_x": 2572.0,
+    "svg_y": -1953.5,
+    "tri_id": "24D26",
+    "category": "named_space"
+  },
+  {
+    "label": "H1-12",
+    "map_x": 20.767,
+    "map_y": 24.074,
+    "svg_x": 2635.5,
+    "svg_y": -1953.5,
+    "tri_id": "24D25",
+    "category": "named_space"
+  },
+  {
+    "label": "H1-14",
+    "map_x": 23.447,
+    "map_y": 24.074,
+    "svg_x": 2741.0,
+    "svg_y": -1953.5,
+    "tri_id": "24D2C",
+    "category": "named_space"
+  },
+  {
+    "label": "H1-15",
+    "map_x": 25.06,
+    "map_y": 24.074,
+    "svg_x": 2804.5,
+    "svg_y": -1953.5,
+    "tri_id": "24D2B",
+    "category": "named_space"
+  },
+  {
+    "label": "H1-16",
+    "map_x": 19.154,
+    "map_y": 22.55,
+    "svg_x": 2572.0,
+    "svg_y": -1893.5,
+    "tri_id": "24D28",
+    "category": "named_space"
+  },
+  {
+    "label": "H1-17",
+    "map_x": 20.767,
+    "map_y": 22.55,
+    "svg_x": 2635.5,
+    "svg_y": -1893.5,
+    "tri_id": "24D27",
+    "category": "named_space"
+  },
+  {
+    "label": "H1-19",
+    "map_x": 23.447,
+    "map_y": 22.55,
+    "svg_x": 2741.0,
+    "svg_y": -1893.5,
+    "tri_id": "24D2E",
+    "category": "named_space"
+  },
+  {
+    "label": "H1-2",
+    "map_x": 20.767,
+    "map_y": 28.189,
+    "svg_x": 2635.5,
+    "svg_y": -2115.5,
+    "tri_id": "24D41",
+    "category": "named_space"
+  },
+  {
+    "label": "H1-20",
+    "map_x": 25.06,
+    "map_y": 22.55,
+    "svg_x": 2804.5,
+    "svg_y": -1893.5,
+    "tri_id": "24D2D",
+    "category": "named_space"
+  },
+  {
+    "label": "H1-21",
+    "map_x": 19.154,
+    "map_y": 21.026,
+    "svg_x": 2572.0,
+    "svg_y": -1833.5,
+    "tri_id": "24D24",
+    "category": "named_space"
+  },
+  {
+    "label": "H1-22",
+    "map_x": 20.767,
+    "map_y": 21.026,
+    "svg_x": 2635.5,
+    "svg_y": -1833.5,
+    "tri_id": "24D23",
+    "category": "named_space"
+  },
+  {
+    "label": "H1-24",
+    "map_x": 23.447,
+    "map_y": 21.026,
+    "svg_x": 2741.0,
+    "svg_y": -1833.5,
+    "tri_id": "24D2A",
+    "category": "named_space"
+  },
+  {
+    "label": "H1-25",
+    "map_x": 25.06,
+    "map_y": 21.026,
+    "svg_x": 2804.5,
+    "svg_y": -1833.5,
+    "tri_id": "24D29",
+    "category": "named_space"
+  },
+  {
+    "label": "H1-4",
+    "map_x": 23.447,
+    "map_y": 28.189,
+    "svg_x": 2741.0,
+    "svg_y": -2115.5,
+    "tri_id": "24D46",
+    "category": "named_space"
+  },
+  {
+    "label": "H1-5",
+    "map_x": 25.06,
+    "map_y": 28.189,
+    "svg_x": 2804.5,
+    "svg_y": -2115.5,
+    "tri_id": "24D45",
+    "category": "named_space"
+  },
+  {
+    "label": "H1-6",
+    "map_x": 19.154,
+    "map_y": 26.665,
+    "svg_x": 2572.0,
+    "svg_y": -2055.5,
+    "tri_id": "24D44",
+    "category": "named_space"
+  },
+  {
+    "label": "H1-7",
+    "map_x": 20.767,
+    "map_y": 26.665,
+    "svg_x": 2635.5,
+    "svg_y": -2055.5,
+    "tri_id": "24D43",
+    "category": "named_space"
+  },
+  {
+    "label": "H1-9",
+    "map_x": 23.447,
+    "map_y": 26.665,
+    "svg_x": 2741.0,
+    "svg_y": -2055.5,
+    "tri_id": "24D48",
+    "category": "named_space"
+  },
+  {
+    "label": "H2-3",
+    "map_x": 21.808,
+    "map_y": 18.118,
+    "svg_x": 2676.5,
+    "svg_y": -1719.0,
+    "tri_id": "24CF7",
+    "category": "named_space"
+  },
+  {
+    "label": "H3-1",
+    "map_x": 19.979,
+    "map_y": 9.66,
+    "svg_x": 2604.5,
+    "svg_y": -1386.0,
+    "tri_id": "24D09",
+    "category": "named_space"
+  },
+  {
+    "label": "H3-16",
+    "map_x": 19.979,
+    "map_y": 7.806,
+    "svg_x": 2604.5,
+    "svg_y": -1313.0,
+    "tri_id": "24D07",
+    "category": "named_space"
+  },
+  {
+    "label": "H3-19",
+    "map_x": 23.637,
+    "map_y": 7.806,
+    "svg_x": 2748.5,
+    "svg_y": -1313.0,
+    "tri_id": "24D06",
+    "category": "named_space"
+  },
+  {
+    "label": "H3-2",
+    "map_x": 23.637,
+    "map_y": 9.66,
+    "svg_x": 2748.5,
+    "svg_y": -1386.0,
+    "tri_id": "24D08",
+    "category": "named_space"
+  },
+  {
+    "label": "H5-11",
+    "map_x": 19.979,
+    "map_y": -7.409,
+    "svg_x": 2604.5,
+    "svg_y": -714.0,
+    "tri_id": "24D0D",
+    "category": "named_space"
+  },
+  {
+    "label": "H5-14",
+    "map_x": 23.637,
+    "map_y": -7.409,
+    "svg_x": 2748.5,
+    "svg_y": -714.0,
+    "tri_id": "24D0C",
+    "category": "named_space"
+  },
+  {
+    "label": "H5-6",
+    "map_x": 19.979,
+    "map_y": -5.555,
+    "svg_x": 2604.5,
+    "svg_y": -787.0,
+    "tri_id": "24D0B",
+    "category": "named_space"
+  },
+  {
+    "label": "H5-9",
+    "map_x": 23.637,
+    "map_y": -5.555,
+    "svg_x": 2748.5,
+    "svg_y": -787.0,
+    "tri_id": "24D0A",
+    "category": "named_space"
+  },
+  {
+    "label": "H6-22",
+    "map_x": 21.808,
+    "map_y": -15.854,
+    "svg_x": 2676.5,
+    "svg_y": -381.5,
+    "tri_id": "24CF8",
+    "category": "named_space"
+  },
+  {
+    "label": "H7-10",
+    "map_x": 25.06,
+    "map_y": -20.299,
+    "svg_x": 2804.5,
+    "svg_y": -206.5,
+    "tri_id": "24DEF",
+    "category": "named_space"
+  },
+  {
+    "label": "H7-12",
+    "map_x": 19.154,
+    "map_y": -21.823,
+    "svg_x": 2572.0,
+    "svg_y": -146.5,
+    "tri_id": "24E1E",
+    "category": "named_space"
+  },
+  {
+    "label": "H7-13",
+    "map_x": 20.767,
+    "map_y": -21.823,
+    "svg_x": 2635.5,
+    "svg_y": -146.5,
+    "tri_id": "24E1D",
+    "category": "named_space"
+  },
+  {
+    "label": "H7-14",
+    "map_x": 23.447,
+    "map_y": -21.823,
+    "svg_x": 2741.0,
+    "svg_y": -146.5,
+    "tri_id": "24E1C",
+    "category": "named_space"
+  },
+  {
+    "label": "H7-15",
+    "map_x": 25.06,
+    "map_y": -21.823,
+    "svg_x": 2804.5,
+    "svg_y": -146.5,
+    "tri_id": "24E1B",
+    "category": "named_space"
+  },
+  {
+    "label": "H7-17",
+    "map_x": 19.154,
+    "map_y": -24.414,
+    "svg_x": 2572.0,
+    "svg_y": -44.5,
+    "tri_id": "24DDE",
+    "category": "named_space"
+  },
+  {
+    "label": "H7-18",
+    "map_x": 20.767,
+    "map_y": -24.414,
+    "svg_x": 2635.5,
+    "svg_y": -44.5,
+    "tri_id": "24DDD",
+    "category": "named_space"
+  },
+  {
+    "label": "H7-19",
+    "map_x": 23.447,
+    "map_y": -24.414,
+    "svg_x": 2741.0,
+    "svg_y": -44.5,
+    "tri_id": "24DE2",
+    "category": "named_space"
+  },
+  {
+    "label": "H7-2",
+    "map_x": 19.154,
+    "map_y": -18.775,
+    "svg_x": 2572.0,
+    "svg_y": -266.5,
+    "tri_id": "24DF2",
+    "category": "named_space"
+  },
+  {
+    "label": "H7-20",
+    "map_x": 25.06,
+    "map_y": -24.414,
+    "svg_x": 2804.5,
+    "svg_y": -44.5,
+    "tri_id": "24DE1",
+    "category": "named_space"
+  },
+  {
+    "label": "H7-22",
+    "map_x": 19.154,
+    "map_y": -25.938,
+    "svg_x": 2572.0,
+    "svg_y": 15.5,
+    "tri_id": "24DE0",
+    "category": "named_space"
+  },
+  {
+    "label": "H7-23",
+    "map_x": 20.767,
+    "map_y": -25.938,
+    "svg_x": 2635.5,
+    "svg_y": 15.5,
+    "tri_id": "24DDF",
+    "category": "named_space"
+  },
+  {
+    "label": "H7-24",
+    "map_x": 23.447,
+    "map_y": -25.938,
+    "svg_x": 2741.0,
+    "svg_y": 15.5,
+    "tri_id": "24DE4",
+    "category": "named_space"
+  },
+  {
+    "label": "H7-25",
+    "map_x": 25.06,
+    "map_y": -25.938,
+    "svg_x": 2804.5,
+    "svg_y": 15.5,
+    "tri_id": "24DE3",
+    "category": "named_space"
+  },
+  {
+    "label": "H7-3",
+    "map_x": 20.767,
+    "map_y": -18.775,
+    "svg_x": 2635.5,
+    "svg_y": -266.5,
+    "tri_id": "24DF1",
+    "category": "named_space"
+  },
+  {
+    "label": "H7-4",
+    "map_x": 23.447,
+    "map_y": -18.775,
+    "svg_x": 2741.0,
+    "svg_y": -266.5,
+    "tri_id": "24DEE",
+    "category": "named_space"
+  },
+  {
+    "label": "H7-5",
+    "map_x": 25.06,
+    "map_y": -18.775,
+    "svg_x": 2804.5,
+    "svg_y": -266.5,
+    "tri_id": "24DED",
+    "category": "named_space"
+  },
+  {
+    "label": "H7-7",
+    "map_x": 19.154,
+    "map_y": -20.299,
+    "svg_x": 2572.0,
+    "svg_y": -206.5,
+    "tri_id": "24DF4",
+    "category": "named_space"
+  },
+  {
+    "label": "H7-8",
+    "map_x": 20.767,
+    "map_y": -20.299,
+    "svg_x": 2635.5,
+    "svg_y": -206.5,
+    "tri_id": "24DF3",
+    "category": "named_space"
+  },
+  {
+    "label": "H7-9",
+    "map_x": 23.447,
+    "map_y": -20.299,
+    "svg_x": 2741.0,
+    "svg_y": -206.5,
+    "tri_id": "24DF0",
+    "category": "named_space"
+  },
+  {
+    "label": "HONOLUA BAY CONF. RM",
+    "map_x": 42.897,
+    "map_y": 24.556,
+    "svg_x": 3506.7,
+    "svg_y": -1972.4,
+    "tri_id": "7D8F",
+    "category": "conference_room"
+  },
+  {
+    "label": "I",
+    "map_x": 27.435,
+    "map_y": 41.698,
+    "svg_x": 2898.0,
+    "svg_y": -2647.3,
+    "tri_id": "AE92",
+    "category": "named_space"
+  },
+  {
+    "label": "I1-11",
+    "map_x": 27.892,
+    "map_y": 24.506,
+    "svg_x": 2916.0,
+    "svg_y": -1970.5,
+    "tri_id": "24D40",
+    "category": "named_space"
+  },
+  {
+    "label": "I1-12",
+    "map_x": 29.505,
+    "map_y": 24.506,
+    "svg_x": 2979.5,
+    "svg_y": -1970.5,
+    "tri_id": "24D3F",
+    "category": "named_space"
+  },
+  {
+    "label": "I1-13",
+    "map_x": 32.833,
+    "map_y": 24.862,
+    "svg_x": 3110.5,
+    "svg_y": -1984.5,
+    "tri_id": "24D2F",
+    "category": "named_space"
+  },
+  {
+    "label": "I1-16",
+    "map_x": 27.892,
+    "map_y": 22.982,
+    "svg_x": 2916.0,
+    "svg_y": -1910.5,
+    "tri_id": "24D3A",
+    "category": "named_space"
+  },
+  {
+    "label": "I1-17",
+    "map_x": 29.505,
+    "map_y": 22.982,
+    "svg_x": 2979.5,
+    "svg_y": -1910.5,
+    "tri_id": "24D39",
+    "category": "named_space"
+  },
+  {
+    "label": "I1-18",
+    "map_x": 32.833,
+    "map_y": 22.423,
+    "svg_x": 3110.5,
+    "svg_y": -1888.5,
+    "tri_id": "24D30",
+    "category": "named_space"
+  },
+  {
+    "label": "I1-21",
+    "map_x": 27.892,
+    "map_y": 21.458,
+    "svg_x": 2916.0,
+    "svg_y": -1850.5,
+    "tri_id": "24D3C",
+    "category": "named_space"
+  },
+  {
+    "label": "I1-22",
+    "map_x": 29.505,
+    "map_y": 21.458,
+    "svg_x": 2979.5,
+    "svg_y": -1850.5,
+    "tri_id": "24D3B",
+    "category": "named_space"
+  },
+  {
+    "label": "I1-6",
+    "map_x": 27.892,
+    "map_y": 26.03,
+    "svg_x": 2916.0,
+    "svg_y": -2030.5,
+    "tri_id": "24D3E",
+    "category": "named_space"
+  },
+  {
+    "label": "I1-7",
+    "map_x": 29.505,
+    "map_y": 26.03,
+    "svg_x": 2979.5,
+    "svg_y": -2030.5,
+    "tri_id": "24D3D",
+    "category": "named_space"
+  },
+  {
+    "label": "I2-10",
+    "map_x": 34.7,
+    "map_y": 17.559,
+    "svg_x": 3184.0,
+    "svg_y": -1697.0,
+    "tri_id": "24CE7",
+    "category": "named_space"
+  },
+  {
+    "label": "I2-11",
+    "map_x": 28.603,
+    "map_y": 15.946,
+    "svg_x": 2944.0,
+    "svg_y": -1633.5,
+    "tri_id": "24D6F",
+    "category": "named_space"
+  },
+  {
+    "label": "I2-12",
+    "map_x": 30.127,
+    "map_y": 15.946,
+    "svg_x": 3004.0,
+    "svg_y": -1633.5,
+    "tri_id": "24D6D",
+    "category": "named_space"
+  },
+  {
+    "label": "I2-13",
+    "map_x": 31.652,
+    "map_y": 15.946,
+    "svg_x": 3064.0,
+    "svg_y": -1633.5,
+    "tri_id": "24D6B",
+    "category": "named_space"
+  },
+  {
+    "label": "I2-14",
+    "map_x": 33.176,
+    "map_y": 15.946,
+    "svg_x": 3124.0,
+    "svg_y": -1633.5,
+    "tri_id": "24D69",
+    "category": "named_space"
+  },
+  {
+    "label": "I2-15",
+    "map_x": 34.7,
+    "map_y": 15.946,
+    "svg_x": 3184.0,
+    "svg_y": -1633.5,
+    "tri_id": "24CE6",
+    "category": "named_space"
+  },
+  {
+    "label": "I2-6",
+    "map_x": 28.603,
+    "map_y": 17.559,
+    "svg_x": 2944.0,
+    "svg_y": -1697.0,
+    "tri_id": "24D70",
+    "category": "named_space"
+  },
+  {
+    "label": "I2-7",
+    "map_x": 30.127,
+    "map_y": 17.559,
+    "svg_x": 3004.0,
+    "svg_y": -1697.0,
+    "tri_id": "24D6E",
+    "category": "named_space"
+  },
+  {
+    "label": "I2-8",
+    "map_x": 31.652,
+    "map_y": 17.559,
+    "svg_x": 3064.0,
+    "svg_y": -1697.0,
+    "tri_id": "24D6C",
+    "category": "named_space"
+  },
+  {
+    "label": "I2-9",
+    "map_x": 33.176,
+    "map_y": 17.559,
+    "svg_x": 3124.0,
+    "svg_y": -1697.0,
+    "tri_id": "24D6A",
+    "category": "named_space"
+  },
+  {
+    "label": "I3-1",
+    "map_x": 28.603,
+    "map_y": 13.419,
+    "svg_x": 2944.0,
+    "svg_y": -1534.0,
+    "tri_id": "24D68",
+    "category": "named_space"
+  },
+  {
+    "label": "I3-2",
+    "map_x": 30.127,
+    "map_y": 13.419,
+    "svg_x": 3004.0,
+    "svg_y": -1534.0,
+    "tri_id": "24D66",
+    "category": "named_space"
+  },
+  {
+    "label": "I3-3",
+    "map_x": 31.652,
+    "map_y": 13.419,
+    "svg_x": 3064.0,
+    "svg_y": -1534.0,
+    "tri_id": "24D64",
+    "category": "named_space"
+  },
+  {
+    "label": "I3-4",
+    "map_x": 33.176,
+    "map_y": 13.419,
+    "svg_x": 3124.0,
+    "svg_y": -1534.0,
+    "tri_id": "24D62",
+    "category": "named_space"
+  },
+  {
+    "label": "I3-6",
+    "map_x": 28.603,
+    "map_y": 11.806,
+    "svg_x": 2944.0,
+    "svg_y": -1470.5,
+    "tri_id": "24D67",
+    "category": "named_space"
+  },
+  {
+    "label": "I3-7",
+    "map_x": 30.127,
+    "map_y": 11.806,
+    "svg_x": 3004.0,
+    "svg_y": -1470.5,
+    "tri_id": "24D65",
+    "category": "named_space"
+  },
+  {
+    "label": "I3-8",
+    "map_x": 31.652,
+    "map_y": 11.806,
+    "svg_x": 3064.0,
+    "svg_y": -1470.5,
+    "tri_id": "24D63",
+    "category": "named_space"
+  },
+  {
+    "label": "I3-9",
+    "map_x": 33.176,
+    "map_y": 11.806,
+    "svg_x": 3124.0,
+    "svg_y": -1470.5,
+    "tri_id": "24D61",
+    "category": "named_space"
+  },
+  {
+    "label": "I5-22",
+    "map_x": 30.127,
+    "map_y": -9.555,
+    "svg_x": 3004.0,
+    "svg_y": -629.5,
+    "tri_id": "24E0A",
+    "category": "named_space"
+  },
+  {
+    "label": "I5-23",
+    "map_x": 31.652,
+    "map_y": -9.555,
+    "svg_x": 3064.0,
+    "svg_y": -629.5,
+    "tri_id": "24E08",
+    "category": "named_space"
+  },
+  {
+    "label": "I5-24",
+    "map_x": 33.176,
+    "map_y": -9.555,
+    "svg_x": 3124.0,
+    "svg_y": -629.5,
+    "tri_id": "24E06",
+    "category": "named_space"
+  },
+  {
+    "label": "I6-11",
+    "map_x": 28.603,
+    "map_y": -13.695,
+    "svg_x": 2944.0,
+    "svg_y": -466.5,
+    "tri_id": "24E04",
+    "category": "named_space"
+  },
+  {
+    "label": "I6-12",
+    "map_x": 30.127,
+    "map_y": -13.695,
+    "svg_x": 3004.0,
+    "svg_y": -466.5,
+    "tri_id": "24E02",
+    "category": "named_space"
+  },
+  {
+    "label": "I6-13",
+    "map_x": 31.652,
+    "map_y": -13.695,
+    "svg_x": 3064.0,
+    "svg_y": -466.5,
+    "tri_id": "24E00",
+    "category": "named_space"
+  },
+  {
+    "label": "I6-14",
+    "map_x": 33.176,
+    "map_y": -13.695,
+    "svg_x": 3124.0,
+    "svg_y": -466.5,
+    "tri_id": "24DFE",
+    "category": "named_space"
+  },
+  {
+    "label": "I6-16",
+    "map_x": 28.603,
+    "map_y": -15.308,
+    "svg_x": 2944.0,
+    "svg_y": -403.0,
+    "tri_id": "24E03",
+    "category": "named_space"
+  },
+  {
+    "label": "I6-17",
+    "map_x": 30.127,
+    "map_y": -15.308,
+    "svg_x": 3004.0,
+    "svg_y": -403.0,
+    "tri_id": "24E01",
+    "category": "named_space"
+  },
+  {
+    "label": "I6-18",
+    "map_x": 31.652,
+    "map_y": -15.308,
+    "svg_x": 3064.0,
+    "svg_y": -403.0,
+    "tri_id": "24DFF",
+    "category": "named_space"
+  },
+  {
+    "label": "I6-19",
+    "map_x": 33.176,
+    "map_y": -15.308,
+    "svg_x": 3124.0,
+    "svg_y": -403.0,
+    "tri_id": "24DFD",
+    "category": "named_space"
+  },
+  {
+    "label": "I6-2",
+    "map_x": 30.127,
+    "map_y": -11.168,
+    "svg_x": 3004.0,
+    "svg_y": -566.0,
+    "tri_id": "24E09",
+    "category": "named_space"
+  },
+  {
+    "label": "I6-3",
+    "map_x": 31.652,
+    "map_y": -11.168,
+    "svg_x": 3064.0,
+    "svg_y": -566.0,
+    "tri_id": "24E07",
+    "category": "named_space"
+  },
+  {
+    "label": "I6-4",
+    "map_x": 33.176,
+    "map_y": -11.168,
+    "svg_x": 3124.0,
+    "svg_y": -566.0,
+    "tri_id": "24E05",
+    "category": "named_space"
+  },
+  {
+    "label": "I7-12",
+    "map_x": 27.892,
+    "map_y": -21.823,
+    "svg_x": 2916.0,
+    "svg_y": -146.5,
+    "tri_id": "24DE6",
+    "category": "named_space"
+  },
+  {
+    "label": "I7-13",
+    "map_x": 29.505,
+    "map_y": -21.823,
+    "svg_x": 2979.5,
+    "svg_y": -146.5,
+    "tri_id": "24DE5",
+    "category": "named_space"
+  },
+  {
+    "label": "I7-14",
+    "map_x": 32.987,
+    "map_y": -21.272,
+    "svg_x": 3116.6,
+    "svg_y": -168.2,
+    "tri_id": "24CF9",
+    "category": "named_space"
+  },
+  {
+    "label": "I7-16",
+    "map_x": 27.892,
+    "map_y": -23.347,
+    "svg_x": 2916.0,
+    "svg_y": -86.5,
+    "tri_id": "24DE8",
+    "category": "named_space"
+  },
+  {
+    "label": "I7-17",
+    "map_x": 29.505,
+    "map_y": -23.347,
+    "svg_x": 2979.5,
+    "svg_y": -86.5,
+    "tri_id": "24DE7",
+    "category": "named_space"
+  },
+  {
+    "label": "I7-2",
+    "map_x": 27.892,
+    "map_y": -18.775,
+    "svg_x": 2916.0,
+    "svg_y": -266.5,
+    "tri_id": "24DEA",
+    "category": "named_space"
+  },
+  {
+    "label": "I7-3",
+    "map_x": 29.505,
+    "map_y": -18.775,
+    "svg_x": 2979.5,
+    "svg_y": -266.5,
+    "tri_id": "24DE9",
+    "category": "named_space"
+  },
+  {
+    "label": "I7-7",
+    "map_x": 27.892,
+    "map_y": -20.299,
+    "svg_x": 2916.0,
+    "svg_y": -206.5,
+    "tri_id": "24DEC",
+    "category": "named_space"
+  },
+  {
+    "label": "I7-8",
+    "map_x": 29.505,
+    "map_y": -20.299,
+    "svg_x": 2979.5,
+    "svg_y": -206.5,
+    "tri_id": "24DEB",
+    "category": "named_space"
+  },
+  {
+    "label": "IDF 3.1",
+    "map_x": -11.866,
+    "map_y": 0.001,
+    "svg_x": 1350.9,
+    "svg_y": -1005.7,
+    "tri_id": "7D80",
+    "category": "utility"
+  },
+  {
+    "label": "IDF 3.2",
+    "map_x": 10.384,
+    "map_y": 0.102,
+    "svg_x": 2226.8,
+    "svg_y": -1009.7,
+    "tri_id": "7D89",
+    "category": "utility"
+  },
+  {
+    "label": "J",
+    "map_x": 36.507,
+    "map_y": 41.698,
+    "svg_x": 3255.1,
+    "svg_y": -2647.3,
+    "tri_id": "AE8C",
+    "category": "named_space"
+  },
+  {
+    "label": "J.9",
+    "map_x": 45.442,
+    "map_y": 41.698,
+    "svg_x": 3606.9,
+    "svg_y": -2647.3,
+    "tri_id": "AE86",
+    "category": "named_space"
+  },
+  {
+    "label": "J2-11",
+    "map_x": 36.224,
+    "map_y": 15.946,
+    "svg_x": 3244.0,
+    "svg_y": -1633.5,
+    "tri_id": "24CE4",
+    "category": "named_space"
+  },
+  {
+    "label": "J2-12",
+    "map_x": 38.345,
+    "map_y": 16.962,
+    "svg_x": 3327.5,
+    "svg_y": -1673.5,
+    "tri_id": "24D13",
+    "category": "named_space"
+  },
+  {
+    "label": "J2-13",
+    "map_x": 41.406,
+    "map_y": 16.708,
+    "svg_x": 3448.0,
+    "svg_y": -1663.5,
+    "tri_id": "24D14",
+    "category": "named_space"
+  },
+  {
+    "label": "J2-15",
+    "map_x": 44.861,
+    "map_y": 17.089,
+    "svg_x": 3584.0,
+    "svg_y": -1678.5,
+    "tri_id": "24D16",
+    "category": "named_space"
+  },
+  {
+    "label": "J2-25",
+    "map_x": 44.861,
+    "map_y": 14.27,
+    "svg_x": 3584.0,
+    "svg_y": -1567.5,
+    "tri_id": "24D15",
+    "category": "named_space"
+  },
+  {
+    "label": "J2-6",
+    "map_x": 36.224,
+    "map_y": 17.559,
+    "svg_x": 3244.0,
+    "svg_y": -1697.0,
+    "tri_id": "24CE5",
+    "category": "named_space"
+  },
+  {
+    "label": "J3-11",
+    "map_x": 36.351,
+    "map_y": 9.774,
+    "svg_x": 3249.0,
+    "svg_y": -1390.5,
+    "tri_id": "24D34",
+    "category": "named_space"
+  },
+  {
+    "label": "J3-12",
+    "map_x": 37.964,
+    "map_y": 9.774,
+    "svg_x": 3312.5,
+    "svg_y": -1390.5,
+    "tri_id": "24D33",
+    "category": "named_space"
+  },
+  {
+    "label": "J3-13",
+    "map_x": 40.492,
+    "map_y": 9.774,
+    "svg_x": 3412.0,
+    "svg_y": -1390.5,
+    "tri_id": "24D38",
+    "category": "named_space"
+  },
+  {
+    "label": "J3-14",
+    "map_x": 42.105,
+    "map_y": 9.774,
+    "svg_x": 3475.5,
+    "svg_y": -1390.5,
+    "tri_id": "24D37",
+    "category": "named_space"
+  },
+  {
+    "label": "J3-3",
+    "map_x": 40.492,
+    "map_y": 12.822,
+    "svg_x": 3412.0,
+    "svg_y": -1510.5,
+    "tri_id": "24D72",
+    "category": "named_space"
+  },
+  {
+    "label": "J3-4",
+    "map_x": 42.105,
+    "map_y": 12.822,
+    "svg_x": 3475.5,
+    "svg_y": -1510.5,
+    "tri_id": "24D71",
+    "category": "named_space"
+  },
+  {
+    "label": "J3-6",
+    "map_x": 36.351,
+    "map_y": 11.298,
+    "svg_x": 3249.0,
+    "svg_y": -1450.5,
+    "tri_id": "24D32",
+    "category": "named_space"
+  },
+  {
+    "label": "J3-7",
+    "map_x": 37.964,
+    "map_y": 11.298,
+    "svg_x": 3312.5,
+    "svg_y": -1450.5,
+    "tri_id": "24D31",
+    "category": "named_space"
+  },
+  {
+    "label": "J3-8",
+    "map_x": 40.492,
+    "map_y": 11.298,
+    "svg_x": 3412.0,
+    "svg_y": -1450.5,
+    "tri_id": "24D36",
+    "category": "named_space"
+  },
+  {
+    "label": "J3-9",
+    "map_x": 42.105,
+    "map_y": 11.298,
+    "svg_x": 3475.5,
+    "svg_y": -1450.5,
+    "tri_id": "24D35",
+    "category": "named_space"
+  },
+  {
+    "label": "JAN.",
+    "map_x": 28.055,
+    "map_y": -2.16,
+    "svg_x": 2922.4,
+    "svg_y": -920.6,
+    "tri_id": "7D94",
+    "category": "utility"
+  },
+  {
+    "label": "JAWS CONF. RM",
+    "map_x": -3.849,
+    "map_y": -21.731,
+    "svg_x": 1666.5,
+    "svg_y": -150.1,
+    "tri_id": "7D78",
+    "category": "conference_room"
+  },
+  {
+    "label": "K",
+    "map_x": 47.147,
+    "map_y": 41.698,
+    "svg_x": 3674.0,
+    "svg_y": -2647.3,
+    "tri_id": "AE98",
+    "category": "named_space"
+  },
+  {
+    "label": "K38 CONF. RM",
+    "map_x": 38.523,
+    "map_y": 25.897,
+    "svg_x": 3334.5,
+    "svg_y": -2025.2,
+    "tri_id": "7D8E",
+    "category": "conference_room"
+  },
+  {
+    "label": "MAALAEA CONF. RM",
+    "map_x": 37.895,
+    "map_y": 22.047,
+    "svg_x": 3309.8,
+    "svg_y": -1873.7,
+    "tri_id": "7D90",
+    "category": "conference_room"
+  },
+  {
+    "label": "MEN",
+    "map_x": -27.816,
+    "map_y": 0.766,
+    "svg_x": 723.0,
+    "svg_y": -1035.8,
+    "tri_id": "7D85",
+    "category": "restroom"
+  },
+  {
+    "label": "NORTH",
+    "map_x": 49.149,
+    "map_y": -25.3,
+    "svg_x": 3752.8,
+    "svg_y": -9.6,
+    "tri_id": "1302E",
+    "category": "named_space"
+  },
+  {
+    "label": "POVERTY BAY CONF. RM",
+    "map_x": 2.19,
+    "map_y": -21.344,
+    "svg_x": 1904.2,
+    "svg_y": -165.4,
+    "tri_id": "7D79",
+    "category": "conference_room"
+  },
+  {
+    "label": "SH-10",
+    "map_x": -9.132,
+    "map_y": 1.138,
+    "svg_x": 1458.5,
+    "svg_y": -1050.5,
+    "tri_id": "253B3",
+    "category": "shared_space"
+  },
+  {
+    "label": "SH-11",
+    "map_x": -5.944,
+    "map_y": 0.173,
+    "svg_x": 1584.0,
+    "svg_y": -1012.5,
+    "tri_id": "253AF",
+    "category": "shared_space"
+  },
+  {
+    "label": "SH-12",
+    "map_x": -2.947,
+    "map_y": 4.466,
+    "svg_x": 1702.0,
+    "svg_y": -1181.5,
+    "tri_id": "253B2",
+    "category": "shared_space"
+  },
+  {
+    "label": "SH-13",
+    "map_x": -2.947,
+    "map_y": -2.405,
+    "svg_x": 1702.0,
+    "svg_y": -911.0,
+    "tri_id": "253B1",
+    "category": "shared_space"
+  },
+  {
+    "label": "SH-14",
+    "map_x": 0.165,
+    "map_y": 4.466,
+    "svg_x": 1824.5,
+    "svg_y": -1181.5,
+    "tri_id": "253AC",
+    "category": "shared_space"
+  },
+  {
+    "label": "SH-15",
+    "map_x": 0.165,
+    "map_y": -2.405,
+    "svg_x": 1824.5,
+    "svg_y": -911.0,
+    "tri_id": "253AB",
+    "category": "shared_space"
+  },
+  {
+    "label": "SH-16",
+    "map_x": 9.158,
+    "map_y": 1.138,
+    "svg_x": 2178.5,
+    "svg_y": -1050.5,
+    "tri_id": "253AA",
+    "category": "shared_space"
+  },
+  {
+    "label": "SH-17",
+    "map_x": 22.748,
+    "map_y": 1.138,
+    "svg_x": 2713.5,
+    "svg_y": -1050.5,
+    "tri_id": "253A9",
+    "category": "shared_space"
+  },
+  {
+    "label": "SH-18",
+    "map_x": 24.818,
+    "map_y": 3.881,
+    "svg_x": 2795.0,
+    "svg_y": -1158.5,
+    "tri_id": "253A8",
+    "category": "shared_space"
+  },
+  {
+    "label": "SH-20",
+    "map_x": 30.343,
+    "map_y": -1.541,
+    "svg_x": 3012.5,
+    "svg_y": -945.0,
+    "tri_id": "253A7",
+    "category": "shared_space"
+  },
+  {
+    "label": "SH-21",
+    "map_x": 33.811,
+    "map_y": 1.138,
+    "svg_x": 3149.0,
+    "svg_y": -1050.5,
+    "tri_id": "253A4",
+    "category": "shared_space"
+  },
+  {
+    "label": "SH-22",
+    "map_x": 40.149,
+    "map_y": 3.894,
+    "svg_x": 3398.5,
+    "svg_y": -1159.0,
+    "tri_id": "253A5",
+    "category": "shared_space"
+  },
+  {
+    "label": "SH-25",
+    "map_x": -3.963,
+    "map_y": -16.273,
+    "svg_x": 1662.0,
+    "svg_y": -365.0,
+    "tri_id": "253BB",
+    "category": "shared_space"
+  },
+  {
+    "label": "SH-3",
+    "map_x": -40.149,
+    "map_y": 3.221,
+    "svg_x": 237.5,
+    "svg_y": -1132.5,
+    "tri_id": "253B9",
+    "category": "shared_space"
+  },
+  {
+    "label": "SH-4",
+    "map_x": -33.811,
+    "map_y": 1.138,
+    "svg_x": 487.0,
+    "svg_y": -1050.5,
+    "tri_id": "253B8",
+    "category": "shared_space"
+  },
+  {
+    "label": "SH-5",
+    "map_x": -28.692,
+    "map_y": 4.174,
+    "svg_x": 688.5,
+    "svg_y": -1170.0,
+    "tri_id": "253B7",
+    "category": "shared_space"
+  },
+  {
+    "label": "SH-7",
+    "map_x": -23.917,
+    "map_y": -1.554,
+    "svg_x": 876.5,
+    "svg_y": -944.5,
+    "tri_id": "253B6",
+    "category": "shared_space"
+  },
+  {
+    "label": "SH-8",
+    "map_x": -21.402,
+    "map_y": 3.793,
+    "svg_x": 975.5,
+    "svg_y": -1155.0,
+    "tri_id": "253B5",
+    "category": "shared_space"
+  },
+  {
+    "label": "SH-9",
+    "map_x": -19.039,
+    "map_y": 1.138,
+    "svg_x": 1068.5,
+    "svg_y": -1050.5,
+    "tri_id": "253B4",
+    "category": "shared_space"
+  },
+  {
+    "label": "SHIPWRECKS CONF. RM",
+    "map_x": -40.495,
+    "map_y": 25.86,
+    "svg_x": 223.9,
+    "svg_y": -2023.8,
+    "tri_id": "7D8B",
+    "category": "conference_room"
+  },
+  {
+    "label": "STAIR1",
+    "map_x": 0.216,
+    "map_y": -16.007,
+    "svg_x": 1826.5,
+    "svg_y": -375.5,
+    "tri_id": "253BC",
+    "category": "vertical_transport"
+  },
+  {
+    "label": "STAIR2",
+    "map_x": -37.837,
+    "map_y": -0.411,
+    "svg_x": 328.5,
+    "svg_y": -989.5,
+    "tri_id": "253BA",
+    "category": "vertical_transport"
+  },
+  {
+    "label": "STAIR3",
+    "map_x": 37.85,
+    "map_y": -0.411,
+    "svg_x": 3308.0,
+    "svg_y": -989.5,
+    "tri_id": "253A6",
+    "category": "vertical_transport"
+  },
+  {
+    "label": "STAIRS",
+    "map_x": -35.995,
+    "map_y": -1.984,
+    "svg_x": 401.0,
+    "svg_y": -927.6,
+    "tri_id": "7D88",
+    "category": "vertical_transport"
+  },
+  {
+    "label": "STOR.",
+    "map_x": -11.64,
+    "map_y": 3.394,
+    "svg_x": 1359.8,
+    "svg_y": -1139.3,
+    "tri_id": "7D81",
+    "category": "utility"
+  },
+  {
+    "label": "TAVARUA CONF. RM",
+    "map_x": -44.786,
+    "map_y": 24.269,
+    "svg_x": 54.9,
+    "svg_y": -1961.2,
+    "tri_id": "7D8C",
+    "category": "conference_room"
+  },
+  {
+    "label": "TEAHUPOO CONF. RM",
+    "map_x": -40.249,
+    "map_y": -23.345,
+    "svg_x": 233.6,
+    "svg_y": -86.6,
+    "tri_id": "7D77",
+    "category": "vertical_transport"
+  },
+  {
+    "label": "TODOS SANTOS CONF. RM",
+    "map_x": -39.77,
+    "map_y": 22.518,
+    "svg_x": 252.4,
+    "svg_y": -1892.2,
+    "tri_id": "7D8D",
+    "category": "conference_room"
+  },
+  {
+    "label": "UP",
+    "map_x": -1.358,
+    "map_y": -17.255,
+    "svg_x": 1764.5,
+    "svg_y": -326.3,
+    "tri_id": "6C2F",
+    "category": "vertical_transport"
+  },
+  {
+    "label": "WAIMEA BAY",
+    "map_x": 38.881,
+    "map_y": -17.769,
+    "svg_x": 3348.6,
+    "svg_y": -306.1,
+    "tri_id": "",
+    "category": "named_space"
+  },
+  {
+    "label": "WOMEN",
+    "map_x": -23.315,
+    "map_y": 0.791,
+    "svg_x": 900.2,
+    "svg_y": -1036.8,
+    "tri_id": "7D86",
+    "category": "restroom"
+  },
+  {
+    "label": "YO-YO'S CONF. RM",
+    "map_x": -16.181,
+    "map_y": 2.956,
+    "svg_x": 1181.0,
+    "svg_y": -1122.0,
+    "tri_id": "7D82",
+    "category": "conference_room"
+  }
+]

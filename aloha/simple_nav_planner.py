@@ -21,6 +21,7 @@ from rclpy.qos import QoSProfile, QoSDurabilityPolicy, QoSReliabilityPolicy, QoS
 
 from geometry_msgs.msg import PoseStamped, Twist, Point
 from nav_msgs.msg import Path, OccupancyGrid, Odometry
+from sensor_msgs.msg import PointCloud2, LaserScan
 from visualization_msgs.msg import Marker, MarkerArray
 from std_msgs.msg import ColorRGBA
 from nav2_msgs.action import NavigateToPose
@@ -81,6 +82,9 @@ class SimpleNavPlanner(Node):
         self.declare_parameter('safety_distance', 0.5)  # Minimum distance to obstacles (meters)
         self.declare_parameter('emergency_stop_distance', 0.3)  # Emergency stop distance (meters)
         self.declare_parameter('occupancy_threshold', 60)  # Cells with occupancy >= this are obstacles (0-100)
+        self.declare_parameter('enable_dynamic_obstacles', True)  # Live depth-camera obstacle updates
+        self.declare_parameter('dynamic_obstacle_timeout', 10.0)  # Seconds before unseen dynamic obstacles expire
+        self.declare_parameter('depth_cloud_topic', '/cam_high/camera/depth/color/points')  # PointCloud2 topic
         
         self.use_nav2 = self.get_parameter('use_nav2').value
         self.lookahead_distance = self.get_parameter('lookahead_distance').value
@@ -126,6 +130,14 @@ class SimpleNavPlanner(Node):
         self._rotate_start_time = None
         self._rotate_vel = 0.0
         self._replan_cooldown_until = None
+
+        # Dynamic obstacle layer
+        self.enable_dynamic_obstacles = self.get_parameter('enable_dynamic_obstacles').value
+        self._dynamic_timeout = self.get_parameter('dynamic_obstacle_timeout').value
+        self._depth_cloud_topic = self.get_parameter('depth_cloud_topic').value
+        self._dynamic_stamps = None   # float32 array: last-seen time per cell
+        self._dynamic_layer = None    # bool array: True = dynamic obstacle
+        self._dynamic_dirty = False   # True when layer changed since last inflate
         
         # TF for transforming odom-frame poses into the map frame
         self._tf_buffer = tf2_ros.Buffer()
@@ -160,7 +172,36 @@ class SimpleNavPlanner(Node):
             self.odom_callback,
             10
         )
+
+        # Dynamic obstacle layer: subscribe to depth point cloud
+        if self.enable_dynamic_obstacles:
+            self.cloud_sub = self.create_subscription(
+                PointCloud2,
+                self._depth_cloud_topic,
+                self._cloud_callback,
+                QoSProfile(
+                    depth=1,
+                    reliability=QoSReliabilityPolicy.BEST_EFFORT,
+                    history=QoSHistoryPolicy.KEEP_LAST,
+                )
+            )
+            # Timer to expire stale dynamic obstacles (runs every 2s)
+            self.create_timer(2.0, self._decay_dynamic_obstacles)
+            self.get_logger().info(
+                f'Dynamic obstacles ENABLED on {self._depth_cloud_topic}, '
+                f'timeout={self._dynamic_timeout}s'
+            )
         
+        # Scan-based emergency stop (works even if AMCL / localization fails)
+        self._latest_scan = None
+        self._scan_emergency_dist = self.emergency_stop_distance  # stop if obstacle closer than this
+        self._scan_safety_dist = self.safety_distance  # slow down within this range
+        self._scan_fov = 0.5  # radians (~29 deg) — forward cone to check
+        self.scan_sub = self.create_subscription(
+            LaserScan, '/scan', self._scan_callback,
+            QoSProfile(depth=1, reliability=QoSReliabilityPolicy.BEST_EFFORT,
+                       history=QoSHistoryPolicy.KEEP_LAST))
+
         # Publishers
         self.cmd_vel_pub = self.create_publisher(Twist, '/cmd_vel', 10)
         path_qos = QoSProfile(
@@ -230,8 +271,146 @@ class SimpleNavPlanner(Node):
         if self.map_data is None:
             self.get_logger().info('Map received! Creating inflated obstacle map...')
         self.map_data = msg
+        # Reset dynamic layer to match new map dimensions
+        h, w = msg.info.height, msg.info.width
+        self._dynamic_stamps = np.zeros((h, w), dtype=np.float32)
+        self._dynamic_layer = np.zeros((h, w), dtype=bool)
         self.create_inflated_map()
     
+    # ── Dynamic obstacle layer ──────────────────────────────────────
+
+    def _cloud_callback(self, msg: PointCloud2):
+        """Project depth-camera point cloud onto the 2D map as dynamic obstacles.
+
+        For each 3D point in the cloud:
+          1. Transform from camera frame → map frame via TF.
+          2. Filter by height (keep only obstacle-height points).
+          3. Convert (x, y) to grid cell and stamp it as a dynamic obstacle.
+
+        Only cells that are FREE in the static map are updated — we never
+        override structural walls from the SVG.
+        """
+        if self.map_data is None or self._dynamic_layer is None:
+            return
+
+        # ── Read XYZ from PointCloud2 ──
+        # Fast numpy parsing of the common float32 XYZRGB / XYZ layout
+        try:
+            import struct
+            point_step = msg.point_step
+            n_points = msg.width * msg.height
+            data = np.frombuffer(msg.data, dtype=np.uint8)
+            if data.size < n_points * point_step:
+                return
+            # Reshape and extract x, y, z as float32 views
+            points = data[:n_points * point_step].reshape(n_points, point_step)
+            xs = points[:, 0:4].view(np.float32).flatten()
+            ys = points[:, 4:8].view(np.float32).flatten()
+            zs = points[:, 8:12].view(np.float32).flatten()
+        except Exception:
+            return
+
+        # Filter NaN / inf
+        valid = np.isfinite(xs) & np.isfinite(ys) & np.isfinite(zs)
+        xs, ys, zs = xs[valid], ys[valid], zs[valid]
+        if xs.size == 0:
+            return
+
+        # Subsample for performance (keep every Nth point)
+        step = max(1, xs.size // 2000)
+        xs, ys, zs = xs[::step], ys[::step], zs[::step]
+
+        # ── Transform camera → map ──
+        try:
+            tf_stamped = self._tf_buffer.lookup_transform(
+                'map', msg.header.frame_id,
+                rclpy.time.Time(), timeout=Duration(seconds=0.1)
+            )
+        except (tf2_ros.LookupException,
+                tf2_ros.ConnectivityException,
+                tf2_ros.ExtrapolationException):
+            return
+
+        t = tf_stamped.transform.translation
+        q = tf_stamped.transform.rotation
+        # Rotation matrix from quaternion (manual to avoid extra deps)
+        qx, qy, qz, qw = q.x, q.y, q.z, q.w
+        r00 = 1 - 2*(qy*qy + qz*qz); r01 = 2*(qx*qy - qz*qw); r02 = 2*(qx*qz + qy*qw)
+        r10 = 2*(qx*qy + qz*qw); r11 = 1 - 2*(qx*qx + qz*qz); r12 = 2*(qy*qz - qx*qw)
+        r20 = 2*(qx*qz - qy*qw); r21 = 2*(qy*qz + qx*qw); r22 = 1 - 2*(qx*qx + qy*qy)
+
+        mx = r00*xs + r01*ys + r02*zs + t.x
+        my = r10*xs + r11*ys + r12*zs + t.y
+        mz = r20*xs + r21*ys + r22*zs + t.z
+
+        # Height filter: keep only points in the obstacle band (0.10m – 1.2m)
+        height_mask = (mz > 0.10) & (mz < 1.2)
+        mx, my = mx[height_mask], my[height_mask]
+        if mx.size == 0:
+            return
+
+        # ── Project to grid ──
+        res = self.map_data.info.resolution
+        ox = self.map_data.info.origin.position.x
+        oy = self.map_data.info.origin.position.y
+        w = self.map_data.info.width
+        h = self.map_data.info.height
+
+        gx = ((mx - ox) / res).astype(int)
+        gy = ((my - oy) / res).astype(int)
+
+        # In-bounds mask
+        inbounds = (gx >= 0) & (gx < w) & (gy >= 0) & (gy < h)
+        gx, gy = gx[inbounds], gy[inbounds]
+        if gx.size == 0:
+            return
+
+        # Only mark cells that are FREE in the static map (don't overwrite walls)
+        static_data = np.array(self.map_data.data, dtype=np.int8).reshape((h, w))
+        now = time.time()
+        changed = 0
+        for i in range(gx.size):
+            cx, cy = int(gx[i]), int(gy[i])
+            if static_data[cy, cx] < self.occupancy_threshold:  # cell is free in static map
+                if not self._dynamic_layer[cy, cx]:
+                    changed += 1
+                self._dynamic_layer[cy, cx] = True
+                self._dynamic_stamps[cy, cx] = now
+
+        if changed > 0:
+            self._dynamic_dirty = True
+            self.get_logger().debug(
+                f'Dynamic layer: +{changed} new obstacle cells, '
+                f'{int(np.sum(self._dynamic_layer))} total',
+            )
+
+    def _decay_dynamic_obstacles(self):
+        """Expire dynamic obstacle cells that haven't been re-observed.
+
+        Cells older than dynamic_obstacle_timeout are cleared, and the
+        inflated map is rebuilt so the planner can use newly freed space.
+        """
+        if self._dynamic_layer is None or not np.any(self._dynamic_layer):
+            return
+
+        now = time.time()
+        stale = (now - self._dynamic_stamps) > self._dynamic_timeout
+        expired = self._dynamic_layer & stale
+        n_expired = int(np.sum(expired))
+        if n_expired > 0:
+            self._dynamic_layer[expired] = False
+            self._dynamic_stamps[expired] = 0.0
+            self._dynamic_dirty = True
+            self.get_logger().info(
+                f'Dynamic layer: expired {n_expired} stale cells, '
+                f'{int(np.sum(self._dynamic_layer))} remaining'
+            )
+
+        # Rebuild inflated map if anything changed
+        if self._dynamic_dirty:
+            self._dynamic_dirty = False
+            self.create_inflated_map()
+
     def odom_callback(self, msg: Odometry):
         """Update current robot pose in the map frame via TF."""
         try:
@@ -575,10 +754,16 @@ class SimpleNavPlanner(Node):
         inflate_kernel = cv2.getStructuringElement(
             cv2.MORPH_ELLIPSE, (inflate_diameter, inflate_diameter)
         )
-        inflated = cv2.dilate(obstacles_clean, inflate_kernel, iterations=1)
+        # Merge dynamic obstacle layer before inflating
+        if self._dynamic_layer is not None and self._dynamic_layer.shape == obstacles_clean.shape:
+            obstacles_merged = np.maximum(obstacles_clean, self._dynamic_layer.astype(np.uint8))
+        else:
+            obstacles_merged = obstacles_clean
+
+        inflated = cv2.dilate(obstacles_merged, inflate_kernel, iterations=1)
 
         self.inflated_map = inflated.astype(bool)
-        self.obstacle_map_raw = obstacles_clean.astype(bool)
+        self.obstacle_map_raw = obstacles_merged.astype(bool)
 
         elapsed = time.time() - start_time
         free_cells = int(np.sum(~self.inflated_map))
@@ -914,12 +1099,39 @@ class SimpleNavPlanner(Node):
         
         return trajectory
     
+    def _scan_callback(self, msg: LaserScan):
+        """Cache latest laser scan for real-time obstacle detection."""
+        self._latest_scan = msg
+
+    def _scan_min_range_ahead(self) -> float:
+        """Return the minimum range reading within the forward cone of the
+        latest laser scan.  Returns inf if no valid readings or no scan."""
+        scan = self._latest_scan
+        if scan is None or len(scan.ranges) == 0:
+            return float('inf')
+        min_r = float('inf')
+        for i, r in enumerate(scan.ranges):
+            angle = scan.angle_min + i * scan.angle_increment
+            if abs(angle) > self._scan_fov:
+                continue
+            if scan.range_min < r < scan.range_max:
+                min_r = min(min_r, r)
+        return min_r
+
     def control_loop(self):
         """Main control loop for path following."""
         if self.state != NavigationState.FOLLOWING:
             return
         
         if self.current_pose is None or self.current_path is None:
+            return
+
+        # --- Scan-based emergency stop (localization-independent) ---
+        scan_dist = self._scan_min_range_ahead()
+        if scan_dist < self._scan_emergency_dist:
+            self.stop_robot(immediate=True)
+            self.get_logger().warn(
+                f'SCAN EMERGENCY STOP: obstacle at {scan_dist:.2f}m (threshold {self._scan_emergency_dist:.2f}m)')
             return
         
         # Check if we reached the goal
