@@ -243,7 +243,50 @@ class SimpleNavPlanner(Node):
         self.get_logger().info(f'Path planning: Using robot radius of {self.robot_radius}m for obstacle inflation')
         self.get_logger().info(f'Dynamic collision avoidance: {"Enabled" if self.enable_collision_avoidance else "Disabled"}')
         self.get_logger().info('Set a goal pose in RViz2 using "2D Goal Pose" tool')
-    
+
+        # [FIX #3] TF health monitoring — warns loudly if AMCL hasn't converged
+        # so you don't silently get "Cannot plan: no map-frame pose" messages.
+        self._tf_check_timer = self.create_timer(5.0, self._check_tf_health)
+        self._tf_healthy = False
+        self._tf_check_count = 0
+
+    def _check_tf_health(self):
+        """Periodically verify the map->odom->base_link TF chain is available.
+
+        Without this chain (published by AMCL), odom_callback cannot transform
+        the robot pose into the map frame and current_pose stays None — causing
+        every goal click to silently abort with 'Cannot plan: no map-frame pose'.
+        """
+        self._tf_check_count += 1
+        try:
+            self._tf_buffer.lookup_transform(
+                'map', 'base_link',
+                rclpy.time.Time(),
+                timeout=Duration(seconds=0.5)
+            )
+            if not self._tf_healthy:
+                self.get_logger().info(
+                    '*** TF chain map->base_link is available. Navigation ready! ***'
+                )
+                self._tf_healthy = True
+        except Exception as e:
+            self._tf_healthy = False
+            if self._tf_check_count <= 6:  # First 30 seconds
+                self.get_logger().warn(
+                    f'Waiting for localization... TF map->base_link not available '
+                    f'({type(e).__name__}). AMCL may still be converging.'
+                )
+            elif self._tf_check_count % 6 == 0:  # Every 30s after that
+                self.get_logger().error(
+                    f'TF map->base_link STILL unavailable after '
+                    f'{self._tf_check_count * 5}s! '
+                    f'Localization has likely failed. Debug steps: '
+                    f'1) ros2 topic hz /scan  '
+                    f'2) ros2 topic echo /amcl_pose  '
+                    f'3) ros2 run tf2_ros tf2_echo map odom  '
+                    f'4) In RViz: does /scan align with map walls?'
+                )
+
     def goal_callback(self, msg: PoseStamped):
         """Handle new goal pose from RViz2."""
         # Reject duplicate goals while actively following a path

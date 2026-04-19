@@ -95,7 +95,7 @@ class LaserScanMerger(Node):
                     self._target_frame,
                     scan.header.frame_id,
                     rclpy.time.Time(),
-                    timeout=rclpy.duration.Duration(seconds=0.05),
+                    timeout=rclpy.duration.Duration(seconds=0.2),  # was 0.05 — too short under CPU load
                 )
             except (tf2_ros.LookupException,
                     tf2_ros.ConnectivityException,
@@ -173,6 +173,10 @@ class LaserScanMerger(Node):
         msg.angle_increment = self._angle_inc
         msg.range_min = self._range_min
         msg.range_max = self._range_max
+        # [FIX #4] Set scan timing metadata (some downstream nodes expect these)
+        publish_rate = self.get_parameter('publish_rate').value
+        msg.scan_time = 1.0 / publish_rate
+        msg.time_increment = msg.scan_time / max(self._num_beams, 1)
         msg.ranges = [
             r if r != float('inf') else float('nan') for r in merged
         ]

@@ -119,6 +119,14 @@ def generate_launch_description():
         arguments=['0', '0', '0.1', '0', '0', '0', 'base_footprint', 'base_link'],
     )
 
+    # >>> [FIX #1] Camera TF: base_link → camera_link
+    # >>> The yaw value MUST match the physical D405 camera mounting angle.
+    # >>> yaw=0 means camera depth sensor faces straight ahead (robot X-axis).
+    # >>> yaw=1.5708 means camera is rotated 90° CW on the mount.
+    # >>> IMPORTANT: camera_static_tf_publisher.py defaults to yaw=1.5708 —
+    # >>> if that node is ever used instead, keep values consistent.
+    # >>> DIAGNOSIS: In RViz, display /scan on the map. If beams don't align
+    # >>> with walls, flip this yaw.
     camera_transform = Node(
         package='tf2_ros',
         executable='static_transform_publisher',
@@ -296,24 +304,27 @@ def generate_launch_description():
             'global_frame_id': 'map',
             'odom_frame_id': 'odom',
 
-            # Laser model — very permissive for dense SVG floor plan.
-            # The SVG map contains walls, furniture, fixtures that the 2D
-            # lidar scan cannot see.  A wide sigma_hit + high z_rand lets
-            # AMCL match the real corridor walls while ignoring map clutter.
+            # >>> [FIX #2] Laser model — tightened for walls-only SVG maps.
+            # >>> Previous values (z_hit=0.5, z_rand=0.4) gave nearly equal
+            # >>> weight to wall-matching and random noise.  Particles converged
+            # >>> weakly with a hint but drifted immediately on motion.
+            # >>> New values: 70% wall-matching weight, 20% random tolerance,
+            # >>> tighter sigma (30cm), more beams (180) to compensate for
+            # >>> sparse depth-camera coverage of the 360° merged scan.
             'laser_model_type': 'likelihood_field',
             'laser_max_range': 3.5,
             'laser_min_range': 0.15,
-            'max_beams': 60,           # fewer beams = faster, less overfitting to clutter
+            'max_beams': 180,          # was 60 — need more samples from sparse depth-camera scan
             'do_beamskip': True,
             'beam_skip_distance': 0.5,
             'beam_skip_error_threshold': 0.9,
             'beam_skip_threshold': 0.3,
             'lambda_short': 0.1,
-            'laser_likelihood_max_dist': 5.0,  # wide search — many map features far from real walls
-            'sigma_hit': 0.5,          # broad Gaussian — tolerate map vs reality mismatch
-            'z_hit': 0.5,              # only half weight on wall matching
+            'laser_likelihood_max_dist': 3.0,  # was 5.0 — tighter search window
+            'sigma_hit': 0.3,          # was 0.5 — tighter wall-match tolerance (30cm)
+            'z_hit': 0.7,              # was 0.5 — 70% weight on wall matching
             'z_max': 0.05,
-            'z_rand': 0.4,             # high random weight — expect many spurious map hits
+            'z_rand': 0.2,             # was 0.4 — 20% random tolerance (was 40%)
             'z_short': 0.05,
 
             # Particle filter — generous count for robustness
@@ -389,7 +400,7 @@ def generate_launch_description():
             'max_linear_velocity': LaunchConfiguration('max_linear_velocity'),
             'max_angular_velocity': LaunchConfiguration('max_angular_velocity'),
             'goal_tolerance': 0.25,
-            'robot_radius': 0.27,
+            'robot_radius': 0.30,  # was 0.27 — ALOHA is 24in (0.61m) wide, radius ~0.305m
             'occupancy_threshold': 95,
             'use_trajectory_optimization': True,
             'smoothing_weight': 0.8,
@@ -416,7 +427,7 @@ def generate_launch_description():
         name='robot_pose_marker',
         output='screen',
         parameters=[{
-            'robot_radius': 0.27,
+            'robot_radius': 0.30,  # was 0.27 — match actual ALOHA radius
             'arrow_length': 0.6,
             'publish_rate': 10.0,
         }],
