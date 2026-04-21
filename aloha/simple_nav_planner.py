@@ -23,7 +23,7 @@ from geometry_msgs.msg import PoseStamped, Twist, Point
 from nav_msgs.msg import Path, OccupancyGrid, Odometry
 from sensor_msgs.msg import PointCloud2, LaserScan
 from visualization_msgs.msg import Marker, MarkerArray
-from std_msgs.msg import ColorRGBA
+from std_msgs.msg import ColorRGBA, String
 from nav2_msgs.action import NavigateToPose
 import tf2_ros
 from tf2_geometry_msgs import do_transform_pose_stamped
@@ -140,6 +140,13 @@ class SimpleNavPlanner(Node):
         self.replan_attempts = 0
         self._prev_angular_z = 0.0
         self._prev_linear_x = 0.0
+
+        # Localization gate: block navigation until AMCL converges
+        self._localization_state = 'UNKNOWN'
+        self._localization_converged = False
+        self.create_subscription(
+            String, '/localization_status',
+            self._localization_status_callback, 10)
 
         # Temporal collision filtering: require N consecutive detections
         self._collision_hit_streak = 0
@@ -531,8 +538,35 @@ class SimpleNavPlanner(Node):
         distance = feedback.distance_remaining
         self.get_logger().info(f'Distance to goal: {distance:.2f}m', throttle_duration_sec=1.0)
     
+    def _localization_status_callback(self, msg: String):
+        """Track AMCL localization state from localization_monitor."""
+        try:
+            import json
+            status = json.loads(msg.data)
+            self._localization_state = status.get('state', 'UNKNOWN')
+            was_converged = self._localization_converged
+            self._localization_converged = (self._localization_state == 'LOCALIZED')
+            if self._localization_converged and not was_converged:
+                self.get_logger().info('Localization CONVERGED — navigation enabled')
+            elif not self._localization_converged and was_converged:
+                self.get_logger().warn(
+                    f'Localization LOST (state={self._localization_state}) — '
+                    f'stopping robot for safety')
+                if self.state == NavigationState.FOLLOWING:
+                    self.stop_robot(immediate=True)
+                    self.state = NavigationState.IDLE
+        except Exception:
+            pass
+
     def plan_and_navigate(self):
         """Plan path and start navigation using simple planner."""
+        if not self._localization_converged:
+            self.get_logger().warn(
+                f'Cannot navigate: localization not converged '
+                f'(state={self._localization_state}). '
+                f'Wait for AMCL to report LOCALIZED before sending goals.')
+            return
+
         if self.current_pose is None:
             self.get_logger().warn(
                 'Cannot plan: no map-frame pose yet (waiting for odom→map TF). '
@@ -1471,16 +1505,30 @@ class SimpleNavPlanner(Node):
 
         self._prev_linear_x = cmd.linear.x
 
-        # --- Angular velocity (pure pursuit) ---
-        curvature = 2.0 * math.sin(alpha) / L
-        gain = 3.0
+        # --- Angular velocity (pure pursuit + heading correction) ---
+        # Classic pure pursuit: ω = v · κ = v · 2·sin(α)/L
+        # Problem: at low v the angular correction vanishes and the robot
+        # drifts off-path.  Fix: use a velocity-independent P-controller on
+        # the heading error (α) as the primary term, with the curvature term
+        # added for smoother arcs at higher speeds.
+        heading_gain = 2.0                       # P-gain on heading error
+        curvature_gain = 1.0                     # weight on classic v·κ term
+        curvature = 2.0 * math.sin(alpha) / max(L, 0.1)
 
-        raw_angular = gain * cmd.linear.x * curvature
+        heading_term = heading_gain * alpha
+        curvature_term = curvature_gain * cmd.linear.x * curvature
+        raw_angular = heading_term + curvature_term
         raw_angular = np.clip(raw_angular, -self.max_angular_vel, self.max_angular_vel)
 
-        smoothed = 0.8 * raw_angular + 0.2 * self._prev_angular_z
+        smoothed = 0.7 * raw_angular + 0.3 * self._prev_angular_z
         self._prev_angular_z = smoothed
         cmd.angular.z = smoothed
+
+        self.get_logger().debug(
+            f'PP: α={math.degrees(alpha):+.1f}° L={L:.2f}m '
+            f'v={cmd.linear.x:.2f} ω={cmd.angular.z:+.2f} '
+            f'(heading={heading_term:+.2f} curv={curvature_term:+.2f})',
+            throttle_duration_sec=0.5)
 
         return cmd
     
