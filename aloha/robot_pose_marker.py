@@ -23,10 +23,20 @@ class RobotPoseMarker(Node):
         super().__init__('robot_pose_marker')
 
         self.declare_parameter('robot_radius', 0.27)
+        self.declare_parameter('robot_footprint_front', 0.0)
+        self.declare_parameter('robot_footprint_rear', 0.0)
+        self.declare_parameter('robot_footprint_left', 0.0)
+        self.declare_parameter('robot_footprint_right', 0.0)
         self.declare_parameter('arrow_length', 0.6)
         self.declare_parameter('publish_rate', 10.0)
 
         self._robot_radius = self.get_parameter('robot_radius').value
+        self._fp_front = self.get_parameter('robot_footprint_front').value
+        self._fp_rear = self.get_parameter('robot_footprint_rear').value
+        self._fp_left = self.get_parameter('robot_footprint_left').value
+        self._fp_right = self.get_parameter('robot_footprint_right').value
+        self._asymmetric = any(v > 0.0 for v in [
+            self._fp_front, self._fp_rear, self._fp_left, self._fp_right])
         self._arrow_length = self.get_parameter('arrow_length').value
         rate = self.get_parameter('publish_rate').value
 
@@ -55,44 +65,100 @@ class RobotPoseMarker(Node):
 
         markers = MarkerArray()
 
-        # --- Large disc (cylinder) for the robot body ---
-        body = Marker()
-        body.header.frame_id = 'map'
-        body.header.stamp = stamp
-        body.ns = 'robot_body'
-        body.id = 0
-        body.type = Marker.CYLINDER
-        body.action = Marker.ADD
-        body.pose.position.x = px
-        body.pose.position.y = py
-        body.pose.position.z = 0.02
-        body.pose.orientation.w = 1.0
-        r = self._robot_radius
-        body.scale.x = r * 2.0
-        body.scale.y = r * 2.0
-        body.scale.z = 0.04
-        body.color = ColorRGBA(r=0.0, g=1.0, b=0.3, a=0.85)
-        body.lifetime.sec = 0
-        markers.markers.append(body)
+        if self._asymmetric:
+            # --- Oriented rectangle for asymmetric footprint ---
+            # Corners in robot-local frame: front-left, front-right,
+            #                                rear-right, rear-left (closed loop)
+            cos_y = math.cos(yaw)
+            sin_y = math.sin(yaw)
+            corners_local = [
+                ( self._fp_front,  self._fp_left),   # front-left
+                ( self._fp_front, -self._fp_right),  # front-right
+                (-self._fp_rear,  -self._fp_right),  # rear-right
+                (-self._fp_rear,   self._fp_left),   # rear-left
+                ( self._fp_front,  self._fp_left),   # close the loop
+            ]
+            body = Marker()
+            body.header.frame_id = 'map'
+            body.header.stamp = stamp
+            body.ns = 'robot_body'
+            body.id = 0
+            body.type = Marker.LINE_STRIP
+            body.action = Marker.ADD
+            body.pose.orientation.w = 1.0
+            body.scale.x = 0.06  # line width
+            body.color = ColorRGBA(r=0.0, g=1.0, b=0.3, a=0.95)
+            body.lifetime.sec = 0
+            for lx, ly in corners_local:
+                pt = Point()
+                pt.x = px + lx * cos_y - ly * sin_y
+                pt.y = py + lx * sin_y + ly * cos_y
+                pt.z = 0.03
+                body.points.append(pt)
+            markers.markers.append(body)
 
-        # --- Bright ring outline around the disc ---
-        ring = Marker()
-        ring.header.frame_id = 'map'
-        ring.header.stamp = stamp
-        ring.ns = 'robot_body'
-        ring.id = 1
-        ring.type = Marker.CYLINDER
-        ring.action = Marker.ADD
-        ring.pose.position.x = px
-        ring.pose.position.y = py
-        ring.pose.position.z = 0.03
-        ring.pose.orientation.w = 1.0
-        ring.scale.x = r * 2.0 + 0.08
-        ring.scale.y = r * 2.0 + 0.08
-        ring.scale.z = 0.02
-        ring.color = ColorRGBA(r=1.0, g=1.0, b=1.0, a=0.95)
-        ring.lifetime.sec = 0
-        markers.markers.append(ring)
+            # --- Filled semi-transparent rectangle (CUBE projected flat) ---
+            fill = Marker()
+            fill.header.frame_id = 'map'
+            fill.header.stamp = stamp
+            fill.ns = 'robot_body'
+            fill.id = 1
+            fill.type = Marker.CUBE
+            fill.action = Marker.ADD
+            length = self._fp_front + self._fp_rear
+            width = self._fp_left + self._fp_right
+            center_offset_x = (self._fp_front - self._fp_rear) / 2.0
+            fill.pose.position.x = px + center_offset_x * cos_y
+            fill.pose.position.y = py + center_offset_x * sin_y
+            fill.pose.position.z = 0.02
+            # Quaternion for yaw rotation
+            fill.pose.orientation.z = math.sin(yaw / 2.0)
+            fill.pose.orientation.w = math.cos(yaw / 2.0)
+            fill.scale.x = length
+            fill.scale.y = width
+            fill.scale.z = 0.02
+            fill.color = ColorRGBA(r=0.0, g=1.0, b=0.3, a=0.45)
+            fill.lifetime.sec = 0
+            markers.markers.append(fill)
+        else:
+            # --- Large disc (cylinder) for symmetric robot body ---
+            body = Marker()
+            body.header.frame_id = 'map'
+            body.header.stamp = stamp
+            body.ns = 'robot_body'
+            body.id = 0
+            body.type = Marker.CYLINDER
+            body.action = Marker.ADD
+            body.pose.position.x = px
+            body.pose.position.y = py
+            body.pose.position.z = 0.02
+            body.pose.orientation.w = 1.0
+            r = self._robot_radius
+            body.scale.x = r * 2.0
+            body.scale.y = r * 2.0
+            body.scale.z = 0.04
+            body.color = ColorRGBA(r=0.0, g=1.0, b=0.3, a=0.85)
+            body.lifetime.sec = 0
+            markers.markers.append(body)
+
+            # --- Bright ring outline around the disc ---
+            ring = Marker()
+            ring.header.frame_id = 'map'
+            ring.header.stamp = stamp
+            ring.ns = 'robot_body'
+            ring.id = 1
+            ring.type = Marker.CYLINDER
+            ring.action = Marker.ADD
+            ring.pose.position.x = px
+            ring.pose.position.y = py
+            ring.pose.position.z = 0.03
+            ring.pose.orientation.w = 1.0
+            ring.scale.x = r * 2.0 + 0.08
+            ring.scale.y = r * 2.0 + 0.08
+            ring.scale.z = 0.02
+            ring.color = ColorRGBA(r=1.0, g=1.0, b=1.0, a=0.95)
+            ring.lifetime.sec = 0
+            markers.markers.append(ring)
 
         # --- Heading arrow ---
         arrow = Marker()

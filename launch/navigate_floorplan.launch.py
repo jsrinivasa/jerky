@@ -400,7 +400,14 @@ def generate_launch_description():
             'max_linear_velocity': LaunchConfiguration('max_linear_velocity'),
             'max_angular_velocity': LaunchConfiguration('max_angular_velocity'),
             'goal_tolerance': 0.25,
-            'robot_radius': 0.30,  # was 0.27 — ALOHA is 24in (0.61m) wide, radius ~0.305m
+            'robot_radius': 0.30,  # fallback if no directional footprint
+            # Asymmetric footprint: Mobile ALOHA is NOT front-back symmetric.
+            # SLATE base is ~500x500mm, but leader arms protrude at the rear.
+            # Measured from base_link (center of SLATE wheel axle):
+            'robot_footprint_front': 0.30,  # front edge: SLATE front + D405 camera
+            'robot_footprint_rear': 0.45,   # rear edge: leader arm mounts protrude behind base
+            'robot_footprint_left': 0.30,   # half of ~610mm (24in) total width
+            'robot_footprint_right': 0.30,  # symmetric left-right
             'occupancy_threshold': 95,
             'use_trajectory_optimization': True,
             'smoothing_weight': 0.8,
@@ -427,7 +434,11 @@ def generate_launch_description():
         name='robot_pose_marker',
         output='screen',
         parameters=[{
-            'robot_radius': 0.30,  # was 0.27 — match actual ALOHA radius
+            'robot_radius': 0.30,
+            'robot_footprint_front': 0.30,
+            'robot_footprint_rear': 0.45,
+            'robot_footprint_left': 0.30,
+            'robot_footprint_right': 0.30,
             'arrow_length': 0.6,
             'publish_rate': 10.0,
         }],

@@ -74,7 +74,11 @@ class SimpleNavPlanner(Node):
         self.declare_parameter('max_angular_velocity', 1.0)
         self.declare_parameter('goal_tolerance', 0.2)
         self.declare_parameter('path_resolution', 0.1)
-        self.declare_parameter('robot_radius', 0.3)  # Robot radius in meters (24in = 0.61m width, radius = 0.305m + safety margin)
+        self.declare_parameter('robot_radius', 0.3)  # Fallback circular radius (overridden by footprint params if set)
+        self.declare_parameter('robot_footprint_front', 0.0)  # Distance from base_link to front edge (m)
+        self.declare_parameter('robot_footprint_rear', 0.0)   # Distance from base_link to rear edge (m)
+        self.declare_parameter('robot_footprint_left', 0.0)   # Distance from base_link to left edge (m)
+        self.declare_parameter('robot_footprint_right', 0.0)  # Distance from base_link to right edge (m)
         self.declare_parameter('use_trajectory_optimization', True)
         self.declare_parameter('smoothing_weight', 0.5)  # Higher = smoother but less accurate
         self.declare_parameter('max_acceleration', 0.5)  # m/s^2
@@ -93,6 +97,24 @@ class SimpleNavPlanner(Node):
         self.goal_tolerance = self.get_parameter('goal_tolerance').value
         self.path_resolution = self.get_parameter('path_resolution').value
         self.robot_radius = self.get_parameter('robot_radius').value
+        self.footprint_front = self.get_parameter('robot_footprint_front').value
+        self.footprint_rear = self.get_parameter('robot_footprint_rear').value
+        self.footprint_left = self.get_parameter('robot_footprint_left').value
+        self.footprint_right = self.get_parameter('robot_footprint_right').value
+
+        # If any directional footprint is set, derive robot_radius as max extent
+        # to ensure the inflation kernel covers the worst-case rotation.
+        fp_extents = [self.footprint_front, self.footprint_rear,
+                      self.footprint_left, self.footprint_right]
+        if any(v > 0.0 for v in fp_extents):
+            self.robot_radius = max(fp_extents)
+            self.has_asymmetric_footprint = True
+        else:
+            self.has_asymmetric_footprint = False
+            self.footprint_front = self.robot_radius
+            self.footprint_rear = self.robot_radius
+            self.footprint_left = self.robot_radius
+            self.footprint_right = self.robot_radius
         self.use_traj_opt = self.get_parameter('use_trajectory_optimization').value
         self.smoothing_weight = self.get_parameter('smoothing_weight').value
         self.max_acceleration = self.get_parameter('max_acceleration').value
@@ -197,6 +219,9 @@ class SimpleNavPlanner(Node):
         self._scan_emergency_dist = self.emergency_stop_distance  # stop if obstacle closer than this
         self._scan_safety_dist = self.safety_distance  # slow down within this range
         self._scan_fov = 0.5  # radians (~29 deg) — forward cone to check
+        # Ignore scan returns closer than the robot's own front extent + margin;
+        # the depth cameras often see the follower arms as fixed 'obstacles'.
+        self._scan_self_filter_dist = self.footprint_front + 0.10
         self.scan_sub = self.create_subscription(
             LaserScan, '/scan', self._scan_callback,
             QoSProfile(depth=1, reliability=QoSReliabilityPolicy.BEST_EFFORT,
@@ -239,8 +264,17 @@ class SimpleNavPlanner(Node):
         self.control_timer = self.create_timer(0.1, self.control_loop)
         
         self.get_logger().info('Simple Navigation Planner initialized')
-        self.get_logger().info(f'Robot radius: {self.robot_radius}m (24 inches wide)')
-        self.get_logger().info(f'Path planning: Using robot radius of {self.robot_radius}m for obstacle inflation')
+        if self.has_asymmetric_footprint:
+            self.get_logger().info(
+                f'Asymmetric footprint: front={self.footprint_front:.2f}m, '
+                f'rear={self.footprint_rear:.2f}m, left={self.footprint_left:.2f}m, '
+                f'right={self.footprint_right:.2f}m')
+            self.get_logger().info(
+                f'Inflation radius: {self.robot_radius:.2f}m (max extent, for rotation safety)')
+        else:
+            self.get_logger().info(f'Robot radius: {self.robot_radius}m (symmetric circular footprint)')
+        self.get_logger().info(f'Path planning: Using {self.robot_radius:.2f}m inflation for obstacle clearance')
+        self.get_logger().info(f'Scan self-filter: ignoring returns < {self._scan_self_filter_dist:.2f}m (robot body)')
         self.get_logger().info(f'Dynamic collision avoidance: {"Enabled" if self.enable_collision_avoidance else "Disabled"}')
         self.get_logger().info('Set a goal pose in RViz2 using "2D Goal Pose" tool')
 
@@ -1157,7 +1191,7 @@ class SimpleNavPlanner(Node):
             angle = scan.angle_min + i * scan.angle_increment
             if abs(angle) > self._scan_fov:
                 continue
-            if scan.range_min < r < scan.range_max:
+            if self._scan_self_filter_dist < r < scan.range_max:
                 min_r = min(min_r, r)
         return min_r
 
@@ -1571,29 +1605,51 @@ class SimpleNavPlanner(Node):
         robot_y = self.current_pose.position.y
         robot_yaw = self.get_yaw_from_quaternion(self.current_pose.orientation)
 
-        min_distance = float('inf')
+        min_distance_front = float('inf')
+        min_distance_rear = float('inf')
         obstacle_positions = []
 
-        check_angles = [0, -0.2, 0.2]
         check_distance = max(self.safety_distance * 1.5, 0.8)
         step = self.map_data.info.resolution
 
-        for angle_offset in check_angles:
+        # --- Forward rays (from front edge of robot) ---
+        front_angles = [0, -0.2, 0.2]
+        for angle_offset in front_angles:
             check_angle = robot_yaw + angle_offset
             cos_a = math.cos(check_angle)
             sin_a = math.sin(check_angle)
-            dist = self.robot_radius
+            dist = self.footprint_front
             while dist <= check_distance:
                 check_x = robot_x + dist * cos_a
                 check_y = robot_y + dist * sin_a
 
                 if self._raw_occupied(check_x, check_y):
-                    if dist < min_distance:
-                        min_distance = dist
+                    if dist < min_distance_front:
+                        min_distance_front = dist
                     obstacle_positions.append((check_x, check_y))
                     break
                 dist += step
 
+        # --- Rearward rays (from rear edge of robot) ---
+        rear_angles = [math.pi, math.pi - 0.2, math.pi + 0.2]
+        rear_check_distance = max(self.safety_distance, 0.5)
+        for angle_offset in rear_angles:
+            check_angle = robot_yaw + angle_offset
+            cos_a = math.cos(check_angle)
+            sin_a = math.sin(check_angle)
+            dist = self.footprint_rear
+            while dist <= rear_check_distance:
+                check_x = robot_x + dist * cos_a
+                check_y = robot_y + dist * sin_a
+
+                if self._raw_occupied(check_x, check_y):
+                    if dist < min_distance_rear:
+                        min_distance_rear = dist
+                    obstacle_positions.append((check_x, check_y))
+                    break
+                dist += step
+
+        min_distance = min(min_distance_front, min_distance_rear)
         emergency_stop = min_distance < self.emergency_stop_distance
         reduce_speed = min_distance < self.safety_distance
 
