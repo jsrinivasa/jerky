@@ -303,10 +303,14 @@ def generate_launch_description():
                 'target_frame': 'base_link',
                 'input_topics': ['/scan_rplidar', '/scan_depth_cam_high'],
                 'publish_rate': 15.0,
-                # Fill in once a sector reads a constant near-range hit
-                # while nothing is actually there (likely the chassis):
-                # e.g. [2.6, 3.14, -3.14, -2.6] for a rear wedge.
-                'self_occlusion_ranges': [],
+                # self_occlusion_ranges intentionally not set here: an empty
+                # list can't be serialized as a launch-time parameter override
+                # (ambiguous array type). Node declares it with dynamic_typing
+                # so its own [] default applies. Fill in once a sector reads a
+                # constant near-range hit while nothing is actually there
+                # (likely the chassis): e.g. [2.6, 3.14, -3.14, -2.6] for a
+                # rear wedge -- set via `ros2 param set` or add it back here
+                # as a non-empty list.
             }],
         ),
 

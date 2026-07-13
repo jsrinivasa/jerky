@@ -25,6 +25,7 @@ import math
 import rclpy
 from rclpy.node import Node
 from rclpy.qos import QoSProfile, ReliabilityPolicy, DurabilityPolicy
+from rcl_interfaces.msg import ParameterDescriptor
 from sensor_msgs.msg import LaserScan
 import tf2_ros
 
@@ -43,7 +44,10 @@ class LaserScanMerger(Node):
         self.declare_parameter('publish_rate', 15.0)
         self.declare_parameter(
             'input_topics', ['/scan_rplidar', '/scan_depth_cam_high'])
-        self.declare_parameter('self_occlusion_ranges', [])  # e.g. [2.6, 3.14, -3.14, -2.6]
+        self.declare_parameter(
+            'self_occlusion_ranges', [],
+            ParameterDescriptor(dynamic_typing=True),
+        )  # e.g. [2.6, 3.14, -3.14, -2.6]
 
         self._target_frame = self.get_parameter('target_frame').value
         self._angle_min = self.get_parameter('angle_min').value
