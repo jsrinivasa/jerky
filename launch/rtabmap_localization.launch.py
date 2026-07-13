@@ -53,6 +53,14 @@ def generate_launch_description():
         description='Session name.  Loads ~/maps/<map_name>.db for localization.',
     )
 
+    # Pass-through to rtabmap_mapping.launch.py (see there for details/defaults).
+    use_rplidar_arg = DeclareLaunchArgument('use_rplidar', default_value='true')
+    rplidar_port_arg = DeclareLaunchArgument('rplidar_port', default_value='/dev/rplidar')
+    rplidar_x_arg = DeclareLaunchArgument('rplidar_x', default_value='0.25')
+    rplidar_y_arg = DeclareLaunchArgument('rplidar_y', default_value='0.0')
+    rplidar_z_arg = DeclareLaunchArgument('rplidar_z', default_value='0.27')
+    rplidar_yaw_arg = DeclareLaunchArgument('rplidar_yaw', default_value='1.5708')
+
     mapping_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
             PathJoinSubstitution([aloha_pkg, 'launch', 'rtabmap_mapping.launch.py'])
@@ -62,6 +70,12 @@ def generate_launch_description():
             ('rviz', 'false'),
             ('rtabmap_viz', LaunchConfiguration('rtabmap_viz')),
             ('map_name', LaunchConfiguration('map_name')),
+            ('use_rplidar', LaunchConfiguration('use_rplidar')),
+            ('rplidar_port', LaunchConfiguration('rplidar_port')),
+            ('rplidar_x', LaunchConfiguration('rplidar_x')),
+            ('rplidar_y', LaunchConfiguration('rplidar_y')),
+            ('rplidar_z', LaunchConfiguration('rplidar_z')),
+            ('rplidar_yaw', LaunchConfiguration('rplidar_yaw')),
         ],
     )
 
@@ -82,6 +96,12 @@ def generate_launch_description():
         use_rviz_arg,
         rtabmap_viz_arg,
         map_name_arg,
+        use_rplidar_arg,
+        rplidar_port_arg,
+        rplidar_x_arg,
+        rplidar_y_arg,
+        rplidar_z_arg,
+        rplidar_yaw_arg,
         mapping_launch,
         rviz_node,
     ])

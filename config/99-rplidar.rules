@@ -1,0 +1,19 @@
+# Slamtec RPLIDAR (CP2102 USB-UART bridge) -- stable /dev/rplidar symlink.
+#
+# Install (one-time, needs the lidar plugged in and sudo):
+#   lsusb | grep -i "10c4:ea60"     # confirm exactly ONE match before installing --
+#                                    # if there's more than one CP2102 device on
+#                                    # this machine, this rule is ambiguous and
+#                                    # you need a KERNELS=="<usb-port-path>" match
+#                                    # instead (see `udevadm info -a -n /dev/ttyUSBx`).
+#   sudo cp config/99-rplidar.rules /etc/udev/rules.d/
+#   sudo udevadm control --reload-rules
+#   sudo udevadm trigger
+#   ls -la /dev/rplidar              # should now exist -> ttyUSBx
+#
+# Also needed once (if not already done for the other USB-serial devices on
+# this robot): add yourself to the dialout group so you don't need root to
+# open the port, then log out/in (or reboot) for it to take effect:
+#   sudo usermod -aG dialout $USER
+
+KERNEL=="ttyUSB*", ATTRS{idVendor}=="10c4", ATTRS{idProduct}=="ea60", MODE:="0777", SYMLINK+="rplidar"

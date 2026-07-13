@@ -3,13 +3,21 @@
 """
 Laser Scan Merger
 
-Merges two LaserScan topics (front + rear cameras) into a single scan
-in the base_link frame.  Each incoming beam is projected into base_link
-using the TF tree, binned by angle, and the nearest range per bin wins.
+Merges any number of LaserScan topics (configured via the `input_topics`
+parameter -- e.g. an RPLIDAR plus a depthimage_to_laserscan-derived scan
+from a depth camera) into a single scan in the base_link frame.  Each
+incoming beam is projected into base_link using the TF tree, binned by
+angle, and the nearest range per bin wins across all sources.
 
-The output scan covers the full -pi..pi range so AMCL can correctly
-interpret the beam angles, but diagnostics are logged periodically to
-help verify that both cameras are contributing valid data.
+The output scan covers the full -pi..pi range so downstream consumers can
+correctly interpret the beam angles, but diagnostics are logged
+periodically to help verify each source is contributing valid data.
+
+`self_occlusion_ranges` optionally blanks out known angle sectors (in the
+target_frame, radians, flat list of [min1, max1, min2, max2, ...] pairs)
+where the robot's own chassis sits in a sensor's field of view -- e.g. a
+lidar mounted near the front will usually see part of the body behind it.
+Points in these sectors are dropped before merging, from every source.
 """
 
 import math
@@ -33,6 +41,9 @@ class LaserScanMerger(Node):
         self.declare_parameter('range_min', 0.1)
         self.declare_parameter('range_max', 5.0)
         self.declare_parameter('publish_rate', 15.0)
+        self.declare_parameter(
+            'input_topics', ['/scan_rplidar', '/scan_depth_cam_high'])
+        self.declare_parameter('self_occlusion_ranges', [])  # e.g. [2.6, 3.14, -3.14, -2.6]
 
         self._target_frame = self.get_parameter('target_frame').value
         self._angle_min = self.get_parameter('angle_min').value
@@ -41,6 +52,16 @@ class LaserScanMerger(Node):
         self._range_min = self.get_parameter('range_min').value
         self._range_max = self.get_parameter('range_max').value
         publish_rate = self.get_parameter('publish_rate').value
+        input_topics = self.get_parameter('input_topics').value
+        occlusion_flat = list(self.get_parameter('self_occlusion_ranges').value)
+        if len(occlusion_flat) % 2 != 0:
+            raise ValueError(
+                'self_occlusion_ranges must be an even-length flat list of '
+                '[min1, max1, min2, max2, ...] pairs'
+            )
+        self._occlusion_ranges = list(
+            zip(occlusion_flat[0::2], occlusion_flat[1::2])
+        )
 
         self._num_beams = int(
             (self._angle_max - self._angle_min) / self._angle_inc
@@ -59,23 +80,38 @@ class LaserScanMerger(Node):
             depth=5,
         )
 
-        self.create_subscription(
-            LaserScan, '/scan_front', self._make_cb('front'), qos)
-        self.create_subscription(
-            LaserScan, '/scan_rear', self._make_cb('rear'), qos)
+        for topic in input_topics:
+            self.create_subscription(
+                LaserScan, topic, self._make_cb(topic), qos)
 
         self._pub = self.create_publisher(LaserScan, '/scan', 10)
         self.create_timer(1.0 / publish_rate, self._merge_and_publish)
 
         self.get_logger().info(
-            f'Merging /scan_front + /scan_rear -> /scan '
-            f'({self._num_beams} bins, frame={self._target_frame})'
+            f'Merging {input_topics} -> /scan '
+            f'({self._num_beams} bins, frame={self._target_frame}'
+            + (f', {len(self._occlusion_ranges)} self-occlusion sector(s)'
+               if self._occlusion_ranges else '')
+            + ')'
         )
 
     def _make_cb(self, key):
         def cb(msg):
             self._latest_scans[key] = msg
         return cb
+
+    def _in_occlusion_sector(self, angle: float) -> bool:
+        """True if `angle` (target_frame bearing, radians) falls inside a
+        configured self_occlusion_ranges pair -- the chassis, not a real
+        obstacle, is expected there."""
+        for lo, hi in self._occlusion_ranges:
+            if lo <= hi:
+                if lo <= angle <= hi:
+                    return True
+            else:  # pair wraps across +/-pi, e.g. [3.0, -3.0]
+                if angle >= lo or angle <= hi:
+                    return True
+        return False
 
     def _merge_and_publish(self):
         if not self._latest_scans:
@@ -129,7 +165,8 @@ class LaserScanMerger(Node):
                     angle_t = math.atan2(py_t, px_t)
                     range_t = math.hypot(px_t, py_t)
 
-                    if self._range_min <= range_t <= self._range_max:
+                    if (self._range_min <= range_t <= self._range_max
+                            and not self._in_occlusion_sector(angle_t)):
                         idx = int(
                             (angle_t - self._angle_min) / self._angle_inc
                         )

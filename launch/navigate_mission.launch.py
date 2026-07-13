@@ -27,7 +27,6 @@ Usage:
 
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
-from launch.conditions import IfCondition
 from launch.substitutions import (
     LaunchConfiguration,
     PathJoinSubstitution,
@@ -78,6 +77,24 @@ def generate_launch_description():
         'max_angular_velocity', default_value='1.5',
         description='Maximum angular velocity (rad/s)',
     )
+    enable_collision_avoidance_arg = DeclareLaunchArgument(
+        'enable_collision_avoidance', default_value='true',
+        description='React to live /scan obstacles (from cam_high depth '
+                    'and/or the RPLIDAR), not just the static map, while '
+                    'following a path.',
+    )
+
+    # RPLIDAR + depth-cam scan + merger now live in rtabmap_mapping.launch.py
+    # (included below via rtabmap_localization), since that's the file used
+    # standalone for actual mapping sessions too -- see it for the node
+    # definitions and TODO(robot) measurement notes. These just pass
+    # overrides through the include chain.
+    use_rplidar_arg = DeclareLaunchArgument('use_rplidar', default_value='true')
+    rplidar_port_arg = DeclareLaunchArgument('rplidar_port', default_value='/dev/rplidar')
+    rplidar_x_arg = DeclareLaunchArgument('rplidar_x', default_value='0.25')
+    rplidar_y_arg = DeclareLaunchArgument('rplidar_y', default_value='0.0')
+    rplidar_z_arg = DeclareLaunchArgument('rplidar_z', default_value='0.27')
+    rplidar_yaw_arg = DeclareLaunchArgument('rplidar_yaw', default_value='1.5708')
 
     use_sim_time = LaunchConfiguration('use_sim_time')
 
@@ -93,6 +110,12 @@ def generate_launch_description():
             ('use_rviz', LaunchConfiguration('use_rviz')),
             ('rtabmap_viz', LaunchConfiguration('rtabmap_viz')),
             ('map_name', LaunchConfiguration('map_name')),
+            ('use_rplidar', LaunchConfiguration('use_rplidar')),
+            ('rplidar_port', LaunchConfiguration('rplidar_port')),
+            ('rplidar_x', LaunchConfiguration('rplidar_x')),
+            ('rplidar_y', LaunchConfiguration('rplidar_y')),
+            ('rplidar_z', LaunchConfiguration('rplidar_z')),
+            ('rplidar_yaw', LaunchConfiguration('rplidar_yaw')),
         ],
     )
 
@@ -112,6 +135,10 @@ def generate_launch_description():
             'use_sim_time': use_sim_time,
         }],
     )
+
+    # Lidar + depth-cam scan + merger are launched by rtabmap_mapping.launch.py
+    # (via rtabmap_localization above) -- /scan is already available here for
+    # simple_nav_planner below without relaunching those nodes.
 
     # ==================== Robot Pose Marker (large disc + heading arrow) ==
 
@@ -145,7 +172,7 @@ def generate_launch_description():
             'use_trajectory_optimization': False,
             'smoothing_weight': 0.8,
             'max_acceleration': 0.3,
-            'enable_collision_avoidance': False,
+            'enable_collision_avoidance': LaunchConfiguration('enable_collision_avoidance'),
             'safety_distance': 0.5,
             'emergency_stop_distance': 0.1,
             'use_sim_time': use_sim_time,
@@ -166,6 +193,13 @@ def generate_launch_description():
         use_sim_time_arg,
         max_linear_velocity_arg,
         max_angular_velocity_arg,
+        enable_collision_avoidance_arg,
+        use_rplidar_arg,
+        rplidar_port_arg,
+        rplidar_x_arg,
+        rplidar_y_arg,
+        rplidar_z_arg,
+        rplidar_yaw_arg,
 
         rtabmap_localization,
         map_server_node,

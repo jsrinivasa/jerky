@@ -21,6 +21,7 @@ from rclpy.qos import QoSProfile, QoSDurabilityPolicy, QoSReliabilityPolicy, QoS
 
 from geometry_msgs.msg import PoseStamped, Twist, Point
 from nav_msgs.msg import Path, OccupancyGrid, Odometry
+from sensor_msgs.msg import LaserScan
 from visualization_msgs.msg import Marker, MarkerArray
 from std_msgs.msg import ColorRGBA
 from nav2_msgs.action import NavigateToPose
@@ -81,7 +82,9 @@ class SimpleNavPlanner(Node):
         self.declare_parameter('safety_distance', 0.5)  # Minimum distance to obstacles (meters)
         self.declare_parameter('emergency_stop_distance', 0.3)  # Emergency stop distance (meters)
         self.declare_parameter('occupancy_threshold', 60)  # Cells with occupancy >= this are obstacles (0-100)
-        
+        self.declare_parameter('live_scan_topic', '/scan')
+        self.declare_parameter('live_scan_max_age', 1.0)  # seconds; older scans are ignored (sensor stalled)
+
         self.use_nav2 = self.get_parameter('use_nav2').value
         self.lookahead_distance = self.get_parameter('lookahead_distance').value
         self.max_linear_vel = self.get_parameter('max_linear_velocity').value
@@ -96,7 +99,9 @@ class SimpleNavPlanner(Node):
         self.safety_distance = self.get_parameter('safety_distance').value
         self.emergency_stop_distance = self.get_parameter('emergency_stop_distance').value
         self.occupancy_threshold = self.get_parameter('occupancy_threshold').value
-        
+        self.live_scan_topic = self.get_parameter('live_scan_topic').value
+        self.live_scan_max_age = self.get_parameter('live_scan_max_age').value
+
         # State
         self.state = NavigationState.IDLE
         self.current_pose = None
@@ -107,6 +112,7 @@ class SimpleNavPlanner(Node):
         self.map_data = None
         self.inflated_map = None  # Pre-computed obstacle-inflated map for fast planning
         self.obstacle_map_raw = None  # Denoised but NOT inflated — for collision ray-casting
+        self.latest_scan = None  # Live LaserScan (e.g. from cam_high depth) for real-time obstacles
         self.path_index = 0
         self.collision_detected = False
         self.last_collision_check_time = self.get_clock().now()
@@ -160,7 +166,22 @@ class SimpleNavPlanner(Node):
             self.odom_callback,
             10
         )
-        
+
+        # Live obstacle scan (best-effort to match depthimage_to_laserscan's
+        # sensor-data QoS; a reliable subscriber wouldn't receive it at all).
+        scan_qos = QoSProfile(
+            depth=5,
+            durability=QoSDurabilityPolicy.VOLATILE,
+            reliability=QoSReliabilityPolicy.BEST_EFFORT,
+            history=QoSHistoryPolicy.KEEP_LAST
+        )
+        self.scan_sub = self.create_subscription(
+            LaserScan,
+            self.live_scan_topic,
+            self.scan_callback,
+            scan_qos
+        )
+
         # Publishers
         self.cmd_vel_pub = self.create_publisher(Twist, '/cmd_vel', 10)
         path_qos = QoSProfile(
@@ -252,7 +273,11 @@ class SimpleNavPlanner(Node):
                 f'TF odom→map failed ({type(e).__name__}), keeping last good pose',
                 throttle_duration_sec=5.0,
             )
-    
+
+    def scan_callback(self, msg: LaserScan):
+        """Store the latest live obstacle scan (see check_collision_ahead)."""
+        self.latest_scan = msg
+
     def navigate_with_nav2(self, goal: PoseStamped):
         """Use Nav2 for navigation (requires Nav2 to be running)."""
         if not self.nav2_client.wait_for_server(timeout_sec=5.0):
@@ -1316,10 +1341,59 @@ class SimpleNavPlanner(Node):
             return True
         return bool(self.obstacle_map_raw[gy, gx])
 
+    def _live_scan_points_map_frame(self) -> Optional[List[Tuple[float, float]]]:
+        """Project the latest live LaserScan (e.g. cam_high depth) into the
+        map frame.
+
+        Returns None — meaning "no live data, fall back to the static map" —
+        if there's no scan yet, it's older than `live_scan_max_age` (sensor
+        stalled/crashed), or its TF isn't available. Never returns an empty
+        list to mean "confirmed no obstacles"; a missing sensor must not look
+        like a clear path.
+        """
+        scan = self.latest_scan
+        if scan is None:
+            return None
+
+        scan_time = rclpy.time.Time.from_msg(scan.header.stamp)
+        age = (self.get_clock().now() - scan_time).nanoseconds / 1e9
+        if age > self.live_scan_max_age:
+            return None
+
+        try:
+            tf_stamped = self._tf_buffer.lookup_transform(
+                'map', scan.header.frame_id, rclpy.time.Time(),
+                timeout=Duration(seconds=0.05),
+            )
+        except (tf2_ros.LookupException, tf2_ros.ConnectivityException,
+                tf2_ros.ExtrapolationException):
+            return None
+
+        q = tf_stamped.transform.rotation
+        yaw = math.atan2(
+            2.0 * (q.w * q.z + q.x * q.y),
+            1.0 - 2.0 * (q.y * q.y + q.z * q.z),
+        )
+        tx = tf_stamped.transform.translation.x
+        ty = tf_stamped.transform.translation.y
+        cos_yaw, sin_yaw = math.cos(yaw), math.sin(yaw)
+
+        points = []
+        angle = scan.angle_min
+        for r in scan.ranges:
+            if not math.isnan(r) and not math.isinf(r) and scan.range_min <= r <= scan.range_max:
+                px, py = r * math.cos(angle), r * math.sin(angle)
+                points.append((cos_yaw * px - sin_yaw * py + tx,
+                               sin_yaw * px + cos_yaw * py + ty))
+            angle += scan.angle_increment
+        return points
+
     def check_collision_ahead(self) -> dict:
         """
         Cast narrow rays ahead of the robot against the **raw** (non-inflated)
-        obstacle map to measure true distance to physical obstacles.
+        obstacle map, AND against the latest live obstacle scan (cam_high
+        depth -> /scan), to measure true distance to physical obstacles —
+        whether or not they're on the saved map.
 
         Using the raw map instead of the inflated map prevents false triggers
         when the robot is merely near the inflation zone of a wall that A*
@@ -1366,6 +1440,26 @@ class SimpleNavPlanner(Node):
                     obstacle_positions.append((check_x, check_y))
                     break
                 dist += step
+
+        # Live obstacles (people, carts, anything not on the saved map).
+        # Same rays/thresholds as above; source is /scan instead of the map.
+        live_points = self._live_scan_points_map_frame()
+        if live_points:
+            ray_half_angle = 0.35  # rad; widens the narrow map rays into a
+                                   # corridor sized for real-world sensor noise
+            for px, py in live_points:
+                dist = math.hypot(px - robot_x, py - robot_y)
+                if dist < self.robot_radius or dist > check_distance:
+                    continue
+                bearing = self.normalize_angle(
+                    math.atan2(py - robot_y, px - robot_x) - robot_yaw
+                )
+                for angle_offset in check_angles:
+                    if abs(self.normalize_angle(bearing - angle_offset)) <= ray_half_angle:
+                        if dist < min_distance:
+                            min_distance = dist
+                        obstacle_positions.append((px, py))
+                        break
 
         emergency_stop = min_distance < self.emergency_stop_distance
         reduce_speed = min_distance < self.safety_distance
