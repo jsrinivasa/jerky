@@ -1,0 +1,9 @@
+free_thresh: 0.196
+image: floorplan_real_2_walls_inflated.pgm
+negate: 0
+occupied_thresh: 0.65
+origin:
+- -98.575
+- -63.025000000000006
+- 0.0
+resolution: 0.05

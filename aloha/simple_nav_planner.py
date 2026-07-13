@@ -753,6 +753,8 @@ class SimpleNavPlanner(Node):
             # the inflated map (same source of truth as A*).
             smoothed_path = []
             collision_count = 0
+            consecutive_collisions = 0
+            max_consecutive_collisions = 0
 
             for x, y in zip(smoothed_coords[0], smoothed_coords[1]):
                 if not self._inflated_occupied(float(x), float(y)):
@@ -761,22 +763,39 @@ class SimpleNavPlanner(Node):
                     p.y = float(y)
                     p.z = 0.0
                     smoothed_path.append(p)
+                    consecutive_collisions = 0
                 else:
                     collision_count += 1
-            
-            # If too many collisions, try with less aggressive smoothing
+                    consecutive_collisions += 1
+                    max_consecutive_collisions = max(
+                        max_consecutive_collisions, consecutive_collisions
+                    )
+
+            # If the spline cuts through a wall (3+ consecutive obstacle points),
+            # removing those points leaves a "gap" — the lookahead then jumps
+            # across the wall and the robot drives through it.  Fall back to the
+            # raw A* path which is guaranteed collision-free.
+            if max_consecutive_collisions >= 3:
+                self.get_logger().warn(
+                    f'Smoothed path cuts through an obstacle '
+                    f'({max_consecutive_collisions} consecutive blocked points). '
+                    'Falling back to raw A* path.'
+                )
+                return path
+
             collision_percentage = (collision_count / num_points) * 100
-            if collision_percentage > 5.0:
+            if collision_percentage > 2.0:
                 self.get_logger().warn(
                     f'Smoothed path has {collision_percentage:.1f}% collision points. '
                     f'Retrying with reduced smoothing (s={smoothing_factor/4:.2f})...'
                 )
-                # Retry with much less smoothing
                 reduced_smoothing = max(smoothing_factor / 4, 0.1)
                 tck, u = splprep([x_coords, y_coords], s=reduced_smoothing, k=k)
                 smoothed_coords = splev(u_new, tck)
-                
+
                 smoothed_path = []
+                consecutive_collisions = 0
+                max_consecutive_collisions = 0
                 for x, y in zip(smoothed_coords[0], smoothed_coords[1]):
                     if not self._inflated_occupied(float(x), float(y)):
                         p = Point()
@@ -784,13 +803,22 @@ class SimpleNavPlanner(Node):
                         p.y = float(y)
                         p.z = 0.0
                         smoothed_path.append(p)
-                
-                if len(smoothed_path) < 2:
-                    self.get_logger().warn('Even with reduced smoothing, path has collisions. Using raw path.')
+                        consecutive_collisions = 0
+                    else:
+                        consecutive_collisions += 1
+                        max_consecutive_collisions = max(
+                            max_consecutive_collisions, consecutive_collisions
+                        )
+
+                if max_consecutive_collisions >= 3 or len(smoothed_path) < 2:
+                    self.get_logger().warn(
+                        'Reduced smoothing still cuts through obstacles. '
+                        'Using raw A* path.'
+                    )
                     return path
-                    
-                self.get_logger().info(f'Retry successful with reduced smoothing')
-            
+
+                self.get_logger().info('Retry successful with reduced smoothing.')
+
             if len(smoothed_path) < 2:
                 self.get_logger().warn('Smoothed path too short after collision filtering, using raw path')
                 return path

@@ -99,6 +99,12 @@ def generate_launch_description():
                         'If false, runs in mapping mode.',
         ),
         DeclareLaunchArgument(
+            'delete_db_on_start', default_value='true',
+            description='Delete the RTAB-Map DB on start (mapping mode only). '
+                        'Set to false to continue extending an existing DB. '
+                        'Has no effect in localization mode.',
+        ),
+        DeclareLaunchArgument(
             'map_name', default_value='rtabmap',
             description='Session name.  Database is saved to ~/maps/<map_name>.db. '
                         'Use the same name when saving the 2D grid.',
@@ -207,7 +213,9 @@ def generate_launch_description():
                 ('args', PythonExpression([
                     "('--delete_db_on_start ' if '",
                     LaunchConfiguration('localization'),
-                    "' != 'true' else '')",
+                    "' != 'true' and '",
+                    LaunchConfiguration('delete_db_on_start'),
+                    "' == 'true' else '')",
                     " + '"
                     " --Rtabmap/DetectionRate 1.0"
                     " --Reg/Strategy 0"

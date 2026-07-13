@@ -44,8 +44,12 @@ setup(
             'laser_scan_merger = aloha.laser_scan_merger:main',
             'auto_localize = aloha.auto_localize:main',
             'navigate_mission = aloha.navigate_mission:main',
+            'go_to_parking = aloha.go_to_parking:main',
+            'go_to_pose = aloha.go_to_pose:main',
+            'static_map_publisher = aloha.static_map_publisher:main',
             'robot_pose_marker = aloha.robot_pose_marker:main',
             'auto_explore = aloha.auto_explore:main',
+            'aloha_tasks = aloha.aloha_tasks:main',
         ],
     },
 )

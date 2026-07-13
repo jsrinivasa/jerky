@@ -1,0 +1,4450 @@
+[
+  {
+    "label": "1",
+    "rtab_x": -73.39,
+    "rtab_y": -33.02,
+    "svg_x": 55.68,
+    "svg_y": 28.659,
+    "category": "numbered_room"
+  },
+  {
+    "label": "1.1",
+    "rtab_x": -73.23,
+    "rtab_y": -31.34,
+    "svg_x": 55.491,
+    "svg_y": 27.135,
+    "category": "named_space"
+  },
+  {
+    "label": "1.9",
+    "rtab_x": -73.37,
+    "rtab_y": -24.86,
+    "svg_x": 55.433,
+    "svg_y": 21.268,
+    "category": "named_space"
+  },
+  {
+    "label": "2",
+    "rtab_x": -73.62,
+    "rtab_y": -23.27,
+    "svg_x": 55.615,
+    "svg_y": 19.82,
+    "category": "numbered_room"
+  },
+  {
+    "label": "2.9",
+    "rtab_x": -73.58,
+    "rtab_y": -16.93,
+    "svg_x": 55.404,
+    "svg_y": 14.08,
+    "category": "named_space"
+  },
+  {
+    "label": "3",
+    "rtab_x": -73.86,
+    "rtab_y": -15.2,
+    "svg_x": 55.615,
+    "svg_y": 12.505,
+    "category": "numbered_room"
+  },
+  {
+    "label": "301",
+    "rtab_x": -17.44,
+    "rtab_y": 24.29,
+    "svg_x": 3.429,
+    "svg_y": -21.684,
+    "category": "numbered_room"
+  },
+  {
+    "label": "303",
+    "rtab_x": -9.89,
+    "rtab_y": 24.52,
+    "svg_x": -3.417,
+    "svg_y": -21.684,
+    "category": "numbered_room"
+  },
+  {
+    "label": "304",
+    "rtab_x": 28.08,
+    "rtab_y": -1.81,
+    "svg_x": -37.062,
+    "svg_y": 3.208,
+    "category": "numbered_room"
+  },
+  {
+    "label": "306",
+    "rtab_x": 21.76,
+    "rtab_y": 0.29,
+    "svg_x": -31.398,
+    "svg_y": 1.138,
+    "category": "numbered_room"
+  },
+  {
+    "label": "308",
+    "rtab_x": 17.03,
+    "rtab_y": 0.16,
+    "svg_x": -27.117,
+    "svg_y": 1.126,
+    "category": "numbered_room"
+  },
+  {
+    "label": "309",
+    "rtab_x": 12.42,
+    "rtab_y": 0.01,
+    "svg_x": -22.939,
+    "svg_y": 1.126,
+    "category": "numbered_room"
+  },
+  {
+    "label": "310",
+    "rtab_x": 3.84,
+    "rtab_y": -2.37,
+    "svg_x": -15.102,
+    "svg_y": 3.043,
+    "category": "numbered_room"
+  },
+  {
+    "label": "311",
+    "rtab_x": 3.75,
+    "rtab_y": 1.84,
+    "svg_x": -15.14,
+    "svg_y": -0.767,
+    "category": "numbered_room"
+  },
+  {
+    "label": "312",
+    "rtab_x": -0.45,
+    "rtab_y": -3.33,
+    "svg_x": -11.19,
+    "svg_y": 3.793,
+    "category": "numbered_room"
+  },
+  {
+    "label": "313",
+    "rtab_x": -0.55,
+    "rtab_y": 0.93,
+    "svg_x": -11.215,
+    "svg_y": -0.068,
+    "category": "numbered_room"
+  },
+  {
+    "label": "314",
+    "rtab_x": -5.05,
+    "rtab_y": -0.54,
+    "svg_x": -7.1,
+    "svg_y": 1.138,
+    "category": "numbered_room"
+  },
+  {
+    "label": "317",
+    "rtab_x": -15.96,
+    "rtab_y": -2.82,
+    "svg_x": 2.845,
+    "svg_y": 2.904,
+    "category": "numbered_room"
+  },
+  {
+    "label": "317A",
+    "rtab_x": -17.26,
+    "rtab_y": 1.35,
+    "svg_x": 3.899,
+    "svg_y": -0.906,
+    "category": "numbered_room"
+  },
+  {
+    "label": "317B",
+    "rtab_x": -14.89,
+    "rtab_y": 1.42,
+    "svg_x": 1.753,
+    "svg_y": -0.906,
+    "category": "numbered_room"
+  },
+  {
+    "label": "318",
+    "rtab_x": -20.51,
+    "rtab_y": -1.01,
+    "svg_x": 6.91,
+    "svg_y": 1.138,
+    "category": "numbered_room"
+  },
+  {
+    "label": "319",
+    "rtab_x": -25.14,
+    "rtab_y": -4.08,
+    "svg_x": 11.19,
+    "svg_y": 3.793,
+    "category": "numbered_room"
+  },
+  {
+    "label": "320",
+    "rtab_x": -25.31,
+    "rtab_y": 0.18,
+    "svg_x": 11.228,
+    "svg_y": -0.068,
+    "category": "numbered_room"
+  },
+  {
+    "label": "321",
+    "rtab_x": -31.59,
+    "rtab_y": -1.35,
+    "svg_x": 16.956,
+    "svg_y": 1.138,
+    "category": "numbered_room"
+  },
+  {
+    "label": "325",
+    "rtab_x": -42.36,
+    "rtab_y": -1.67,
+    "svg_x": 26.711,
+    "svg_y": 1.126,
+    "category": "numbered_room"
+  },
+  {
+    "label": "326",
+    "rtab_x": -47.33,
+    "rtab_y": -1.82,
+    "svg_x": 31.22,
+    "svg_y": 1.126,
+    "category": "numbered_room"
+  },
+  {
+    "label": "327",
+    "rtab_x": -44.41,
+    "rtab_y": 1.64,
+    "svg_x": 28.476,
+    "svg_y": -1.922,
+    "category": "numbered_room"
+  },
+  {
+    "label": "328",
+    "rtab_x": -53.75,
+    "rtab_y": -4.31,
+    "svg_x": 37.1,
+    "svg_y": 3.208,
+    "category": "numbered_room"
+  },
+  {
+    "label": "340",
+    "rtab_x": -59.14,
+    "rtab_y": 19.05,
+    "svg_x": 41.337,
+    "svg_y": -18.096,
+    "category": "numbered_room"
+  },
+  {
+    "label": "346",
+    "rtab_x": -39.34,
+    "rtab_y": 10.59,
+    "svg_x": 23.637,
+    "svg_y": -9.885,
+    "category": "numbered_room"
+  },
+  {
+    "label": "347",
+    "rtab_x": -39.46,
+    "rtab_y": 14.62,
+    "svg_x": 23.637,
+    "svg_y": -13.543,
+    "category": "numbered_room"
+  },
+  {
+    "label": "348",
+    "rtab_x": -35.3,
+    "rtab_y": 10.71,
+    "svg_x": 19.979,
+    "svg_y": -9.885,
+    "category": "numbered_room"
+  },
+  {
+    "label": "349",
+    "rtab_x": -35.43,
+    "rtab_y": 14.75,
+    "svg_x": 19.979,
+    "svg_y": -13.543,
+    "category": "numbered_room"
+  },
+  {
+    "label": "350",
+    "rtab_x": -15.59,
+    "rtab_y": 9.69,
+    "svg_x": 2.159,
+    "svg_y": -8.412,
+    "category": "numbered_room"
+  },
+  {
+    "label": "351",
+    "rtab_x": -10.8,
+    "rtab_y": 9.84,
+    "svg_x": -2.185,
+    "svg_y": -8.412,
+    "category": "numbered_room"
+  },
+  {
+    "label": "352",
+    "rtab_x": -10.89,
+    "rtab_y": 12.99,
+    "svg_x": -2.185,
+    "svg_y": -11.27,
+    "category": "numbered_room"
+  },
+  {
+    "label": "353",
+    "rtab_x": -15.69,
+    "rtab_y": 12.84,
+    "svg_x": 2.159,
+    "svg_y": -11.27,
+    "category": "numbered_room"
+  },
+  {
+    "label": "356",
+    "rtab_x": 8.79,
+    "rtab_y": 12.06,
+    "svg_x": -19.979,
+    "svg_y": -9.885,
+    "category": "numbered_room"
+  },
+  {
+    "label": "357",
+    "rtab_x": 8.66,
+    "rtab_y": 16.1,
+    "svg_x": -19.979,
+    "svg_y": -13.543,
+    "category": "numbered_room"
+  },
+  {
+    "label": "358",
+    "rtab_x": 12.82,
+    "rtab_y": 12.19,
+    "svg_x": -23.637,
+    "svg_y": -9.885,
+    "category": "numbered_room"
+  },
+  {
+    "label": "359",
+    "rtab_x": 12.7,
+    "rtab_y": 16.22,
+    "svg_x": -23.637,
+    "svg_y": -13.543,
+    "category": "numbered_room"
+  },
+  {
+    "label": "360",
+    "rtab_x": 34.66,
+    "rtab_y": 25.87,
+    "svg_x": -43.794,
+    "svg_y": -21.671,
+    "category": "numbered_room"
+  },
+  {
+    "label": "361",
+    "rtab_x": 29.39,
+    "rtab_y": 23.69,
+    "svg_x": -38.955,
+    "svg_y": -19.842,
+    "category": "numbered_room"
+  },
+  {
+    "label": "363",
+    "rtab_x": 29.26,
+    "rtab_y": 27.75,
+    "svg_x": -38.955,
+    "svg_y": -23.525,
+    "category": "numbered_room"
+  },
+  {
+    "label": "370",
+    "rtab_x": 36.21,
+    "rtab_y": -24.43,
+    "svg_x": -43.794,
+    "svg_y": 23.922,
+    "category": "numbered_room"
+  },
+  {
+    "label": "371",
+    "rtab_x": 30.93,
+    "rtab_y": -26.64,
+    "svg_x": -38.955,
+    "svg_y": 25.776,
+    "category": "numbered_room"
+  },
+  {
+    "label": "373",
+    "rtab_x": 30.8,
+    "rtab_y": -22.58,
+    "svg_x": -38.955,
+    "svg_y": 22.093,
+    "category": "numbered_room"
+  },
+  {
+    "label": "376",
+    "rtab_x": 13.57,
+    "rtab_y": -12.11,
+    "svg_x": -23.637,
+    "svg_y": 12.136,
+    "category": "numbered_room"
+  },
+  {
+    "label": "377",
+    "rtab_x": 13.69,
+    "rtab_y": -16.15,
+    "svg_x": -23.637,
+    "svg_y": 15.794,
+    "category": "numbered_room"
+  },
+  {
+    "label": "378",
+    "rtab_x": 9.53,
+    "rtab_y": -12.23,
+    "svg_x": -19.979,
+    "svg_y": 12.136,
+    "category": "numbered_room"
+  },
+  {
+    "label": "379",
+    "rtab_x": 9.65,
+    "rtab_y": -16.27,
+    "svg_x": -19.979,
+    "svg_y": 15.794,
+    "category": "numbered_room"
+  },
+  {
+    "label": "380",
+    "rtab_x": -10.15,
+    "rtab_y": -11.38,
+    "svg_x": -2.185,
+    "svg_y": 10.816,
+    "category": "numbered_room"
+  },
+  {
+    "label": "381",
+    "rtab_x": -10.03,
+    "rtab_y": -15.19,
+    "svg_x": -2.185,
+    "svg_y": 14.27,
+    "category": "numbered_room"
+  },
+  {
+    "label": "382A",
+    "rtab_x": -9.13,
+    "rtab_y": -18.49,
+    "svg_x": -2.909,
+    "svg_y": 17.28,
+    "category": "numbered_room"
+  },
+  {
+    "label": "382B",
+    "rtab_x": -12.34,
+    "rtab_y": -18.59,
+    "svg_x": 0.0,
+    "svg_y": 17.28,
+    "category": "numbered_room"
+  },
+  {
+    "label": "382C",
+    "rtab_x": -15.55,
+    "rtab_y": -18.68,
+    "svg_x": 2.909,
+    "svg_y": 17.28,
+    "category": "numbered_room"
+  },
+  {
+    "label": "383",
+    "rtab_x": -14.85,
+    "rtab_y": -15.34,
+    "svg_x": 2.185,
+    "svg_y": 14.27,
+    "category": "numbered_room"
+  },
+  {
+    "label": "384",
+    "rtab_x": -14.97,
+    "rtab_y": -11.53,
+    "svg_x": 2.185,
+    "svg_y": 10.816,
+    "category": "numbered_room"
+  },
+  {
+    "label": "385",
+    "rtab_x": -12.08,
+    "rtab_y": -27.11,
+    "svg_x": 0.0,
+    "svg_y": 25.002,
+    "category": "numbered_room"
+  },
+  {
+    "label": "390",
+    "rtab_x": -60.43,
+    "rtab_y": -27.39,
+    "svg_x": 43.794,
+    "svg_y": 23.922,
+    "category": "numbered_room"
+  },
+  {
+    "label": "391",
+    "rtab_x": -55.16,
+    "rtab_y": -25.21,
+    "svg_x": 38.955,
+    "svg_y": 22.093,
+    "category": "numbered_room"
+  },
+  {
+    "label": "393",
+    "rtab_x": -55.03,
+    "rtab_y": -29.28,
+    "svg_x": 38.955,
+    "svg_y": 25.776,
+    "category": "numbered_room"
+  },
+  {
+    "label": "396",
+    "rtab_x": -34.56,
+    "rtab_y": -13.59,
+    "svg_x": 19.979,
+    "svg_y": 12.136,
+    "category": "numbered_room"
+  },
+  {
+    "label": "397",
+    "rtab_x": -34.43,
+    "rtab_y": -17.62,
+    "svg_x": 19.979,
+    "svg_y": 15.794,
+    "category": "numbered_room"
+  },
+  {
+    "label": "398",
+    "rtab_x": -38.59,
+    "rtab_y": -13.71,
+    "svg_x": 23.637,
+    "svg_y": 12.136,
+    "category": "numbered_room"
+  },
+  {
+    "label": "399",
+    "rtab_x": -38.47,
+    "rtab_y": -17.75,
+    "svg_x": 23.637,
+    "svg_y": 15.794,
+    "category": "numbered_room"
+  },
+  {
+    "label": "4",
+    "rtab_x": -74.12,
+    "rtab_y": -6.45,
+    "svg_x": 55.607,
+    "svg_y": 4.58,
+    "category": "numbered_room"
+  },
+  {
+    "label": "5",
+    "rtab_x": -74.38,
+    "rtab_y": 1.62,
+    "svg_x": 55.615,
+    "svg_y": -2.735,
+    "category": "numbered_room"
+  },
+  {
+    "label": "6",
+    "rtab_x": -74.65,
+    "rtab_y": 10.36,
+    "svg_x": 55.622,
+    "svg_y": -10.66,
+    "category": "numbered_room"
+  },
+  {
+    "label": "6.1",
+    "rtab_x": -74.53,
+    "rtab_y": 12.1,
+    "svg_x": 55.462,
+    "svg_y": -12.235,
+    "category": "named_space"
+  },
+  {
+    "label": "7",
+    "rtab_x": -74.89,
+    "rtab_y": 18.43,
+    "svg_x": 55.615,
+    "svg_y": -17.975,
+    "category": "numbered_room"
+  },
+  {
+    "label": "7.1",
+    "rtab_x": -74.77,
+    "rtab_y": 20.03,
+    "svg_x": 55.462,
+    "svg_y": -19.423,
+    "category": "named_space"
+  },
+  {
+    "label": "7.9",
+    "rtab_x": -74.91,
+    "rtab_y": 26.51,
+    "svg_x": 55.404,
+    "svg_y": -25.29,
+    "category": "named_space"
+  },
+  {
+    "label": "8",
+    "rtab_x": -75.19,
+    "rtab_y": 28.18,
+    "svg_x": 55.615,
+    "svg_y": -26.814,
+    "category": "numbered_room"
+  },
+  {
+    "label": "8.5",
+    "rtab_x": -75.01,
+    "rtab_y": 30.21,
+    "svg_x": 55.397,
+    "svg_y": -28.643,
+    "category": "named_space"
+  },
+  {
+    "label": "9",
+    "rtab_x": -75.31,
+    "rtab_y": 31.72,
+    "svg_x": 55.622,
+    "svg_y": -30.015,
+    "category": "numbered_room"
+  },
+  {
+    "label": "A",
+    "rtab_x": 40.75,
+    "rtab_y": -43.93,
+    "svg_x": -47.365,
+    "svg_y": 41.698,
+    "category": "named_space"
+  },
+  {
+    "label": "A.1",
+    "rtab_x": 39.23,
+    "rtab_y": -43.97,
+    "svg_x": -45.993,
+    "svg_y": 41.698,
+    "category": "named_space"
+  },
+  {
+    "label": "A.2",
+    "rtab_x": 37.29,
+    "rtab_y": -44.03,
+    "svg_x": -44.23,
+    "svg_y": 41.698,
+    "category": "named_space"
+  },
+  {
+    "label": "A.6",
+    "rtab_x": 34.08,
+    "rtab_y": -44.13,
+    "svg_x": -41.326,
+    "svg_y": 41.698,
+    "category": "named_space"
+  },
+  {
+    "label": "A2-14",
+    "rtab_x": 33.94,
+    "rtab_y": -16.25,
+    "svg_x": -41.966,
+    "svg_y": 16.451,
+    "category": "numbered_room"
+  },
+  {
+    "label": "A3-10",
+    "rtab_x": 28.15,
+    "rtab_y": -9.47,
+    "svg_x": -36.915,
+    "svg_y": 10.151,
+    "category": "numbered_room"
+  },
+  {
+    "label": "A3-2",
+    "rtab_x": 34.55,
+    "rtab_y": -11.02,
+    "svg_x": -42.664,
+    "svg_y": 11.731,
+    "category": "numbered_room"
+  },
+  {
+    "label": "A3-3",
+    "rtab_x": 32.88,
+    "rtab_y": -11.07,
+    "svg_x": -41.15,
+    "svg_y": 11.731,
+    "category": "numbered_room"
+  },
+  {
+    "label": "A3-4",
+    "rtab_x": 30.03,
+    "rtab_y": -11.14,
+    "svg_x": -38.575,
+    "svg_y": 11.718,
+    "category": "numbered_room"
+  },
+  {
+    "label": "A3-5",
+    "rtab_x": 28.17,
+    "rtab_y": -11.2,
+    "svg_x": -36.89,
+    "svg_y": 11.718,
+    "category": "numbered_room"
+  },
+  {
+    "label": "A3-7",
+    "rtab_x": 34.49,
+    "rtab_y": -9.26,
+    "svg_x": -42.664,
+    "svg_y": 10.136,
+    "category": "numbered_room"
+  },
+  {
+    "label": "A3-8",
+    "rtab_x": 32.8,
+    "rtab_y": -9.31,
+    "svg_x": -41.126,
+    "svg_y": 10.136,
+    "category": "numbered_room"
+  },
+  {
+    "label": "A3-9",
+    "rtab_x": 29.98,
+    "rtab_y": -9.42,
+    "svg_x": -38.575,
+    "svg_y": 10.151,
+    "category": "numbered_room"
+  },
+  {
+    "label": "A5-17",
+    "rtab_x": 33.28,
+    "rtab_y": 10.2,
+    "svg_x": -42.105,
+    "svg_y": -7.523,
+    "category": "numbered_room"
+  },
+  {
+    "label": "A5-18",
+    "rtab_x": 31.5,
+    "rtab_y": 10.15,
+    "svg_x": -40.492,
+    "svg_y": -7.523,
+    "category": "numbered_room"
+  },
+  {
+    "label": "A5-19",
+    "rtab_x": 28.71,
+    "rtab_y": 10.06,
+    "svg_x": -37.964,
+    "svg_y": -7.523,
+    "category": "numbered_room"
+  },
+  {
+    "label": "A5-20",
+    "rtab_x": 26.93,
+    "rtab_y": 10.01,
+    "svg_x": -36.351,
+    "svg_y": -7.523,
+    "category": "numbered_room"
+  },
+  {
+    "label": "A5-22",
+    "rtab_x": 33.23,
+    "rtab_y": 11.89,
+    "svg_x": -42.105,
+    "svg_y": -9.047,
+    "category": "numbered_room"
+  },
+  {
+    "label": "A5-23",
+    "rtab_x": 31.45,
+    "rtab_y": 11.83,
+    "svg_x": -40.492,
+    "svg_y": -9.047,
+    "category": "numbered_room"
+  },
+  {
+    "label": "A5-24",
+    "rtab_x": 28.66,
+    "rtab_y": 11.75,
+    "svg_x": -37.964,
+    "svg_y": -9.047,
+    "category": "numbered_room"
+  },
+  {
+    "label": "A5-25",
+    "rtab_x": 26.88,
+    "rtab_y": 11.69,
+    "svg_x": -36.351,
+    "svg_y": -9.047,
+    "category": "numbered_room"
+  },
+  {
+    "label": "A6-1",
+    "rtab_x": 36.18,
+    "rtab_y": 15.34,
+    "svg_x": -44.874,
+    "svg_y": -12.095,
+    "category": "numbered_room"
+  },
+  {
+    "label": "A6-11",
+    "rtab_x": 36.09,
+    "rtab_y": 17.81,
+    "svg_x": -44.861,
+    "svg_y": -14.33,
+    "category": "numbered_room"
+  },
+  {
+    "label": "A6-13",
+    "rtab_x": 32.19,
+    "rtab_y": 17.87,
+    "svg_x": -41.33,
+    "svg_y": -14.495,
+    "category": "numbered_room"
+  },
+  {
+    "label": "A6-15",
+    "rtab_x": 28.23,
+    "rtab_y": 17.99,
+    "svg_x": -37.748,
+    "svg_y": -14.711,
+    "category": "numbered_room"
+  },
+  {
+    "label": "A6-16",
+    "rtab_x": 36.01,
+    "rtab_y": 20.25,
+    "svg_x": -44.861,
+    "svg_y": -16.54,
+    "category": "numbered_room"
+  },
+  {
+    "label": "B",
+    "rtab_x": 28.96,
+    "rtab_y": -44.29,
+    "svg_x": -36.681,
+    "svg_y": 41.698,
+    "category": "named_space"
+  },
+  {
+    "label": "B.3",
+    "rtab_x": 26.18,
+    "rtab_y": -44.37,
+    "svg_x": -34.163,
+    "svg_y": 41.698,
+    "category": "named_space"
+  },
+  {
+    "label": "B1-10",
+    "rtab_x": 18.67,
+    "rtab_y": -25.62,
+    "svg_x": -27.879,
+    "svg_y": 24.506,
+    "category": "numbered_room"
+  },
+  {
+    "label": "B1-14",
+    "rtab_x": 20.39,
+    "rtab_y": -23.88,
+    "svg_x": -29.492,
+    "svg_y": 22.982,
+    "category": "numbered_room"
+  },
+  {
+    "label": "B1-15",
+    "rtab_x": 18.61,
+    "rtab_y": -23.93,
+    "svg_x": -27.879,
+    "svg_y": 22.982,
+    "category": "numbered_room"
+  },
+  {
+    "label": "B1-17",
+    "rtab_x": 24.05,
+    "rtab_y": -23.15,
+    "svg_x": -32.82,
+    "svg_y": 22.423,
+    "category": "numbered_room"
+  },
+  {
+    "label": "B1-19",
+    "rtab_x": 20.34,
+    "rtab_y": -22.2,
+    "svg_x": -29.492,
+    "svg_y": 21.458,
+    "category": "numbered_room"
+  },
+  {
+    "label": "B1-20",
+    "rtab_x": 18.56,
+    "rtab_y": -22.25,
+    "svg_x": -27.879,
+    "svg_y": 21.458,
+    "category": "numbered_room"
+  },
+  {
+    "label": "B1-4",
+    "rtab_x": 20.5,
+    "rtab_y": -27.24,
+    "svg_x": -29.492,
+    "svg_y": 26.03,
+    "category": "numbered_room"
+  },
+  {
+    "label": "B1-5",
+    "rtab_x": 18.72,
+    "rtab_y": -27.3,
+    "svg_x": -27.879,
+    "svg_y": 26.03,
+    "category": "numbered_room"
+  },
+  {
+    "label": "B1-7",
+    "rtab_x": 24.13,
+    "rtab_y": -25.84,
+    "svg_x": -32.82,
+    "svg_y": 24.862,
+    "category": "numbered_room"
+  },
+  {
+    "label": "B1-9",
+    "rtab_x": 20.44,
+    "rtab_y": -25.56,
+    "svg_x": -29.492,
+    "svg_y": 24.506,
+    "category": "numbered_room"
+  },
+  {
+    "label": "B2-12",
+    "rtab_x": 25.34,
+    "rtab_y": -16.92,
+    "svg_x": -34.16,
+    "svg_y": 16.817,
+    "category": "numbered_room"
+  },
+  {
+    "label": "B2-13",
+    "rtab_x": 23.63,
+    "rtab_y": -16.97,
+    "svg_x": -32.612,
+    "svg_y": 16.817,
+    "category": "numbered_room"
+  },
+  {
+    "label": "B2-14",
+    "rtab_x": 21.93,
+    "rtab_y": -17.02,
+    "svg_x": -31.075,
+    "svg_y": 16.817,
+    "category": "numbered_room"
+  },
+  {
+    "label": "B2-15",
+    "rtab_x": 20.23,
+    "rtab_y": -17.08,
+    "svg_x": -29.533,
+    "svg_y": 16.817,
+    "category": "numbered_room"
+  },
+  {
+    "label": "B2-17",
+    "rtab_x": 25.3,
+    "rtab_y": -15.7,
+    "svg_x": -34.16,
+    "svg_y": 15.715,
+    "category": "numbered_room"
+  },
+  {
+    "label": "B2-18",
+    "rtab_x": 23.59,
+    "rtab_y": -15.76,
+    "svg_x": -32.612,
+    "svg_y": 15.715,
+    "category": "numbered_room"
+  },
+  {
+    "label": "B2-19",
+    "rtab_x": 21.89,
+    "rtab_y": -15.81,
+    "svg_x": -31.075,
+    "svg_y": 15.715,
+    "category": "numbered_room"
+  },
+  {
+    "label": "B2-20",
+    "rtab_x": 20.19,
+    "rtab_y": -15.86,
+    "svg_x": -29.533,
+    "svg_y": 15.715,
+    "category": "numbered_room"
+  },
+  {
+    "label": "B3-10",
+    "rtab_x": 19.95,
+    "rtab_y": -11.17,
+    "svg_x": -29.443,
+    "svg_y": 11.464,
+    "category": "numbered_room"
+  },
+  {
+    "label": "B3-2",
+    "rtab_x": 25.09,
+    "rtab_y": -12.31,
+    "svg_x": -34.065,
+    "svg_y": 12.635,
+    "category": "numbered_room"
+  },
+  {
+    "label": "B3-3",
+    "rtab_x": 23.37,
+    "rtab_y": -12.36,
+    "svg_x": -32.507,
+    "svg_y": 12.635,
+    "category": "numbered_room"
+  },
+  {
+    "label": "B3-4",
+    "rtab_x": 21.71,
+    "rtab_y": -12.41,
+    "svg_x": -31.001,
+    "svg_y": 12.634,
+    "category": "numbered_room"
+  },
+  {
+    "label": "B3-5",
+    "rtab_x": 19.99,
+    "rtab_y": -12.46,
+    "svg_x": -29.443,
+    "svg_y": 12.634,
+    "category": "numbered_room"
+  },
+  {
+    "label": "B3-7",
+    "rtab_x": 25.13,
+    "rtab_y": -11.01,
+    "svg_x": -34.139,
+    "svg_y": 11.464,
+    "category": "numbered_room"
+  },
+  {
+    "label": "B3-8",
+    "rtab_x": 23.33,
+    "rtab_y": -11.07,
+    "svg_x": -32.507,
+    "svg_y": 11.464,
+    "category": "numbered_room"
+  },
+  {
+    "label": "B3-9",
+    "rtab_x": 21.67,
+    "rtab_y": -11.12,
+    "svg_x": -31.001,
+    "svg_y": 11.464,
+    "category": "numbered_room"
+  },
+  {
+    "label": "B5-22",
+    "rtab_x": 23.37,
+    "rtab_y": 12.15,
+    "svg_x": -33.188,
+    "svg_y": -9.555,
+    "category": "numbered_room"
+  },
+  {
+    "label": "B5-23",
+    "rtab_x": 21.69,
+    "rtab_y": 12.09,
+    "svg_x": -31.664,
+    "svg_y": -9.555,
+    "category": "numbered_room"
+  },
+  {
+    "label": "B5-24",
+    "rtab_x": 20.01,
+    "rtab_y": 12.04,
+    "svg_x": -30.14,
+    "svg_y": -9.555,
+    "category": "numbered_room"
+  },
+  {
+    "label": "B5-25",
+    "rtab_x": 18.33,
+    "rtab_y": 11.99,
+    "svg_x": -28.616,
+    "svg_y": -9.555,
+    "category": "numbered_room"
+  },
+  {
+    "label": "B6-12",
+    "rtab_x": 23.23,
+    "rtab_y": 16.71,
+    "svg_x": -33.188,
+    "svg_y": -13.695,
+    "category": "numbered_room"
+  },
+  {
+    "label": "B6-13",
+    "rtab_x": 21.55,
+    "rtab_y": 16.66,
+    "svg_x": -31.664,
+    "svg_y": -13.695,
+    "category": "numbered_room"
+  },
+  {
+    "label": "B6-14",
+    "rtab_x": 19.87,
+    "rtab_y": 16.61,
+    "svg_x": -30.14,
+    "svg_y": -13.695,
+    "category": "numbered_room"
+  },
+  {
+    "label": "B6-15",
+    "rtab_x": 18.19,
+    "rtab_y": 16.56,
+    "svg_x": -28.616,
+    "svg_y": -13.695,
+    "category": "numbered_room"
+  },
+  {
+    "label": "B6-17",
+    "rtab_x": 23.18,
+    "rtab_y": 18.49,
+    "svg_x": -33.188,
+    "svg_y": -15.308,
+    "category": "numbered_room"
+  },
+  {
+    "label": "B6-18",
+    "rtab_x": 21.49,
+    "rtab_y": 18.44,
+    "svg_x": -31.664,
+    "svg_y": -15.308,
+    "category": "numbered_room"
+  },
+  {
+    "label": "B6-19",
+    "rtab_x": 19.81,
+    "rtab_y": 18.39,
+    "svg_x": -30.14,
+    "svg_y": -15.308,
+    "category": "numbered_room"
+  },
+  {
+    "label": "B6-2",
+    "rtab_x": 23.32,
+    "rtab_y": 13.92,
+    "svg_x": -33.188,
+    "svg_y": -11.168,
+    "category": "numbered_room"
+  },
+  {
+    "label": "B6-20",
+    "rtab_x": 18.13,
+    "rtab_y": 18.34,
+    "svg_x": -28.616,
+    "svg_y": -15.308,
+    "category": "numbered_room"
+  },
+  {
+    "label": "B6-3",
+    "rtab_x": 21.63,
+    "rtab_y": 13.87,
+    "svg_x": -31.664,
+    "svg_y": -11.168,
+    "category": "numbered_room"
+  },
+  {
+    "label": "B6-4",
+    "rtab_x": 19.95,
+    "rtab_y": 13.82,
+    "svg_x": -30.14,
+    "svg_y": -11.168,
+    "category": "numbered_room"
+  },
+  {
+    "label": "B6-5",
+    "rtab_x": 18.27,
+    "rtab_y": 13.77,
+    "svg_x": -28.616,
+    "svg_y": -11.168,
+    "category": "numbered_room"
+  },
+  {
+    "label": "B7-10",
+    "rtab_x": 17.16,
+    "rtab_y": 23.82,
+    "svg_x": -27.892,
+    "svg_y": -20.299,
+    "category": "numbered_room"
+  },
+  {
+    "label": "B7-14",
+    "rtab_x": 18.89,
+    "rtab_y": 25.56,
+    "svg_x": -29.505,
+    "svg_y": -21.823,
+    "category": "numbered_room"
+  },
+  {
+    "label": "B7-15",
+    "rtab_x": 17.11,
+    "rtab_y": 25.5,
+    "svg_x": -27.892,
+    "svg_y": -21.823,
+    "category": "numbered_room"
+  },
+  {
+    "label": "B7-17",
+    "rtab_x": 22.54,
+    "rtab_y": 26.55,
+    "svg_x": -32.833,
+    "svg_y": -22.623,
+    "category": "numbered_room"
+  },
+  {
+    "label": "B7-19",
+    "rtab_x": 18.84,
+    "rtab_y": 27.24,
+    "svg_x": -29.505,
+    "svg_y": -23.347,
+    "category": "numbered_room"
+  },
+  {
+    "label": "B7-20",
+    "rtab_x": 17.06,
+    "rtab_y": 27.18,
+    "svg_x": -27.892,
+    "svg_y": -23.347,
+    "category": "numbered_room"
+  },
+  {
+    "label": "B7-4",
+    "rtab_x": 19.0,
+    "rtab_y": 22.19,
+    "svg_x": -29.505,
+    "svg_y": -18.775,
+    "category": "numbered_room"
+  },
+  {
+    "label": "B7-5",
+    "rtab_x": 17.22,
+    "rtab_y": 22.14,
+    "svg_x": -27.892,
+    "svg_y": -18.775,
+    "category": "numbered_room"
+  },
+  {
+    "label": "B7-7",
+    "rtab_x": 22.62,
+    "rtab_y": 23.86,
+    "svg_x": -32.833,
+    "svg_y": -20.185,
+    "category": "numbered_room"
+  },
+  {
+    "label": "B7-9",
+    "rtab_x": 18.94,
+    "rtab_y": 23.88,
+    "svg_x": -29.505,
+    "svg_y": -20.299,
+    "category": "numbered_room"
+  },
+  {
+    "label": "BREAK RM.",
+    "rtab_x": -14.65,
+    "rtab_y": -0.46,
+    "svg_x": 1.585,
+    "svg_y": 0.805,
+    "category": "named_space"
+  },
+  {
+    "label": "C",
+    "rtab_x": 18.88,
+    "rtab_y": -44.6,
+    "svg_x": -27.544,
+    "svg_y": 41.698,
+    "category": "named_space"
+  },
+  {
+    "label": "C-1",
+    "rtab_x": -11.44,
+    "rtab_y": -0.73,
+    "svg_x": -1.308,
+    "svg_y": 1.138,
+    "category": "corridor"
+  },
+  {
+    "label": "C-2",
+    "rtab_x": 34.41,
+    "rtab_y": 0.69,
+    "svg_x": -42.867,
+    "svg_y": 1.126,
+    "category": "corridor"
+  },
+  {
+    "label": "C-3",
+    "rtab_x": -59.33,
+    "rtab_y": -2.19,
+    "svg_x": 42.092,
+    "svg_y": 1.126,
+    "category": "corridor"
+  },
+  {
+    "label": "C-4",
+    "rtab_x": -19.09,
+    "rtab_y": -5.19,
+    "svg_x": 5.741,
+    "svg_y": 4.961,
+    "category": "corridor"
+  },
+  {
+    "label": "C-5",
+    "rtab_x": -18.89,
+    "rtab_y": 11.05,
+    "svg_x": 5.106,
+    "svg_y": -9.733,
+    "category": "corridor"
+  },
+  {
+    "label": "C1-1",
+    "rtab_x": 15.68,
+    "rtab_y": -29.77,
+    "svg_x": -25.06,
+    "svg_y": 28.189,
+    "category": "numbered_room"
+  },
+  {
+    "label": "C1-10",
+    "rtab_x": 9.11,
+    "rtab_y": -28.29,
+    "svg_x": -19.154,
+    "svg_y": 26.665,
+    "category": "numbered_room"
+  },
+  {
+    "label": "C1-11",
+    "rtab_x": 15.54,
+    "rtab_y": -25.23,
+    "svg_x": -25.06,
+    "svg_y": 24.074,
+    "category": "numbered_room"
+  },
+  {
+    "label": "C1-12",
+    "rtab_x": 13.76,
+    "rtab_y": -25.29,
+    "svg_x": -23.447,
+    "svg_y": 24.074,
+    "category": "numbered_room"
+  },
+  {
+    "label": "C1-14",
+    "rtab_x": 10.8,
+    "rtab_y": -25.38,
+    "svg_x": -20.767,
+    "svg_y": 24.074,
+    "category": "numbered_room"
+  },
+  {
+    "label": "C1-15",
+    "rtab_x": 9.02,
+    "rtab_y": -25.43,
+    "svg_x": -19.154,
+    "svg_y": 24.074,
+    "category": "numbered_room"
+  },
+  {
+    "label": "C1-16",
+    "rtab_x": 15.49,
+    "rtab_y": -23.55,
+    "svg_x": -25.06,
+    "svg_y": 22.55,
+    "category": "numbered_room"
+  },
+  {
+    "label": "C1-17",
+    "rtab_x": 13.71,
+    "rtab_y": -23.61,
+    "svg_x": -23.447,
+    "svg_y": 22.55,
+    "category": "numbered_room"
+  },
+  {
+    "label": "C1-19",
+    "rtab_x": 10.75,
+    "rtab_y": -23.7,
+    "svg_x": -20.767,
+    "svg_y": 22.55,
+    "category": "numbered_room"
+  },
+  {
+    "label": "C1-2",
+    "rtab_x": 13.9,
+    "rtab_y": -29.83,
+    "svg_x": -23.447,
+    "svg_y": 28.189,
+    "category": "numbered_room"
+  },
+  {
+    "label": "C1-20",
+    "rtab_x": 8.97,
+    "rtab_y": -23.75,
+    "svg_x": -19.154,
+    "svg_y": 22.55,
+    "category": "numbered_room"
+  },
+  {
+    "label": "C1-21",
+    "rtab_x": 15.44,
+    "rtab_y": -21.87,
+    "svg_x": -25.06,
+    "svg_y": 21.026,
+    "category": "numbered_room"
+  },
+  {
+    "label": "C1-22",
+    "rtab_x": 13.66,
+    "rtab_y": -21.93,
+    "svg_x": -23.447,
+    "svg_y": 21.026,
+    "category": "numbered_room"
+  },
+  {
+    "label": "C1-24",
+    "rtab_x": 10.7,
+    "rtab_y": -22.02,
+    "svg_x": -20.767,
+    "svg_y": 21.026,
+    "category": "numbered_room"
+  },
+  {
+    "label": "C1-25",
+    "rtab_x": 8.92,
+    "rtab_y": -22.07,
+    "svg_x": -19.154,
+    "svg_y": 21.026,
+    "category": "numbered_room"
+  },
+  {
+    "label": "C1-4",
+    "rtab_x": 10.94,
+    "rtab_y": -29.92,
+    "svg_x": -20.767,
+    "svg_y": 28.189,
+    "category": "numbered_room"
+  },
+  {
+    "label": "C1-5",
+    "rtab_x": 9.16,
+    "rtab_y": -29.97,
+    "svg_x": -19.154,
+    "svg_y": 28.189,
+    "category": "numbered_room"
+  },
+  {
+    "label": "C1-6",
+    "rtab_x": 15.63,
+    "rtab_y": -28.09,
+    "svg_x": -25.06,
+    "svg_y": 26.665,
+    "category": "numbered_room"
+  },
+  {
+    "label": "C1-7",
+    "rtab_x": 13.85,
+    "rtab_y": -28.15,
+    "svg_x": -23.447,
+    "svg_y": 26.665,
+    "category": "numbered_room"
+  },
+  {
+    "label": "C1-9",
+    "rtab_x": 10.89,
+    "rtab_y": -28.24,
+    "svg_x": -20.767,
+    "svg_y": 26.665,
+    "category": "numbered_room"
+  },
+  {
+    "label": "C2-4",
+    "rtab_x": 11.75,
+    "rtab_y": -18.77,
+    "svg_x": -21.808,
+    "svg_y": 18.118,
+    "category": "numbered_room"
+  },
+  {
+    "label": "C3-12",
+    "rtab_x": 13.48,
+    "rtab_y": -9.39,
+    "svg_x": -23.637,
+    "svg_y": 9.673,
+    "category": "numbered_room"
+  },
+  {
+    "label": "C3-14",
+    "rtab_x": 9.45,
+    "rtab_y": -9.52,
+    "svg_x": -19.979,
+    "svg_y": 9.673,
+    "category": "numbered_room"
+  },
+  {
+    "label": "C3-22",
+    "rtab_x": 13.42,
+    "rtab_y": -7.33,
+    "svg_x": -23.637,
+    "svg_y": 7.806,
+    "category": "numbered_room"
+  },
+  {
+    "label": "C3-24",
+    "rtab_x": 9.38,
+    "rtab_y": -7.46,
+    "svg_x": -19.979,
+    "svg_y": 7.806,
+    "category": "numbered_room"
+  },
+  {
+    "label": "C5-12",
+    "rtab_x": 12.91,
+    "rtab_y": 9.45,
+    "svg_x": -23.637,
+    "svg_y": -7.409,
+    "category": "numbered_room"
+  },
+  {
+    "label": "C5-14",
+    "rtab_x": 8.87,
+    "rtab_y": 9.33,
+    "svg_x": -19.979,
+    "svg_y": -7.409,
+    "category": "numbered_room"
+  },
+  {
+    "label": "C5-7",
+    "rtab_x": 12.97,
+    "rtab_y": 7.41,
+    "svg_x": -23.637,
+    "svg_y": -5.555,
+    "category": "numbered_room"
+  },
+  {
+    "label": "C5-9",
+    "rtab_x": 8.93,
+    "rtab_y": 7.29,
+    "svg_x": -19.979,
+    "svg_y": -5.555,
+    "category": "numbered_room"
+  },
+  {
+    "label": "C6-23",
+    "rtab_x": 10.6,
+    "rtab_y": 18.71,
+    "svg_x": -21.808,
+    "svg_y": -15.854,
+    "category": "numbered_room"
+  },
+  {
+    "label": "C7-10",
+    "rtab_x": 7.52,
+    "rtab_y": 23.53,
+    "svg_x": -19.154,
+    "svg_y": -20.299,
+    "category": "numbered_room"
+  },
+  {
+    "label": "C7-12",
+    "rtab_x": 13.99,
+    "rtab_y": 25.41,
+    "svg_x": -25.06,
+    "svg_y": -21.823,
+    "category": "numbered_room"
+  },
+  {
+    "label": "C7-13",
+    "rtab_x": 12.21,
+    "rtab_y": 25.35,
+    "svg_x": -23.447,
+    "svg_y": -21.823,
+    "category": "numbered_room"
+  },
+  {
+    "label": "C7-14",
+    "rtab_x": 9.25,
+    "rtab_y": 25.26,
+    "svg_x": -20.767,
+    "svg_y": -21.823,
+    "category": "numbered_room"
+  },
+  {
+    "label": "C7-15",
+    "rtab_x": 7.47,
+    "rtab_y": 25.21,
+    "svg_x": -19.154,
+    "svg_y": -21.823,
+    "category": "numbered_room"
+  },
+  {
+    "label": "C7-17",
+    "rtab_x": 13.9,
+    "rtab_y": 28.27,
+    "svg_x": -25.06,
+    "svg_y": -24.414,
+    "category": "numbered_room"
+  },
+  {
+    "label": "C7-18",
+    "rtab_x": 12.12,
+    "rtab_y": 28.21,
+    "svg_x": -23.447,
+    "svg_y": -24.414,
+    "category": "numbered_room"
+  },
+  {
+    "label": "C7-19",
+    "rtab_x": 9.16,
+    "rtab_y": 28.12,
+    "svg_x": -20.767,
+    "svg_y": -24.414,
+    "category": "numbered_room"
+  },
+  {
+    "label": "C7-2",
+    "rtab_x": 14.09,
+    "rtab_y": 22.04,
+    "svg_x": -25.06,
+    "svg_y": -18.775,
+    "category": "numbered_room"
+  },
+  {
+    "label": "C7-20",
+    "rtab_x": 7.38,
+    "rtab_y": 28.07,
+    "svg_x": -19.154,
+    "svg_y": -24.414,
+    "category": "numbered_room"
+  },
+  {
+    "label": "C7-22",
+    "rtab_x": 13.85,
+    "rtab_y": 29.95,
+    "svg_x": -25.06,
+    "svg_y": -25.938,
+    "category": "numbered_room"
+  },
+  {
+    "label": "C7-23",
+    "rtab_x": 12.07,
+    "rtab_y": 29.89,
+    "svg_x": -23.447,
+    "svg_y": -25.938,
+    "category": "numbered_room"
+  },
+  {
+    "label": "C7-24",
+    "rtab_x": 9.11,
+    "rtab_y": 29.8,
+    "svg_x": -20.767,
+    "svg_y": -25.938,
+    "category": "numbered_room"
+  },
+  {
+    "label": "C7-25",
+    "rtab_x": 7.33,
+    "rtab_y": 29.75,
+    "svg_x": -19.154,
+    "svg_y": -25.938,
+    "category": "numbered_room"
+  },
+  {
+    "label": "C7-3",
+    "rtab_x": 12.31,
+    "rtab_y": 21.99,
+    "svg_x": -23.447,
+    "svg_y": -18.775,
+    "category": "numbered_room"
+  },
+  {
+    "label": "C7-4",
+    "rtab_x": 9.35,
+    "rtab_y": 21.9,
+    "svg_x": -20.767,
+    "svg_y": -18.775,
+    "category": "numbered_room"
+  },
+  {
+    "label": "C7-5",
+    "rtab_x": 7.57,
+    "rtab_y": 21.84,
+    "svg_x": -19.154,
+    "svg_y": -18.775,
+    "category": "numbered_room"
+  },
+  {
+    "label": "C7-7",
+    "rtab_x": 14.04,
+    "rtab_y": 23.72,
+    "svg_x": -25.06,
+    "svg_y": -20.299,
+    "category": "numbered_room"
+  },
+  {
+    "label": "C7-8",
+    "rtab_x": 12.26,
+    "rtab_y": 23.67,
+    "svg_x": -23.447,
+    "svg_y": -20.299,
+    "category": "numbered_room"
+  },
+  {
+    "label": "C7-9",
+    "rtab_x": 9.3,
+    "rtab_y": 23.58,
+    "svg_x": -20.767,
+    "svg_y": -20.299,
+    "category": "numbered_room"
+  },
+  {
+    "label": "CONF. RM",
+    "rtab_x": -56.89,
+    "rtab_y": 19.32,
+    "svg_x": 39.287,
+    "svg_y": -18.275,
+    "category": "conference_room"
+  },
+  {
+    "label": "COPY/MAIL",
+    "rtab_x": -19.36,
+    "rtab_y": -0.61,
+    "svg_x": 5.859,
+    "svg_y": 0.805,
+    "category": "named_space"
+  },
+  {
+    "label": "CRYSTAL PIER CONF. RM",
+    "rtab_x": 30.62,
+    "rtab_y": 23.62,
+    "svg_x": -40.068,
+    "svg_y": -19.743,
+    "category": "conference_room"
+  },
+  {
+    "label": "D",
+    "rtab_x": 8.78,
+    "rtab_y": -44.9,
+    "svg_x": -18.391,
+    "svg_y": 41.698,
+    "category": "named_space"
+  },
+  {
+    "label": "D1-1",
+    "rtab_x": 6.37,
+    "rtab_y": -30.06,
+    "svg_x": -16.626,
+    "svg_y": 28.189,
+    "category": "named_space"
+  },
+  {
+    "label": "D1-10",
+    "rtab_x": -0.03,
+    "rtab_y": -28.57,
+    "svg_x": -10.872,
+    "svg_y": 26.665,
+    "category": "named_space"
+  },
+  {
+    "label": "D1-11",
+    "rtab_x": 6.23,
+    "rtab_y": -25.52,
+    "svg_x": -16.626,
+    "svg_y": 24.074,
+    "category": "named_space"
+  },
+  {
+    "label": "D1-12",
+    "rtab_x": 4.45,
+    "rtab_y": -25.57,
+    "svg_x": -15.013,
+    "svg_y": 24.074,
+    "category": "named_space"
+  },
+  {
+    "label": "D1-14",
+    "rtab_x": 1.67,
+    "rtab_y": -25.66,
+    "svg_x": -12.485,
+    "svg_y": 24.074,
+    "category": "named_space"
+  },
+  {
+    "label": "D1-15",
+    "rtab_x": -0.11,
+    "rtab_y": -25.71,
+    "svg_x": -10.872,
+    "svg_y": 24.074,
+    "category": "named_space"
+  },
+  {
+    "label": "D1-16",
+    "rtab_x": 6.18,
+    "rtab_y": -23.84,
+    "svg_x": -16.626,
+    "svg_y": 22.55,
+    "category": "named_space"
+  },
+  {
+    "label": "D1-17",
+    "rtab_x": 4.4,
+    "rtab_y": -23.89,
+    "svg_x": -15.013,
+    "svg_y": 22.55,
+    "category": "named_space"
+  },
+  {
+    "label": "D1-19",
+    "rtab_x": 1.61,
+    "rtab_y": -23.98,
+    "svg_x": -12.485,
+    "svg_y": 22.55,
+    "category": "named_space"
+  },
+  {
+    "label": "D1-2",
+    "rtab_x": 4.59,
+    "rtab_y": -30.11,
+    "svg_x": -15.013,
+    "svg_y": 28.189,
+    "category": "named_space"
+  },
+  {
+    "label": "D1-20",
+    "rtab_x": -0.17,
+    "rtab_y": -24.03,
+    "svg_x": -10.872,
+    "svg_y": 22.55,
+    "category": "named_space"
+  },
+  {
+    "label": "D1-21",
+    "rtab_x": 6.13,
+    "rtab_y": -22.16,
+    "svg_x": -16.626,
+    "svg_y": 21.026,
+    "category": "named_space"
+  },
+  {
+    "label": "D1-22",
+    "rtab_x": 4.35,
+    "rtab_y": -22.21,
+    "svg_x": -15.013,
+    "svg_y": 21.026,
+    "category": "named_space"
+  },
+  {
+    "label": "D1-24",
+    "rtab_x": 1.56,
+    "rtab_y": -22.3,
+    "svg_x": -12.485,
+    "svg_y": 21.026,
+    "category": "named_space"
+  },
+  {
+    "label": "D1-25",
+    "rtab_x": -0.22,
+    "rtab_y": -22.35,
+    "svg_x": -10.872,
+    "svg_y": 21.026,
+    "category": "named_space"
+  },
+  {
+    "label": "D1-4",
+    "rtab_x": 1.8,
+    "rtab_y": -30.2,
+    "svg_x": -12.485,
+    "svg_y": 28.189,
+    "category": "named_space"
+  },
+  {
+    "label": "D1-5",
+    "rtab_x": 0.03,
+    "rtab_y": -30.25,
+    "svg_x": -10.872,
+    "svg_y": 28.189,
+    "category": "named_space"
+  },
+  {
+    "label": "D1-6",
+    "rtab_x": 6.32,
+    "rtab_y": -28.38,
+    "svg_x": -16.626,
+    "svg_y": 26.665,
+    "category": "named_space"
+  },
+  {
+    "label": "D1-7",
+    "rtab_x": 4.54,
+    "rtab_y": -28.43,
+    "svg_x": -15.013,
+    "svg_y": 26.665,
+    "category": "named_space"
+  },
+  {
+    "label": "D1-9",
+    "rtab_x": 1.75,
+    "rtab_y": -28.52,
+    "svg_x": -12.485,
+    "svg_y": 26.665,
+    "category": "named_space"
+  },
+  {
+    "label": "D2-10",
+    "rtab_x": -0.54,
+    "rtab_y": -18.53,
+    "svg_x": -10.682,
+    "svg_y": 17.559,
+    "category": "named_space"
+  },
+  {
+    "label": "D2-12",
+    "rtab_x": 4.45,
+    "rtab_y": -16.6,
+    "svg_x": -15.254,
+    "svg_y": 15.946,
+    "category": "named_space"
+  },
+  {
+    "label": "D2-13",
+    "rtab_x": 2.76,
+    "rtab_y": -16.65,
+    "svg_x": -13.73,
+    "svg_y": 15.946,
+    "category": "named_space"
+  },
+  {
+    "label": "D2-14",
+    "rtab_x": 1.08,
+    "rtab_y": -16.7,
+    "svg_x": -12.206,
+    "svg_y": 15.946,
+    "category": "named_space"
+  },
+  {
+    "label": "D2-15",
+    "rtab_x": -0.6,
+    "rtab_y": -16.75,
+    "svg_x": -10.682,
+    "svg_y": 15.946,
+    "category": "named_space"
+  },
+  {
+    "label": "D2-7",
+    "rtab_x": 4.5,
+    "rtab_y": -18.38,
+    "svg_x": -15.254,
+    "svg_y": 17.559,
+    "category": "named_space"
+  },
+  {
+    "label": "D2-8",
+    "rtab_x": 2.82,
+    "rtab_y": -18.43,
+    "svg_x": -13.73,
+    "svg_y": 17.559,
+    "category": "named_space"
+  },
+  {
+    "label": "D2-9",
+    "rtab_x": 1.14,
+    "rtab_y": -18.48,
+    "svg_x": -12.206,
+    "svg_y": 17.559,
+    "category": "named_space"
+  },
+  {
+    "label": "D3-10",
+    "rtab_x": -0.71,
+    "rtab_y": -12.18,
+    "svg_x": -10.707,
+    "svg_y": 11.806,
+    "category": "named_space"
+  },
+  {
+    "label": "D3-2",
+    "rtab_x": 4.39,
+    "rtab_y": -13.81,
+    "svg_x": -15.28,
+    "svg_y": 13.419,
+    "category": "named_space"
+  },
+  {
+    "label": "D3-3",
+    "rtab_x": 2.71,
+    "rtab_y": -13.86,
+    "svg_x": -13.755,
+    "svg_y": 13.419,
+    "category": "named_space"
+  },
+  {
+    "label": "D3-4",
+    "rtab_x": 1.03,
+    "rtab_y": -13.91,
+    "svg_x": -12.231,
+    "svg_y": 13.419,
+    "category": "named_space"
+  },
+  {
+    "label": "D3-5",
+    "rtab_x": -0.66,
+    "rtab_y": -13.96,
+    "svg_x": -10.707,
+    "svg_y": 13.419,
+    "category": "named_space"
+  },
+  {
+    "label": "D3-7",
+    "rtab_x": 4.33,
+    "rtab_y": -12.03,
+    "svg_x": -15.28,
+    "svg_y": 11.806,
+    "category": "named_space"
+  },
+  {
+    "label": "D3-8",
+    "rtab_x": 2.65,
+    "rtab_y": -12.08,
+    "svg_x": -13.755,
+    "svg_y": 11.806,
+    "category": "named_space"
+  },
+  {
+    "label": "D3-9",
+    "rtab_x": 0.97,
+    "rtab_y": -12.13,
+    "svg_x": -12.231,
+    "svg_y": 11.806,
+    "category": "named_space"
+  },
+  {
+    "label": "D5-22",
+    "rtab_x": 3.61,
+    "rtab_y": 11.54,
+    "svg_x": -15.28,
+    "svg_y": -9.555,
+    "category": "named_space"
+  },
+  {
+    "label": "D5-23",
+    "rtab_x": 1.93,
+    "rtab_y": 11.49,
+    "svg_x": -13.755,
+    "svg_y": -9.555,
+    "category": "named_space"
+  },
+  {
+    "label": "D5-24",
+    "rtab_x": 0.25,
+    "rtab_y": 11.44,
+    "svg_x": -12.231,
+    "svg_y": -9.555,
+    "category": "named_space"
+  },
+  {
+    "label": "D5-25",
+    "rtab_x": -1.43,
+    "rtab_y": 11.38,
+    "svg_x": -10.707,
+    "svg_y": -9.555,
+    "category": "named_space"
+  },
+  {
+    "label": "D6-12",
+    "rtab_x": 3.44,
+    "rtab_y": 16.11,
+    "svg_x": -15.254,
+    "svg_y": -13.695,
+    "category": "named_space"
+  },
+  {
+    "label": "D6-13",
+    "rtab_x": 1.76,
+    "rtab_y": 16.06,
+    "svg_x": -13.73,
+    "svg_y": -13.695,
+    "category": "named_space"
+  },
+  {
+    "label": "D6-14",
+    "rtab_x": 0.08,
+    "rtab_y": 16.0,
+    "svg_x": -12.206,
+    "svg_y": -13.695,
+    "category": "named_space"
+  },
+  {
+    "label": "D6-15",
+    "rtab_x": -1.6,
+    "rtab_y": 15.95,
+    "svg_x": -10.682,
+    "svg_y": -13.695,
+    "category": "named_space"
+  },
+  {
+    "label": "D6-17",
+    "rtab_x": 3.39,
+    "rtab_y": 17.89,
+    "svg_x": -15.254,
+    "svg_y": -15.308,
+    "category": "named_space"
+  },
+  {
+    "label": "D6-18",
+    "rtab_x": 1.71,
+    "rtab_y": 17.83,
+    "svg_x": -13.73,
+    "svg_y": -15.308,
+    "category": "named_space"
+  },
+  {
+    "label": "D6-19",
+    "rtab_x": 0.03,
+    "rtab_y": 17.78,
+    "svg_x": -12.206,
+    "svg_y": -15.308,
+    "category": "named_space"
+  },
+  {
+    "label": "D6-2",
+    "rtab_x": 3.56,
+    "rtab_y": 13.32,
+    "svg_x": -15.28,
+    "svg_y": -11.168,
+    "category": "named_space"
+  },
+  {
+    "label": "D6-20",
+    "rtab_x": -1.66,
+    "rtab_y": 17.73,
+    "svg_x": -10.682,
+    "svg_y": -15.308,
+    "category": "named_space"
+  },
+  {
+    "label": "D6-3",
+    "rtab_x": 1.87,
+    "rtab_y": 13.27,
+    "svg_x": -13.755,
+    "svg_y": -11.168,
+    "category": "named_space"
+  },
+  {
+    "label": "D6-4",
+    "rtab_x": 0.19,
+    "rtab_y": 13.22,
+    "svg_x": -12.231,
+    "svg_y": -11.168,
+    "category": "named_space"
+  },
+  {
+    "label": "D6-5",
+    "rtab_x": -1.49,
+    "rtab_y": 13.16,
+    "svg_x": -10.707,
+    "svg_y": -11.168,
+    "category": "named_space"
+  },
+  {
+    "label": "D7-10",
+    "rtab_x": -1.61,
+    "rtab_y": 23.24,
+    "svg_x": -10.872,
+    "svg_y": -20.299,
+    "category": "named_space"
+  },
+  {
+    "label": "D7-12",
+    "rtab_x": 4.68,
+    "rtab_y": 25.12,
+    "svg_x": -16.626,
+    "svg_y": -21.823,
+    "category": "named_space"
+  },
+  {
+    "label": "D7-13",
+    "rtab_x": 2.9,
+    "rtab_y": 25.07,
+    "svg_x": -15.013,
+    "svg_y": -21.823,
+    "category": "named_space"
+  },
+  {
+    "label": "D7-14",
+    "rtab_x": 0.11,
+    "rtab_y": 24.98,
+    "svg_x": -12.485,
+    "svg_y": -21.823,
+    "category": "named_space"
+  },
+  {
+    "label": "D7-15",
+    "rtab_x": -1.67,
+    "rtab_y": 24.93,
+    "svg_x": -10.872,
+    "svg_y": -21.823,
+    "category": "named_space"
+  },
+  {
+    "label": "D7-17",
+    "rtab_x": 4.59,
+    "rtab_y": 27.98,
+    "svg_x": -16.626,
+    "svg_y": -24.414,
+    "category": "named_space"
+  },
+  {
+    "label": "D7-18",
+    "rtab_x": 2.81,
+    "rtab_y": 27.93,
+    "svg_x": -15.013,
+    "svg_y": -24.414,
+    "category": "named_space"
+  },
+  {
+    "label": "D7-19",
+    "rtab_x": 0.03,
+    "rtab_y": 27.84,
+    "svg_x": -12.485,
+    "svg_y": -24.414,
+    "category": "named_space"
+  },
+  {
+    "label": "D7-2",
+    "rtab_x": 4.79,
+    "rtab_y": 21.76,
+    "svg_x": -16.626,
+    "svg_y": -18.775,
+    "category": "named_space"
+  },
+  {
+    "label": "D7-20",
+    "rtab_x": -1.75,
+    "rtab_y": 27.79,
+    "svg_x": -10.872,
+    "svg_y": -24.414,
+    "category": "named_space"
+  },
+  {
+    "label": "D7-22",
+    "rtab_x": 4.54,
+    "rtab_y": 29.66,
+    "svg_x": -16.626,
+    "svg_y": -25.938,
+    "category": "named_space"
+  },
+  {
+    "label": "D7-23",
+    "rtab_x": 2.76,
+    "rtab_y": 29.61,
+    "svg_x": -15.013,
+    "svg_y": -25.938,
+    "category": "named_space"
+  },
+  {
+    "label": "D7-24",
+    "rtab_x": -0.03,
+    "rtab_y": 29.52,
+    "svg_x": -12.485,
+    "svg_y": -25.938,
+    "category": "named_space"
+  },
+  {
+    "label": "D7-25",
+    "rtab_x": -1.81,
+    "rtab_y": 29.47,
+    "svg_x": -10.872,
+    "svg_y": -25.938,
+    "category": "named_space"
+  },
+  {
+    "label": "D7-3",
+    "rtab_x": 3.01,
+    "rtab_y": 21.7,
+    "svg_x": -15.013,
+    "svg_y": -18.775,
+    "category": "named_space"
+  },
+  {
+    "label": "D7-4",
+    "rtab_x": 0.22,
+    "rtab_y": 21.62,
+    "svg_x": -12.485,
+    "svg_y": -18.775,
+    "category": "named_space"
+  },
+  {
+    "label": "D7-5",
+    "rtab_x": -1.56,
+    "rtab_y": 21.56,
+    "svg_x": -10.872,
+    "svg_y": -18.775,
+    "category": "named_space"
+  },
+  {
+    "label": "D7-7",
+    "rtab_x": 4.73,
+    "rtab_y": 23.44,
+    "svg_x": -16.626,
+    "svg_y": -20.299,
+    "category": "named_space"
+  },
+  {
+    "label": "D7-8",
+    "rtab_x": 2.95,
+    "rtab_y": 23.38,
+    "svg_x": -15.013,
+    "svg_y": -20.299,
+    "category": "named_space"
+  },
+  {
+    "label": "D7-9",
+    "rtab_x": 0.16,
+    "rtab_y": 23.3,
+    "svg_x": -12.485,
+    "svg_y": -20.299,
+    "category": "named_space"
+  },
+  {
+    "label": "DESERT POINT CONF. RM",
+    "rtab_x": 4.73,
+    "rtab_y": 1.63,
+    "svg_x": -16.016,
+    "svg_y": -0.547,
+    "category": "conference_room"
+  },
+  {
+    "label": "DIEGO GARCIA ISLAND CONF. RM",
+    "rtab_x": 22.78,
+    "rtab_y": -0.46,
+    "svg_x": -32.305,
+    "svg_y": 1.84,
+    "category": "conference_room"
+  },
+  {
+    "label": "DN",
+    "rtab_x": -14.53,
+    "rtab_y": 19.46,
+    "svg_x": 0.928,
+    "svg_y": -17.234,
+    "category": "vertical_transport"
+  },
+  {
+    "label": "E",
+    "rtab_x": -1.32,
+    "rtab_y": -45.21,
+    "svg_x": -9.239,
+    "svg_y": 41.698,
+    "category": "named_space"
+  },
+  {
+    "label": "E1-11",
+    "rtab_x": -4.23,
+    "rtab_y": -25.36,
+    "svg_x": -7.151,
+    "svg_y": 23.643,
+    "category": "named_space"
+  },
+  {
+    "label": "E1-24",
+    "rtab_x": -8.61,
+    "rtab_y": -23.2,
+    "svg_x": -3.252,
+    "svg_y": 21.56,
+    "category": "named_space"
+  },
+  {
+    "label": "E1-25",
+    "rtab_x": -11.0,
+    "rtab_y": -23.27,
+    "svg_x": -1.08,
+    "svg_y": 21.56,
+    "category": "named_space"
+  },
+  {
+    "label": "E1-6",
+    "rtab_x": -4.02,
+    "rtab_y": -29.23,
+    "svg_x": -7.24,
+    "svg_y": 27.148,
+    "category": "named_space"
+  },
+  {
+    "label": "E2-16",
+    "rtab_x": -4.51,
+    "rtab_y": -15.76,
+    "svg_x": -7.164,
+    "svg_y": 14.943,
+    "category": "named_space"
+  },
+  {
+    "label": "E2-6",
+    "rtab_x": -4.43,
+    "rtab_y": -18.46,
+    "svg_x": -7.164,
+    "svg_y": 17.382,
+    "category": "named_space"
+  },
+  {
+    "label": "E3-20",
+    "rtab_x": -10.25,
+    "rtab_y": -8.1,
+    "svg_x": -2.185,
+    "svg_y": 7.844,
+    "category": "named_space"
+  },
+  {
+    "label": "E3-6",
+    "rtab_x": -4.59,
+    "rtab_y": -10.56,
+    "svg_x": -7.24,
+    "svg_y": 10.231,
+    "category": "named_space"
+  },
+  {
+    "label": "E5-9",
+    "rtab_x": -10.7,
+    "rtab_y": 6.73,
+    "svg_x": -2.185,
+    "svg_y": -5.593,
+    "category": "named_space"
+  },
+  {
+    "label": "E6-1",
+    "rtab_x": -5.41,
+    "rtab_y": 13.48,
+    "svg_x": -7.164,
+    "svg_y": -11.562,
+    "category": "named_space"
+  },
+  {
+    "label": "E6-11",
+    "rtab_x": -5.49,
+    "rtab_y": 16.17,
+    "svg_x": -7.164,
+    "svg_y": -14.0,
+    "category": "named_space"
+  },
+  {
+    "label": "ELEC. RM",
+    "rtab_x": 29.44,
+    "rtab_y": -1.19,
+    "svg_x": -38.311,
+    "svg_y": 2.688,
+    "category": "named_space"
+  },
+  {
+    "label": "ELEV.",
+    "rtab_x": -7.4,
+    "rtab_y": -0.32,
+    "svg_x": -4.977,
+    "svg_y": 0.881,
+    "category": "vertical_transport"
+  },
+  {
+    "label": "ELEV1",
+    "rtab_x": -7.99,
+    "rtab_y": -3.44,
+    "svg_x": -4.357,
+    "svg_y": 3.691,
+    "category": "vertical_transport"
+  },
+  {
+    "label": "ELEV2",
+    "rtab_x": -8.08,
+    "rtab_y": -0.46,
+    "svg_x": -4.357,
+    "svg_y": 0.986,
+    "category": "vertical_transport"
+  },
+  {
+    "label": "ELEV3",
+    "rtab_x": -7.53,
+    "rtab_y": 2.39,
+    "svg_x": -4.941,
+    "svg_y": -1.58,
+    "category": "vertical_transport"
+  },
+  {
+    "label": "F",
+    "rtab_x": -11.41,
+    "rtab_y": -45.52,
+    "svg_x": -0.094,
+    "svg_y": 41.698,
+    "category": "named_space"
+  },
+  {
+    "label": "F1-14",
+    "rtab_x": -20.04,
+    "rtab_y": -25.85,
+    "svg_x": 7.176,
+    "svg_y": 23.643,
+    "category": "named_space"
+  },
+  {
+    "label": "F1-21",
+    "rtab_x": -13.4,
+    "rtab_y": -23.34,
+    "svg_x": 1.092,
+    "svg_y": 21.56,
+    "category": "named_space"
+  },
+  {
+    "label": "F1-22",
+    "rtab_x": -15.8,
+    "rtab_y": -23.42,
+    "svg_x": 3.264,
+    "svg_y": 21.56,
+    "category": "named_space"
+  },
+  {
+    "label": "F1-9",
+    "rtab_x": -19.81,
+    "rtab_y": -29.71,
+    "svg_x": 7.075,
+    "svg_y": 27.148,
+    "category": "named_space"
+  },
+  {
+    "label": "F2-10",
+    "rtab_x": -20.24,
+    "rtab_y": -18.94,
+    "svg_x": 7.164,
+    "svg_y": 17.382,
+    "category": "named_space"
+  },
+  {
+    "label": "F2-20",
+    "rtab_x": -20.32,
+    "rtab_y": -16.25,
+    "svg_x": 7.164,
+    "svg_y": 14.943,
+    "category": "named_space"
+  },
+  {
+    "label": "F3-21",
+    "rtab_x": -15.07,
+    "rtab_y": -8.25,
+    "svg_x": 2.185,
+    "svg_y": 7.844,
+    "category": "named_space"
+  },
+  {
+    "label": "F5-7",
+    "rtab_x": -15.5,
+    "rtab_y": 6.58,
+    "svg_x": 2.159,
+    "svg_y": -5.593,
+    "category": "named_space"
+  },
+  {
+    "label": "G",
+    "rtab_x": -21.48,
+    "rtab_y": -45.83,
+    "svg_x": 9.036,
+    "svg_y": 41.698,
+    "category": "named_space"
+  },
+  {
+    "label": "G-LAND CONF. RM",
+    "rtab_x": 35.94,
+    "rtab_y": 25.13,
+    "svg_x": -44.93,
+    "svg_y": -20.962,
+    "category": "conference_room"
+  },
+  {
+    "label": "G1-1",
+    "rtab_x": -23.97,
+    "rtab_y": -30.99,
+    "svg_x": 10.872,
+    "svg_y": 28.189,
+    "category": "named_space"
+  },
+  {
+    "label": "G1-10",
+    "rtab_x": -30.37,
+    "rtab_y": -29.5,
+    "svg_x": 16.626,
+    "svg_y": 26.665,
+    "category": "named_space"
+  },
+  {
+    "label": "G1-11",
+    "rtab_x": -24.11,
+    "rtab_y": -26.45,
+    "svg_x": 10.872,
+    "svg_y": 24.074,
+    "category": "named_space"
+  },
+  {
+    "label": "G1-12",
+    "rtab_x": -25.88,
+    "rtab_y": -26.5,
+    "svg_x": 12.485,
+    "svg_y": 24.074,
+    "category": "named_space"
+  },
+  {
+    "label": "G1-14",
+    "rtab_x": -28.67,
+    "rtab_y": -26.59,
+    "svg_x": 15.013,
+    "svg_y": 24.074,
+    "category": "named_space"
+  },
+  {
+    "label": "G1-15",
+    "rtab_x": -30.45,
+    "rtab_y": -26.64,
+    "svg_x": 16.626,
+    "svg_y": 24.074,
+    "category": "named_space"
+  },
+  {
+    "label": "G1-16",
+    "rtab_x": -24.16,
+    "rtab_y": -24.77,
+    "svg_x": 10.872,
+    "svg_y": 22.55,
+    "category": "named_space"
+  },
+  {
+    "label": "G1-17",
+    "rtab_x": -25.94,
+    "rtab_y": -24.82,
+    "svg_x": 12.485,
+    "svg_y": 22.55,
+    "category": "named_space"
+  },
+  {
+    "label": "G1-19",
+    "rtab_x": -28.73,
+    "rtab_y": -24.91,
+    "svg_x": 15.013,
+    "svg_y": 22.55,
+    "category": "named_space"
+  },
+  {
+    "label": "G1-2",
+    "rtab_x": -25.75,
+    "rtab_y": -31.04,
+    "svg_x": 12.485,
+    "svg_y": 28.189,
+    "category": "named_space"
+  },
+  {
+    "label": "G1-20",
+    "rtab_x": -30.51,
+    "rtab_y": -24.96,
+    "svg_x": 16.626,
+    "svg_y": 22.55,
+    "category": "named_space"
+  },
+  {
+    "label": "G1-21",
+    "rtab_x": -24.21,
+    "rtab_y": -23.09,
+    "svg_x": 10.872,
+    "svg_y": 21.026,
+    "category": "named_space"
+  },
+  {
+    "label": "G1-22",
+    "rtab_x": -25.99,
+    "rtab_y": -23.14,
+    "svg_x": 12.485,
+    "svg_y": 21.026,
+    "category": "named_space"
+  },
+  {
+    "label": "G1-24",
+    "rtab_x": -28.78,
+    "rtab_y": -23.23,
+    "svg_x": 15.013,
+    "svg_y": 21.026,
+    "category": "named_space"
+  },
+  {
+    "label": "G1-25",
+    "rtab_x": -30.56,
+    "rtab_y": -23.28,
+    "svg_x": 16.626,
+    "svg_y": 21.026,
+    "category": "named_space"
+  },
+  {
+    "label": "G1-4",
+    "rtab_x": -28.54,
+    "rtab_y": -31.13,
+    "svg_x": 15.013,
+    "svg_y": 28.189,
+    "category": "named_space"
+  },
+  {
+    "label": "G1-5",
+    "rtab_x": -30.31,
+    "rtab_y": -31.18,
+    "svg_x": 16.626,
+    "svg_y": 28.189,
+    "category": "named_space"
+  },
+  {
+    "label": "G1-6",
+    "rtab_x": -24.02,
+    "rtab_y": -29.31,
+    "svg_x": 10.872,
+    "svg_y": 26.665,
+    "category": "named_space"
+  },
+  {
+    "label": "G1-7",
+    "rtab_x": -25.8,
+    "rtab_y": -29.36,
+    "svg_x": 12.485,
+    "svg_y": 26.665,
+    "category": "named_space"
+  },
+  {
+    "label": "G1-9",
+    "rtab_x": -28.59,
+    "rtab_y": -29.45,
+    "svg_x": 15.013,
+    "svg_y": 26.665,
+    "category": "named_space"
+  },
+  {
+    "label": "G2-11",
+    "rtab_x": -24.06,
+    "rtab_y": -17.47,
+    "svg_x": 10.58,
+    "svg_y": 15.946,
+    "category": "named_space"
+  },
+  {
+    "label": "G2-12",
+    "rtab_x": -25.74,
+    "rtab_y": -17.52,
+    "svg_x": 12.104,
+    "svg_y": 15.946,
+    "category": "named_space"
+  },
+  {
+    "label": "G2-13",
+    "rtab_x": -27.42,
+    "rtab_y": -17.57,
+    "svg_x": 13.628,
+    "svg_y": 15.946,
+    "category": "named_space"
+  },
+  {
+    "label": "G2-14",
+    "rtab_x": -29.1,
+    "rtab_y": -17.63,
+    "svg_x": 15.153,
+    "svg_y": 15.946,
+    "category": "named_space"
+  },
+  {
+    "label": "G2-6",
+    "rtab_x": -24.0,
+    "rtab_y": -19.25,
+    "svg_x": 10.58,
+    "svg_y": 17.559,
+    "category": "named_space"
+  },
+  {
+    "label": "G2-7",
+    "rtab_x": -25.68,
+    "rtab_y": -19.3,
+    "svg_x": 12.104,
+    "svg_y": 17.559,
+    "category": "named_space"
+  },
+  {
+    "label": "G2-8",
+    "rtab_x": -27.37,
+    "rtab_y": -19.35,
+    "svg_x": 13.628,
+    "svg_y": 17.559,
+    "category": "named_space"
+  },
+  {
+    "label": "G2-9",
+    "rtab_x": -29.05,
+    "rtab_y": -19.41,
+    "svg_x": 15.153,
+    "svg_y": 17.559,
+    "category": "named_space"
+  },
+  {
+    "label": "G3-1",
+    "rtab_x": -24.14,
+    "rtab_y": -14.68,
+    "svg_x": 10.58,
+    "svg_y": 13.419,
+    "category": "named_space"
+  },
+  {
+    "label": "G3-2",
+    "rtab_x": -25.82,
+    "rtab_y": -14.73,
+    "svg_x": 12.104,
+    "svg_y": 13.419,
+    "category": "named_space"
+  },
+  {
+    "label": "G3-3",
+    "rtab_x": -27.51,
+    "rtab_y": -14.79,
+    "svg_x": 13.628,
+    "svg_y": 13.419,
+    "category": "named_space"
+  },
+  {
+    "label": "G3-4",
+    "rtab_x": -29.19,
+    "rtab_y": -14.84,
+    "svg_x": 15.153,
+    "svg_y": 13.419,
+    "category": "named_space"
+  },
+  {
+    "label": "G3-6",
+    "rtab_x": -24.2,
+    "rtab_y": -12.9,
+    "svg_x": 10.58,
+    "svg_y": 11.806,
+    "category": "named_space"
+  },
+  {
+    "label": "G3-7",
+    "rtab_x": -25.88,
+    "rtab_y": -12.96,
+    "svg_x": 12.104,
+    "svg_y": 11.806,
+    "category": "named_space"
+  },
+  {
+    "label": "G3-8",
+    "rtab_x": -27.56,
+    "rtab_y": -13.01,
+    "svg_x": 13.628,
+    "svg_y": 11.806,
+    "category": "named_space"
+  },
+  {
+    "label": "G3-9",
+    "rtab_x": -29.24,
+    "rtab_y": -13.06,
+    "svg_x": 15.153,
+    "svg_y": 11.806,
+    "category": "named_space"
+  },
+  {
+    "label": "G5-21",
+    "rtab_x": -25.06,
+    "rtab_y": 10.66,
+    "svg_x": 10.707,
+    "svg_y": -9.555,
+    "category": "named_space"
+  },
+  {
+    "label": "G5-22",
+    "rtab_x": -26.74,
+    "rtab_y": 10.61,
+    "svg_x": 12.231,
+    "svg_y": -9.555,
+    "category": "named_space"
+  },
+  {
+    "label": "G5-23",
+    "rtab_x": -28.42,
+    "rtab_y": 10.56,
+    "svg_x": 13.755,
+    "svg_y": -9.555,
+    "category": "named_space"
+  },
+  {
+    "label": "G5-24",
+    "rtab_x": -30.11,
+    "rtab_y": 10.51,
+    "svg_x": 15.28,
+    "svg_y": -9.555,
+    "category": "named_space"
+  },
+  {
+    "label": "G6-1",
+    "rtab_x": -25.12,
+    "rtab_y": 12.44,
+    "svg_x": 10.707,
+    "svg_y": -11.168,
+    "category": "named_space"
+  },
+  {
+    "label": "G6-11",
+    "rtab_x": -25.16,
+    "rtab_y": 15.23,
+    "svg_x": 10.669,
+    "svg_y": -13.695,
+    "category": "named_space"
+  },
+  {
+    "label": "G6-12",
+    "rtab_x": -26.84,
+    "rtab_y": 15.18,
+    "svg_x": 12.193,
+    "svg_y": -13.695,
+    "category": "named_space"
+  },
+  {
+    "label": "G6-13",
+    "rtab_x": -28.52,
+    "rtab_y": 15.13,
+    "svg_x": 13.717,
+    "svg_y": -13.695,
+    "category": "named_space"
+  },
+  {
+    "label": "G6-14",
+    "rtab_x": -30.2,
+    "rtab_y": 15.08,
+    "svg_x": 15.242,
+    "svg_y": -13.695,
+    "category": "named_space"
+  },
+  {
+    "label": "G6-16",
+    "rtab_x": -25.21,
+    "rtab_y": 17.01,
+    "svg_x": 10.669,
+    "svg_y": -15.308,
+    "category": "named_space"
+  },
+  {
+    "label": "G6-17",
+    "rtab_x": -26.89,
+    "rtab_y": 16.96,
+    "svg_x": 12.193,
+    "svg_y": -15.308,
+    "category": "named_space"
+  },
+  {
+    "label": "G6-18",
+    "rtab_x": -28.58,
+    "rtab_y": 16.91,
+    "svg_x": 13.717,
+    "svg_y": -15.308,
+    "category": "named_space"
+  },
+  {
+    "label": "G6-19",
+    "rtab_x": -30.26,
+    "rtab_y": 16.85,
+    "svg_x": 15.242,
+    "svg_y": -15.308,
+    "category": "named_space"
+  },
+  {
+    "label": "G6-2",
+    "rtab_x": -26.8,
+    "rtab_y": 12.39,
+    "svg_x": 12.231,
+    "svg_y": -11.168,
+    "category": "named_space"
+  },
+  {
+    "label": "G6-3",
+    "rtab_x": -28.48,
+    "rtab_y": 12.34,
+    "svg_x": 13.755,
+    "svg_y": -11.168,
+    "category": "named_space"
+  },
+  {
+    "label": "G6-4",
+    "rtab_x": -30.16,
+    "rtab_y": 12.29,
+    "svg_x": 15.28,
+    "svg_y": -11.168,
+    "category": "named_space"
+  },
+  {
+    "label": "G7-10",
+    "rtab_x": -31.95,
+    "rtab_y": 22.31,
+    "svg_x": 16.626,
+    "svg_y": -20.299,
+    "category": "named_space"
+  },
+  {
+    "label": "G7-12",
+    "rtab_x": -25.66,
+    "rtab_y": 24.19,
+    "svg_x": 10.872,
+    "svg_y": -21.823,
+    "category": "named_space"
+  },
+  {
+    "label": "G7-13",
+    "rtab_x": -27.44,
+    "rtab_y": 24.14,
+    "svg_x": 12.485,
+    "svg_y": -21.823,
+    "category": "named_space"
+  },
+  {
+    "label": "G7-14",
+    "rtab_x": -30.23,
+    "rtab_y": 24.05,
+    "svg_x": 15.013,
+    "svg_y": -21.823,
+    "category": "named_space"
+  },
+  {
+    "label": "G7-15",
+    "rtab_x": -32.01,
+    "rtab_y": 24.0,
+    "svg_x": 16.626,
+    "svg_y": -21.823,
+    "category": "named_space"
+  },
+  {
+    "label": "G7-17",
+    "rtab_x": -25.75,
+    "rtab_y": 27.05,
+    "svg_x": 10.872,
+    "svg_y": -24.414,
+    "category": "named_space"
+  },
+  {
+    "label": "G7-18",
+    "rtab_x": -27.52,
+    "rtab_y": 27.0,
+    "svg_x": 12.485,
+    "svg_y": -24.414,
+    "category": "named_space"
+  },
+  {
+    "label": "G7-19",
+    "rtab_x": -30.31,
+    "rtab_y": 26.91,
+    "svg_x": 15.013,
+    "svg_y": -24.414,
+    "category": "named_space"
+  },
+  {
+    "label": "G7-2",
+    "rtab_x": -25.55,
+    "rtab_y": 20.83,
+    "svg_x": 10.872,
+    "svg_y": -18.775,
+    "category": "named_space"
+  },
+  {
+    "label": "G7-20",
+    "rtab_x": -32.09,
+    "rtab_y": 26.86,
+    "svg_x": 16.626,
+    "svg_y": -24.414,
+    "category": "named_space"
+  },
+  {
+    "label": "G7-22",
+    "rtab_x": -25.8,
+    "rtab_y": 28.73,
+    "svg_x": 10.872,
+    "svg_y": -25.938,
+    "category": "named_space"
+  },
+  {
+    "label": "G7-23",
+    "rtab_x": -27.58,
+    "rtab_y": 28.68,
+    "svg_x": 12.485,
+    "svg_y": -25.938,
+    "category": "named_space"
+  },
+  {
+    "label": "G7-24",
+    "rtab_x": -30.37,
+    "rtab_y": 28.59,
+    "svg_x": 15.013,
+    "svg_y": -25.938,
+    "category": "named_space"
+  },
+  {
+    "label": "G7-25",
+    "rtab_x": -32.15,
+    "rtab_y": 28.54,
+    "svg_x": 16.626,
+    "svg_y": -25.938,
+    "category": "named_space"
+  },
+  {
+    "label": "G7-3",
+    "rtab_x": -27.33,
+    "rtab_y": 20.77,
+    "svg_x": 12.485,
+    "svg_y": -18.775,
+    "category": "named_space"
+  },
+  {
+    "label": "G7-4",
+    "rtab_x": -30.12,
+    "rtab_y": 20.69,
+    "svg_x": 15.013,
+    "svg_y": -18.775,
+    "category": "named_space"
+  },
+  {
+    "label": "G7-5",
+    "rtab_x": -31.9,
+    "rtab_y": 20.63,
+    "svg_x": 16.626,
+    "svg_y": -18.775,
+    "category": "named_space"
+  },
+  {
+    "label": "G7-7",
+    "rtab_x": -25.61,
+    "rtab_y": 22.51,
+    "svg_x": 10.872,
+    "svg_y": -20.299,
+    "category": "named_space"
+  },
+  {
+    "label": "G7-8",
+    "rtab_x": -27.39,
+    "rtab_y": 22.45,
+    "svg_x": 12.485,
+    "svg_y": -20.299,
+    "category": "named_space"
+  },
+  {
+    "label": "G7-9",
+    "rtab_x": -30.17,
+    "rtab_y": 22.37,
+    "svg_x": 15.013,
+    "svg_y": -20.299,
+    "category": "named_space"
+  },
+  {
+    "label": "H",
+    "rtab_x": -31.58,
+    "rtab_y": -46.14,
+    "svg_x": 18.188,
+    "svg_y": 41.698,
+    "category": "named_space"
+  },
+  {
+    "label": "H1-1",
+    "rtab_x": -33.1,
+    "rtab_y": -31.27,
+    "svg_x": 19.154,
+    "svg_y": 28.189,
+    "category": "named_space"
+  },
+  {
+    "label": "H1-10",
+    "rtab_x": -39.67,
+    "rtab_y": -29.79,
+    "svg_x": 25.06,
+    "svg_y": 26.665,
+    "category": "named_space"
+  },
+  {
+    "label": "H1-11",
+    "rtab_x": -33.24,
+    "rtab_y": -26.73,
+    "svg_x": 19.154,
+    "svg_y": 24.074,
+    "category": "named_space"
+  },
+  {
+    "label": "H1-12",
+    "rtab_x": -35.02,
+    "rtab_y": -26.78,
+    "svg_x": 20.767,
+    "svg_y": 24.074,
+    "category": "named_space"
+  },
+  {
+    "label": "H1-14",
+    "rtab_x": -37.98,
+    "rtab_y": -26.87,
+    "svg_x": 23.447,
+    "svg_y": 24.074,
+    "category": "named_space"
+  },
+  {
+    "label": "H1-15",
+    "rtab_x": -39.76,
+    "rtab_y": -26.93,
+    "svg_x": 25.06,
+    "svg_y": 24.074,
+    "category": "named_space"
+  },
+  {
+    "label": "H1-16",
+    "rtab_x": -33.29,
+    "rtab_y": -25.05,
+    "svg_x": 19.154,
+    "svg_y": 22.55,
+    "category": "named_space"
+  },
+  {
+    "label": "H1-17",
+    "rtab_x": -35.07,
+    "rtab_y": -25.1,
+    "svg_x": 20.767,
+    "svg_y": 22.55,
+    "category": "named_space"
+  },
+  {
+    "label": "H1-19",
+    "rtab_x": -38.03,
+    "rtab_y": -25.19,
+    "svg_x": 23.447,
+    "svg_y": 22.55,
+    "category": "named_space"
+  },
+  {
+    "label": "H1-2",
+    "rtab_x": -34.88,
+    "rtab_y": -31.32,
+    "svg_x": 20.767,
+    "svg_y": 28.189,
+    "category": "named_space"
+  },
+  {
+    "label": "H1-20",
+    "rtab_x": -39.81,
+    "rtab_y": -25.25,
+    "svg_x": 25.06,
+    "svg_y": 22.55,
+    "category": "named_space"
+  },
+  {
+    "label": "H1-21",
+    "rtab_x": -33.35,
+    "rtab_y": -23.37,
+    "svg_x": 19.154,
+    "svg_y": 21.026,
+    "category": "named_space"
+  },
+  {
+    "label": "H1-22",
+    "rtab_x": -35.13,
+    "rtab_y": -23.42,
+    "svg_x": 20.767,
+    "svg_y": 21.026,
+    "category": "named_space"
+  },
+  {
+    "label": "H1-24",
+    "rtab_x": -38.08,
+    "rtab_y": -23.51,
+    "svg_x": 23.447,
+    "svg_y": 21.026,
+    "category": "named_space"
+  },
+  {
+    "label": "H1-25",
+    "rtab_x": -39.86,
+    "rtab_y": -23.57,
+    "svg_x": 25.06,
+    "svg_y": 21.026,
+    "category": "named_space"
+  },
+  {
+    "label": "H1-4",
+    "rtab_x": -37.84,
+    "rtab_y": -31.41,
+    "svg_x": 23.447,
+    "svg_y": 28.189,
+    "category": "named_space"
+  },
+  {
+    "label": "H1-5",
+    "rtab_x": -39.62,
+    "rtab_y": -31.47,
+    "svg_x": 25.06,
+    "svg_y": 28.189,
+    "category": "named_space"
+  },
+  {
+    "label": "H1-6",
+    "rtab_x": -33.16,
+    "rtab_y": -29.59,
+    "svg_x": 19.154,
+    "svg_y": 26.665,
+    "category": "named_space"
+  },
+  {
+    "label": "H1-7",
+    "rtab_x": -34.94,
+    "rtab_y": -29.64,
+    "svg_x": 20.767,
+    "svg_y": 26.665,
+    "category": "named_space"
+  },
+  {
+    "label": "H1-9",
+    "rtab_x": -37.89,
+    "rtab_y": -29.73,
+    "svg_x": 23.447,
+    "svg_y": 26.665,
+    "category": "named_space"
+  },
+  {
+    "label": "H2-3",
+    "rtab_x": -36.37,
+    "rtab_y": -20.25,
+    "svg_x": 21.808,
+    "svg_y": 18.118,
+    "category": "named_space"
+  },
+  {
+    "label": "H3-1",
+    "rtab_x": -34.64,
+    "rtab_y": -10.85,
+    "svg_x": 19.979,
+    "svg_y": 9.66,
+    "category": "named_space"
+  },
+  {
+    "label": "H3-16",
+    "rtab_x": -34.7,
+    "rtab_y": -8.81,
+    "svg_x": 19.979,
+    "svg_y": 7.806,
+    "category": "named_space"
+  },
+  {
+    "label": "H3-19",
+    "rtab_x": -38.74,
+    "rtab_y": -8.93,
+    "svg_x": 23.637,
+    "svg_y": 7.806,
+    "category": "named_space"
+  },
+  {
+    "label": "H3-2",
+    "rtab_x": -38.68,
+    "rtab_y": -10.98,
+    "svg_x": 23.637,
+    "svg_y": 9.66,
+    "category": "named_space"
+  },
+  {
+    "label": "H5-11",
+    "rtab_x": -35.22,
+    "rtab_y": 7.98,
+    "svg_x": 19.979,
+    "svg_y": -7.409,
+    "category": "named_space"
+  },
+  {
+    "label": "H5-14",
+    "rtab_x": -39.25,
+    "rtab_y": 7.86,
+    "svg_x": 23.637,
+    "svg_y": -7.409,
+    "category": "named_space"
+  },
+  {
+    "label": "H5-6",
+    "rtab_x": -35.16,
+    "rtab_y": 5.93,
+    "svg_x": 19.979,
+    "svg_y": -5.555,
+    "category": "named_space"
+  },
+  {
+    "label": "H5-9",
+    "rtab_x": -39.19,
+    "rtab_y": 5.81,
+    "svg_x": 23.637,
+    "svg_y": -5.555,
+    "category": "named_space"
+  },
+  {
+    "label": "H6-22",
+    "rtab_x": -37.52,
+    "rtab_y": 17.24,
+    "svg_x": 21.808,
+    "svg_y": -15.854,
+    "category": "named_space"
+  },
+  {
+    "label": "H7-10",
+    "rtab_x": -41.26,
+    "rtab_y": 22.03,
+    "svg_x": 25.06,
+    "svg_y": -20.299,
+    "category": "named_space"
+  },
+  {
+    "label": "H7-12",
+    "rtab_x": -34.8,
+    "rtab_y": 23.91,
+    "svg_x": 19.154,
+    "svg_y": -21.823,
+    "category": "named_space"
+  },
+  {
+    "label": "H7-13",
+    "rtab_x": -36.58,
+    "rtab_y": 23.86,
+    "svg_x": 20.767,
+    "svg_y": -21.823,
+    "category": "named_space"
+  },
+  {
+    "label": "H7-14",
+    "rtab_x": -39.53,
+    "rtab_y": 23.77,
+    "svg_x": 23.447,
+    "svg_y": -21.823,
+    "category": "named_space"
+  },
+  {
+    "label": "H7-15",
+    "rtab_x": -41.31,
+    "rtab_y": 23.71,
+    "svg_x": 25.06,
+    "svg_y": -21.823,
+    "category": "named_space"
+  },
+  {
+    "label": "H7-17",
+    "rtab_x": -34.88,
+    "rtab_y": 26.77,
+    "svg_x": 19.154,
+    "svg_y": -24.414,
+    "category": "named_space"
+  },
+  {
+    "label": "H7-18",
+    "rtab_x": -36.66,
+    "rtab_y": 26.72,
+    "svg_x": 20.767,
+    "svg_y": -24.414,
+    "category": "named_space"
+  },
+  {
+    "label": "H7-19",
+    "rtab_x": -39.62,
+    "rtab_y": 26.62,
+    "svg_x": 23.447,
+    "svg_y": -24.414,
+    "category": "named_space"
+  },
+  {
+    "label": "H7-2",
+    "rtab_x": -34.69,
+    "rtab_y": 20.55,
+    "svg_x": 19.154,
+    "svg_y": -18.775,
+    "category": "named_space"
+  },
+  {
+    "label": "H7-20",
+    "rtab_x": -41.4,
+    "rtab_y": 26.57,
+    "svg_x": 25.06,
+    "svg_y": -24.414,
+    "category": "named_space"
+  },
+  {
+    "label": "H7-22",
+    "rtab_x": -34.93,
+    "rtab_y": 28.45,
+    "svg_x": 19.154,
+    "svg_y": -25.938,
+    "category": "named_space"
+  },
+  {
+    "label": "H7-23",
+    "rtab_x": -36.71,
+    "rtab_y": 28.4,
+    "svg_x": 20.767,
+    "svg_y": -25.938,
+    "category": "named_space"
+  },
+  {
+    "label": "H7-24",
+    "rtab_x": -39.67,
+    "rtab_y": 28.31,
+    "svg_x": 23.447,
+    "svg_y": -25.938,
+    "category": "named_space"
+  },
+  {
+    "label": "H7-25",
+    "rtab_x": -41.45,
+    "rtab_y": 28.25,
+    "svg_x": 25.06,
+    "svg_y": -25.938,
+    "category": "named_space"
+  },
+  {
+    "label": "H7-3",
+    "rtab_x": -36.47,
+    "rtab_y": 20.49,
+    "svg_x": 20.767,
+    "svg_y": -18.775,
+    "category": "named_space"
+  },
+  {
+    "label": "H7-4",
+    "rtab_x": -39.43,
+    "rtab_y": 20.4,
+    "svg_x": 23.447,
+    "svg_y": -18.775,
+    "category": "named_space"
+  },
+  {
+    "label": "H7-5",
+    "rtab_x": -41.21,
+    "rtab_y": 20.35,
+    "svg_x": 25.06,
+    "svg_y": -18.775,
+    "category": "named_space"
+  },
+  {
+    "label": "H7-7",
+    "rtab_x": -34.74,
+    "rtab_y": 22.23,
+    "svg_x": 19.154,
+    "svg_y": -20.299,
+    "category": "named_space"
+  },
+  {
+    "label": "H7-8",
+    "rtab_x": -36.52,
+    "rtab_y": 22.17,
+    "svg_x": 20.767,
+    "svg_y": -20.299,
+    "category": "named_space"
+  },
+  {
+    "label": "H7-9",
+    "rtab_x": -39.48,
+    "rtab_y": 22.08,
+    "svg_x": 23.447,
+    "svg_y": -20.299,
+    "category": "named_space"
+  },
+  {
+    "label": "HONOLUA BAY CONF. RM",
+    "rtab_x": -59.42,
+    "rtab_y": -28.06,
+    "svg_x": 42.897,
+    "svg_y": 24.556,
+    "category": "conference_room"
+  },
+  {
+    "label": "I",
+    "rtab_x": -41.78,
+    "rtab_y": -46.45,
+    "svg_x": 27.435,
+    "svg_y": 41.698,
+    "category": "named_space"
+  },
+  {
+    "label": "I1-11",
+    "rtab_x": -42.87,
+    "rtab_y": -27.5,
+    "svg_x": 27.892,
+    "svg_y": 24.506,
+    "category": "named_space"
+  },
+  {
+    "label": "I1-12",
+    "rtab_x": -44.65,
+    "rtab_y": -27.56,
+    "svg_x": 29.505,
+    "svg_y": 24.506,
+    "category": "named_space"
+  },
+  {
+    "label": "I1-13",
+    "rtab_x": -48.31,
+    "rtab_y": -28.06,
+    "svg_x": 32.833,
+    "svg_y": 24.862,
+    "category": "named_space"
+  },
+  {
+    "label": "I1-16",
+    "rtab_x": -42.92,
+    "rtab_y": -25.82,
+    "svg_x": 27.892,
+    "svg_y": 22.982,
+    "category": "named_space"
+  },
+  {
+    "label": "I1-17",
+    "rtab_x": -44.7,
+    "rtab_y": -25.87,
+    "svg_x": 29.505,
+    "svg_y": 22.982,
+    "category": "named_space"
+  },
+  {
+    "label": "I1-18",
+    "rtab_x": -48.39,
+    "rtab_y": -25.37,
+    "svg_x": 32.833,
+    "svg_y": 22.423,
+    "category": "named_space"
+  },
+  {
+    "label": "I1-21",
+    "rtab_x": -42.97,
+    "rtab_y": -24.14,
+    "svg_x": 27.892,
+    "svg_y": 21.458,
+    "category": "named_space"
+  },
+  {
+    "label": "I1-22",
+    "rtab_x": -44.75,
+    "rtab_y": -24.19,
+    "svg_x": 29.505,
+    "svg_y": 21.458,
+    "category": "named_space"
+  },
+  {
+    "label": "I1-6",
+    "rtab_x": -42.82,
+    "rtab_y": -29.18,
+    "svg_x": 27.892,
+    "svg_y": 26.03,
+    "category": "named_space"
+  },
+  {
+    "label": "I1-7",
+    "rtab_x": -44.6,
+    "rtab_y": -29.24,
+    "svg_x": 29.505,
+    "svg_y": 26.03,
+    "category": "named_space"
+  },
+  {
+    "label": "I2-10",
+    "rtab_x": -50.62,
+    "rtab_y": -20.07,
+    "svg_x": 34.7,
+    "svg_y": 17.559,
+    "category": "named_space"
+  },
+  {
+    "label": "I2-11",
+    "rtab_x": -43.94,
+    "rtab_y": -18.08,
+    "svg_x": 28.603,
+    "svg_y": 15.946,
+    "category": "named_space"
+  },
+  {
+    "label": "I2-12",
+    "rtab_x": -45.63,
+    "rtab_y": -18.13,
+    "svg_x": 30.127,
+    "svg_y": 15.946,
+    "category": "named_space"
+  },
+  {
+    "label": "I2-13",
+    "rtab_x": -47.31,
+    "rtab_y": -18.18,
+    "svg_x": 31.652,
+    "svg_y": 15.946,
+    "category": "named_space"
+  },
+  {
+    "label": "I2-14",
+    "rtab_x": -48.99,
+    "rtab_y": -18.24,
+    "svg_x": 33.176,
+    "svg_y": 15.946,
+    "category": "named_space"
+  },
+  {
+    "label": "I2-15",
+    "rtab_x": -50.67,
+    "rtab_y": -18.29,
+    "svg_x": 34.7,
+    "svg_y": 15.946,
+    "category": "named_space"
+  },
+  {
+    "label": "I2-6",
+    "rtab_x": -43.89,
+    "rtab_y": -19.86,
+    "svg_x": 28.603,
+    "svg_y": 17.559,
+    "category": "named_space"
+  },
+  {
+    "label": "I2-7",
+    "rtab_x": -45.57,
+    "rtab_y": -19.91,
+    "svg_x": 30.127,
+    "svg_y": 17.559,
+    "category": "named_space"
+  },
+  {
+    "label": "I2-8",
+    "rtab_x": -47.25,
+    "rtab_y": -19.96,
+    "svg_x": 31.652,
+    "svg_y": 17.559,
+    "category": "named_space"
+  },
+  {
+    "label": "I2-9",
+    "rtab_x": -48.93,
+    "rtab_y": -20.02,
+    "svg_x": 33.176,
+    "svg_y": 17.559,
+    "category": "named_space"
+  },
+  {
+    "label": "I3-1",
+    "rtab_x": -44.03,
+    "rtab_y": -15.29,
+    "svg_x": 28.603,
+    "svg_y": 13.419,
+    "category": "named_space"
+  },
+  {
+    "label": "I3-2",
+    "rtab_x": -45.71,
+    "rtab_y": -15.34,
+    "svg_x": 30.127,
+    "svg_y": 13.419,
+    "category": "named_space"
+  },
+  {
+    "label": "I3-3",
+    "rtab_x": -47.39,
+    "rtab_y": -15.4,
+    "svg_x": 31.652,
+    "svg_y": 13.419,
+    "category": "named_space"
+  },
+  {
+    "label": "I3-4",
+    "rtab_x": -49.07,
+    "rtab_y": -15.45,
+    "svg_x": 33.176,
+    "svg_y": 13.419,
+    "category": "named_space"
+  },
+  {
+    "label": "I3-6",
+    "rtab_x": -44.08,
+    "rtab_y": -13.51,
+    "svg_x": 28.603,
+    "svg_y": 11.806,
+    "category": "named_space"
+  },
+  {
+    "label": "I3-7",
+    "rtab_x": -45.77,
+    "rtab_y": -13.56,
+    "svg_x": 30.127,
+    "svg_y": 11.806,
+    "category": "named_space"
+  },
+  {
+    "label": "I3-8",
+    "rtab_x": -47.45,
+    "rtab_y": -13.62,
+    "svg_x": 31.652,
+    "svg_y": 11.806,
+    "category": "named_space"
+  },
+  {
+    "label": "I3-9",
+    "rtab_x": -49.13,
+    "rtab_y": -13.67,
+    "svg_x": 33.176,
+    "svg_y": 11.806,
+    "category": "named_space"
+  },
+  {
+    "label": "I5-22",
+    "rtab_x": -46.49,
+    "rtab_y": 10.0,
+    "svg_x": 30.127,
+    "svg_y": -9.555,
+    "category": "named_space"
+  },
+  {
+    "label": "I5-23",
+    "rtab_x": -48.17,
+    "rtab_y": 9.95,
+    "svg_x": 31.652,
+    "svg_y": -9.555,
+    "category": "named_space"
+  },
+  {
+    "label": "I5-24",
+    "rtab_x": -49.85,
+    "rtab_y": 9.9,
+    "svg_x": 33.176,
+    "svg_y": -9.555,
+    "category": "named_space"
+  },
+  {
+    "label": "I6-11",
+    "rtab_x": -44.95,
+    "rtab_y": 14.62,
+    "svg_x": 28.603,
+    "svg_y": -13.695,
+    "category": "named_space"
+  },
+  {
+    "label": "I6-12",
+    "rtab_x": -46.63,
+    "rtab_y": 14.57,
+    "svg_x": 30.127,
+    "svg_y": -13.695,
+    "category": "named_space"
+  },
+  {
+    "label": "I6-13",
+    "rtab_x": -48.31,
+    "rtab_y": 14.52,
+    "svg_x": 31.652,
+    "svg_y": -13.695,
+    "category": "named_space"
+  },
+  {
+    "label": "I6-14",
+    "rtab_x": -49.99,
+    "rtab_y": 14.47,
+    "svg_x": 33.176,
+    "svg_y": -13.695,
+    "category": "named_space"
+  },
+  {
+    "label": "I6-16",
+    "rtab_x": -45.0,
+    "rtab_y": 16.4,
+    "svg_x": 28.603,
+    "svg_y": -15.308,
+    "category": "named_space"
+  },
+  {
+    "label": "I6-17",
+    "rtab_x": -46.68,
+    "rtab_y": 16.35,
+    "svg_x": 30.127,
+    "svg_y": -15.308,
+    "category": "named_space"
+  },
+  {
+    "label": "I6-18",
+    "rtab_x": -48.36,
+    "rtab_y": 16.3,
+    "svg_x": 31.652,
+    "svg_y": -15.308,
+    "category": "named_space"
+  },
+  {
+    "label": "I6-19",
+    "rtab_x": -50.05,
+    "rtab_y": 16.25,
+    "svg_x": 33.176,
+    "svg_y": -15.308,
+    "category": "named_space"
+  },
+  {
+    "label": "I6-2",
+    "rtab_x": -46.54,
+    "rtab_y": 11.78,
+    "svg_x": 30.127,
+    "svg_y": -11.168,
+    "category": "named_space"
+  },
+  {
+    "label": "I6-3",
+    "rtab_x": -48.22,
+    "rtab_y": 11.73,
+    "svg_x": 31.652,
+    "svg_y": -11.168,
+    "category": "named_space"
+  },
+  {
+    "label": "I6-4",
+    "rtab_x": -49.91,
+    "rtab_y": 11.68,
+    "svg_x": 33.176,
+    "svg_y": -11.168,
+    "category": "named_space"
+  },
+  {
+    "label": "I7-12",
+    "rtab_x": -44.44,
+    "rtab_y": 23.62,
+    "svg_x": 27.892,
+    "svg_y": -21.823,
+    "category": "named_space"
+  },
+  {
+    "label": "I7-13",
+    "rtab_x": -46.22,
+    "rtab_y": 23.56,
+    "svg_x": 29.505,
+    "svg_y": -21.823,
+    "category": "named_space"
+  },
+  {
+    "label": "I7-14",
+    "rtab_x": -50.04,
+    "rtab_y": 22.84,
+    "svg_x": 32.987,
+    "svg_y": -21.272,
+    "category": "named_space"
+  },
+  {
+    "label": "I7-16",
+    "rtab_x": -44.49,
+    "rtab_y": 25.3,
+    "svg_x": 27.892,
+    "svg_y": -23.347,
+    "category": "named_space"
+  },
+  {
+    "label": "I7-17",
+    "rtab_x": -46.27,
+    "rtab_y": 25.24,
+    "svg_x": 29.505,
+    "svg_y": -23.347,
+    "category": "named_space"
+  },
+  {
+    "label": "I7-2",
+    "rtab_x": -44.33,
+    "rtab_y": 20.25,
+    "svg_x": 27.892,
+    "svg_y": -18.775,
+    "category": "named_space"
+  },
+  {
+    "label": "I7-3",
+    "rtab_x": -46.11,
+    "rtab_y": 20.2,
+    "svg_x": 29.505,
+    "svg_y": -18.775,
+    "category": "named_space"
+  },
+  {
+    "label": "I7-7",
+    "rtab_x": -44.38,
+    "rtab_y": 21.93,
+    "svg_x": 27.892,
+    "svg_y": -20.299,
+    "category": "named_space"
+  },
+  {
+    "label": "I7-8",
+    "rtab_x": -46.16,
+    "rtab_y": 21.88,
+    "svg_x": 29.505,
+    "svg_y": -20.299,
+    "category": "named_space"
+  },
+  {
+    "label": "IDF 3.1",
+    "rtab_x": 0.17,
+    "rtab_y": 0.88,
+    "svg_x": -11.866,
+    "svg_y": 0.001,
+    "category": "utility"
+  },
+  {
+    "label": "IDF 3.2",
+    "rtab_x": -24.38,
+    "rtab_y": 0.02,
+    "svg_x": 10.384,
+    "svg_y": 0.102,
+    "category": "utility"
+  },
+  {
+    "label": "J",
+    "rtab_x": -51.79,
+    "rtab_y": -46.76,
+    "svg_x": 36.507,
+    "svg_y": 41.698,
+    "category": "named_space"
+  },
+  {
+    "label": "J.9",
+    "rtab_x": -61.65,
+    "rtab_y": -47.06,
+    "svg_x": 45.442,
+    "svg_y": 41.698,
+    "category": "named_space"
+  },
+  {
+    "label": "J2-11",
+    "rtab_x": -52.35,
+    "rtab_y": -18.34,
+    "svg_x": 36.224,
+    "svg_y": 15.946,
+    "category": "named_space"
+  },
+  {
+    "label": "J2-12",
+    "rtab_x": -54.66,
+    "rtab_y": -19.53,
+    "svg_x": 38.345,
+    "svg_y": 16.962,
+    "category": "named_space"
+  },
+  {
+    "label": "J2-13",
+    "rtab_x": -58.04,
+    "rtab_y": -19.35,
+    "svg_x": 41.406,
+    "svg_y": 16.708,
+    "category": "named_space"
+  },
+  {
+    "label": "J2-15",
+    "rtab_x": -61.84,
+    "rtab_y": -19.89,
+    "svg_x": 44.861,
+    "svg_y": 17.089,
+    "category": "named_space"
+  },
+  {
+    "label": "J2-25",
+    "rtab_x": -61.94,
+    "rtab_y": -16.78,
+    "svg_x": 44.861,
+    "svg_y": 14.27,
+    "category": "named_space"
+  },
+  {
+    "label": "J2-6",
+    "rtab_x": -52.3,
+    "rtab_y": -20.12,
+    "svg_x": 36.224,
+    "svg_y": 17.559,
+    "category": "named_space"
+  },
+  {
+    "label": "J3-11",
+    "rtab_x": -52.7,
+    "rtab_y": -11.53,
+    "svg_x": 36.351,
+    "svg_y": 9.774,
+    "category": "named_space"
+  },
+  {
+    "label": "J3-12",
+    "rtab_x": -54.48,
+    "rtab_y": -11.59,
+    "svg_x": 37.964,
+    "svg_y": 9.774,
+    "category": "named_space"
+  },
+  {
+    "label": "J3-13",
+    "rtab_x": -57.27,
+    "rtab_y": -11.67,
+    "svg_x": 40.492,
+    "svg_y": 9.774,
+    "category": "named_space"
+  },
+  {
+    "label": "J3-14",
+    "rtab_x": -59.05,
+    "rtab_y": -11.73,
+    "svg_x": 42.105,
+    "svg_y": 9.774,
+    "category": "named_space"
+  },
+  {
+    "label": "J3-3",
+    "rtab_x": -57.17,
+    "rtab_y": -15.04,
+    "svg_x": 40.492,
+    "svg_y": 12.822,
+    "category": "named_space"
+  },
+  {
+    "label": "J3-4",
+    "rtab_x": -58.95,
+    "rtab_y": -15.09,
+    "svg_x": 42.105,
+    "svg_y": 12.822,
+    "category": "named_space"
+  },
+  {
+    "label": "J3-6",
+    "rtab_x": -52.65,
+    "rtab_y": -13.21,
+    "svg_x": 36.351,
+    "svg_y": 11.298,
+    "category": "named_space"
+  },
+  {
+    "label": "J3-7",
+    "rtab_x": -54.43,
+    "rtab_y": -13.27,
+    "svg_x": 37.964,
+    "svg_y": 11.298,
+    "category": "named_space"
+  },
+  {
+    "label": "J3-8",
+    "rtab_x": -57.22,
+    "rtab_y": -13.35,
+    "svg_x": 40.492,
+    "svg_y": 11.298,
+    "category": "named_space"
+  },
+  {
+    "label": "J3-9",
+    "rtab_x": -59.0,
+    "rtab_y": -13.41,
+    "svg_x": 42.105,
+    "svg_y": 11.298,
+    "category": "named_space"
+  },
+  {
+    "label": "JAN.",
+    "rtab_x": -43.95,
+    "rtab_y": 1.91,
+    "svg_x": 28.055,
+    "svg_y": -2.16,
+    "category": "utility"
+  },
+  {
+    "label": "JAWS CONF. RM",
+    "rtab_x": -9.41,
+    "rtab_y": 24.59,
+    "svg_x": -3.849,
+    "svg_y": -21.731,
+    "category": "conference_room"
+  },
+  {
+    "label": "K",
+    "rtab_x": -63.53,
+    "rtab_y": -47.12,
+    "svg_x": 47.147,
+    "svg_y": 41.698,
+    "category": "named_space"
+  },
+  {
+    "label": "K38 CONF. RM",
+    "rtab_x": -54.55,
+    "rtab_y": -29.4,
+    "svg_x": 38.523,
+    "svg_y": 25.897,
+    "category": "conference_room"
+  },
+  {
+    "label": "MAALAEA CONF. RM",
+    "rtab_x": -53.99,
+    "rtab_y": -25.13,
+    "svg_x": 37.895,
+    "svg_y": 22.047,
+    "category": "conference_room"
+  },
+  {
+    "label": "MEN",
+    "rtab_x": 17.79,
+    "rtab_y": 0.58,
+    "svg_x": -27.816,
+    "svg_y": 0.766,
+    "category": "restroom"
+  },
+  {
+    "label": "NORTH",
+    "rtab_x": -68.01,
+    "rtab_y": 26.73,
+    "svg_x": 49.149,
+    "svg_y": -25.3,
+    "category": "named_space"
+  },
+  {
+    "label": "POVERTY BAY CONF. RM",
+    "rtab_x": -16.06,
+    "rtab_y": 23.96,
+    "svg_x": 2.19,
+    "svg_y": -21.344,
+    "category": "conference_room"
+  },
+  {
+    "label": "SH-10",
+    "rtab_x": -2.81,
+    "rtab_y": -0.47,
+    "svg_x": -9.132,
+    "svg_y": 1.138,
+    "category": "shared_space"
+  },
+  {
+    "label": "SH-11",
+    "rtab_x": -6.36,
+    "rtab_y": 0.49,
+    "svg_x": -5.944,
+    "svg_y": 0.173,
+    "category": "shared_space"
+  },
+  {
+    "label": "SH-12",
+    "rtab_x": -9.52,
+    "rtab_y": -4.35,
+    "svg_x": -2.947,
+    "svg_y": 4.466,
+    "category": "shared_space"
+  },
+  {
+    "label": "SH-13",
+    "rtab_x": -9.75,
+    "rtab_y": 3.23,
+    "svg_x": -2.947,
+    "svg_y": -2.405,
+    "category": "shared_space"
+  },
+  {
+    "label": "SH-14",
+    "rtab_x": -12.95,
+    "rtab_y": -4.45,
+    "svg_x": 0.165,
+    "svg_y": 4.466,
+    "category": "shared_space"
+  },
+  {
+    "label": "SH-15",
+    "rtab_x": -13.19,
+    "rtab_y": 3.13,
+    "svg_x": 0.165,
+    "svg_y": -2.405,
+    "category": "shared_space"
+  },
+  {
+    "label": "SH-16",
+    "rtab_x": -22.99,
+    "rtab_y": -1.08,
+    "svg_x": 9.158,
+    "svg_y": 1.138,
+    "category": "shared_space"
+  },
+  {
+    "label": "SH-17",
+    "rtab_x": -37.98,
+    "rtab_y": -1.54,
+    "svg_x": 22.748,
+    "svg_y": 1.138,
+    "category": "shared_space"
+  },
+  {
+    "label": "SH-18",
+    "rtab_x": -40.18,
+    "rtab_y": -4.64,
+    "svg_x": 24.818,
+    "svg_y": 3.881,
+    "category": "shared_space"
+  },
+  {
+    "label": "SH-20",
+    "rtab_x": -46.45,
+    "rtab_y": 1.15,
+    "svg_x": 30.343,
+    "svg_y": -1.541,
+    "category": "shared_space"
+  },
+  {
+    "label": "SH-21",
+    "rtab_x": -50.19,
+    "rtab_y": -1.92,
+    "svg_x": 33.811,
+    "svg_y": 1.138,
+    "category": "shared_space"
+  },
+  {
+    "label": "SH-22",
+    "rtab_x": -57.09,
+    "rtab_y": -5.17,
+    "svg_x": 40.149,
+    "svg_y": 3.894,
+    "category": "shared_space"
+  },
+  {
+    "label": "SH-25",
+    "rtab_x": -9.1,
+    "rtab_y": 18.57,
+    "svg_x": -3.963,
+    "svg_y": -16.273,
+    "category": "shared_space"
+  },
+  {
+    "label": "SH-3",
+    "rtab_x": 31.48,
+    "rtab_y": -1.72,
+    "svg_x": -40.149,
+    "svg_y": 3.221,
+    "category": "shared_space"
+  },
+  {
+    "label": "SH-4",
+    "rtab_x": 24.42,
+    "rtab_y": 0.37,
+    "svg_x": -33.811,
+    "svg_y": 1.138,
+    "category": "shared_space"
+  },
+  {
+    "label": "SH-5",
+    "rtab_x": 18.87,
+    "rtab_y": -3.15,
+    "svg_x": -28.692,
+    "svg_y": 4.174,
+    "category": "shared_space"
+  },
+  {
+    "label": "SH-7",
+    "rtab_x": 13.41,
+    "rtab_y": 3.0,
+    "svg_x": -23.917,
+    "svg_y": -1.554,
+    "category": "shared_space"
+  },
+  {
+    "label": "SH-8",
+    "rtab_x": 10.82,
+    "rtab_y": -2.98,
+    "svg_x": -21.402,
+    "svg_y": 3.793,
+    "category": "shared_space"
+  },
+  {
+    "label": "SH-9",
+    "rtab_x": 8.12,
+    "rtab_y": -0.13,
+    "svg_x": -19.039,
+    "svg_y": 1.138,
+    "category": "shared_space"
+  },
+  {
+    "label": "SHIPWRECKS CONF. RM",
+    "rtab_x": 32.63,
+    "rtab_y": -26.68,
+    "svg_x": -40.495,
+    "svg_y": 25.86,
+    "category": "conference_room"
+  },
+  {
+    "label": "STAIR1",
+    "rtab_x": -13.7,
+    "rtab_y": 18.13,
+    "svg_x": 0.216,
+    "svg_y": -16.007,
+    "category": "vertical_transport"
+  },
+  {
+    "label": "STAIR2",
+    "rtab_x": 28.81,
+    "rtab_y": 2.21,
+    "svg_x": -37.837,
+    "svg_y": -0.411,
+    "category": "vertical_transport"
+  },
+  {
+    "label": "STAIR3",
+    "rtab_x": -54.7,
+    "rtab_y": -0.35,
+    "svg_x": 37.85,
+    "svg_y": -0.411,
+    "category": "vertical_transport"
+  },
+  {
+    "label": "STAIRS",
+    "rtab_x": 26.72,
+    "rtab_y": 3.89,
+    "svg_x": -35.995,
+    "svg_y": -1.984,
+    "category": "vertical_transport"
+  },
+  {
+    "label": "STOR.",
+    "rtab_x": 0.03,
+    "rtab_y": -2.87,
+    "svg_x": -11.64,
+    "svg_y": 3.394,
+    "category": "utility"
+  },
+  {
+    "label": "TAVARUA CONF. RM",
+    "rtab_x": 37.31,
+    "rtab_y": -24.78,
+    "svg_x": -44.786,
+    "svg_y": 24.269,
+    "category": "conference_room"
+  },
+  {
+    "label": "TEAHUPOO CONF. RM",
+    "rtab_x": 30.7,
+    "rtab_y": 27.6,
+    "svg_x": -40.249,
+    "svg_y": -23.345,
+    "category": "vertical_transport"
+  },
+  {
+    "label": "TODOS SANTOS CONF. RM",
+    "rtab_x": 31.72,
+    "rtab_y": -23.02,
+    "svg_x": -39.77,
+    "svg_y": 22.518,
+    "category": "conference_room"
+  },
+  {
+    "label": "UP",
+    "rtab_x": -12.01,
+    "rtab_y": 19.56,
+    "svg_x": -1.358,
+    "svg_y": -17.255,
+    "category": "vertical_transport"
+  },
+  {
+    "label": "WAIMEA BAY",
+    "rtab_x": -56.42,
+    "rtab_y": 18.77,
+    "svg_x": 38.881,
+    "svg_y": -17.769,
+    "category": "named_space"
+  },
+  {
+    "label": "WOMEN",
+    "rtab_x": 12.83,
+    "rtab_y": 0.4,
+    "svg_x": -23.315,
+    "svg_y": 0.791,
+    "category": "restroom"
+  },
+  {
+    "label": "YO-YO'S CONF. RM",
+    "rtab_x": 5.03,
+    "rtab_y": -2.23,
+    "svg_x": -16.181,
+    "svg_y": 2.956,
+    "category": "conference_room"
+  }
+]

@@ -1,0 +1,9 @@
+free_thresh: 0.196
+image: floorplan_real_2_nav_full.pgm
+negate: 0
+occupied_thresh: 0.65
+origin:
+- -50.0761
+- -32.0167
+- 0.0
+resolution: 0.0254

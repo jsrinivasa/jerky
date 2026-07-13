@@ -1,0 +1,36 @@
+# Named poses for autonomous navigation.
+# Coordinates are in the *map* frame (meters, yaw in radians).
+#
+# How to record a pose:
+#   1. Launch navigate_mission.launch.py with the correct map
+#   2. Manually drive the robot to the exact location
+#   3. Run:  ros2 run tf2_ros tf2_echo map base_link
+#   4. Copy Translation (x, y) and RPY radian yaw (3rd value) below
+#
+# How to navigate to a pose (handles map selection automatically):
+#   ros2 launch aloha go_to_pose.launch.py pose_name:=elevator
+#   ros2 launch aloha go_to_pose.launch.py pose_name:=conference_room
+#   ros2 launch aloha go_to_pose.launch.py pose_name:=team_room_31
+#   ros2 launch aloha go_to_pose.launch.py pose_name:=parking
+
+parking:
+  x: -6.220
+  y: 0.382
+  yaw: -2.020
+  map_name: building16_with_parking
+  map_file: /home/aloha/maps/building16_with_parking_edited.yaml
+
+elevator:
+  x: -10.207
+  y: -2.163
+  yaw: 1.340
+  map_name: building16_with_elevator
+  map_file: /home/aloha/maps/building16_with_elevator_edited.yaml
+
+pachisi:
+  x: 13.102
+  y: -7.199
+  yaw: -1.922
+  map_name: building16_with_elevator
+  map_file: /home/aloha/maps/building16_with_elevator_edited.yaml
+

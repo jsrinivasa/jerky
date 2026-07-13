@@ -97,26 +97,18 @@ def generate_launch_description():
     )
 
     # ==================== Map Server (2D grid for A*) ====================
+    # Uses a simple custom publisher instead of nav2_map_server to avoid
+    # lifecycle management issues (nav2_map_server gets stuck in 'unconfigured'
+    # on rapid restarts due to bond timeout failures).
 
     map_server_node = Node(
-        package='nav2_map_server',
-        executable='map_server',
-        name='map_server',
+        package='aloha',
+        executable='static_map_publisher',
+        name='static_map_publisher',
         output='screen',
         parameters=[{
-            'yaml_filename': LaunchConfiguration('map_file'),
-            'use_sim_time': use_sim_time,
-        }],
-    )
-
-    map_lifecycle_node = Node(
-        package='nav2_lifecycle_manager',
-        executable='lifecycle_manager',
-        name='map_lifecycle_manager',
-        output='screen',
-        parameters=[{
-            'autostart': True,
-            'node_names': ['map_server'],
+            'map_file': LaunchConfiguration('map_file'),
+            'republish_interval': 5.0,
             'use_sim_time': use_sim_time,
         }],
     )
@@ -129,7 +121,7 @@ def generate_launch_description():
         name='robot_pose_marker',
         output='screen',
         parameters=[{
-            'robot_radius': 0.27,
+            'robot_radius': 0.26,
             'arrow_length': 0.6,
             'publish_rate': 10.0,
         }],
@@ -148,14 +140,14 @@ def generate_launch_description():
             'max_linear_velocity': LaunchConfiguration('max_linear_velocity'),
             'max_angular_velocity': LaunchConfiguration('max_angular_velocity'),
             'goal_tolerance': 0.25,
-            'robot_radius': 0.27,
+            'robot_radius': 0.25,
             'occupancy_threshold': 95,
-            'use_trajectory_optimization': True,
+            'use_trajectory_optimization': False,
             'smoothing_weight': 0.8,
-            'max_acceleration': 0.5,
-            'enable_collision_avoidance': True,
+            'max_acceleration': 0.3,
+            'enable_collision_avoidance': False,
             'safety_distance': 0.5,
-            'emergency_stop_distance': 0.2,
+            'emergency_stop_distance': 0.1,
             'use_sim_time': use_sim_time,
         }],
         remappings=[
@@ -177,7 +169,6 @@ def generate_launch_description():
 
         rtabmap_localization,
         map_server_node,
-        map_lifecycle_node,
         nav_planner_node,
         robot_pose_marker_node,
     ])
