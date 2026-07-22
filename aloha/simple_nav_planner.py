@@ -11,6 +11,7 @@ Author: ALOHA Team
 License: MIT
 """
 
+import copy
 import time
 
 import rclpy
@@ -23,8 +24,9 @@ from geometry_msgs.msg import PoseStamped, Twist, Point
 from nav_msgs.msg import Path, OccupancyGrid, Odometry
 from sensor_msgs.msg import LaserScan
 from visualization_msgs.msg import Marker, MarkerArray
-from std_msgs.msg import ColorRGBA
+from std_msgs.msg import ColorRGBA, Empty
 from nav2_msgs.action import NavigateToPose
+from rtabmap_msgs.msg import Info as RtabmapInfo
 import tf2_ros
 from tf2_geometry_msgs import do_transform_pose_stamped
 
@@ -74,16 +76,34 @@ class SimpleNavPlanner(Node):
         self.declare_parameter('max_angular_velocity', 1.0)
         self.declare_parameter('goal_tolerance', 0.2)
         self.declare_parameter('path_resolution', 0.1)
-        self.declare_parameter('robot_radius', 0.3)  # Robot radius in meters (24in = 0.61m width, radius = 0.305m + safety margin)
+        # robot_radius: worst-case corner-to-pivot distance (all orientations,
+        # incl. turning) -- used ONLY for live safety (check_collision_ahead,
+        # _raw_forward_clearance). inflation_radius: A* path-planning
+        # inflation -- based on half-width + modest margin, deliberately
+        # SMALLER than robot_radius, so straight-through corridors the robot
+        # actually fits through aren't rejected by a diagonal-case radius
+        # that only matters when turning. Split 2026-07-16 -- previously one
+        # shared value made valid paths look blocked once robot_radius was
+        # correctly sized for the live safety checks.
+        self.declare_parameter('robot_radius', 0.3)
+        self.declare_parameter('inflation_radius', 0.3)
         self.declare_parameter('use_trajectory_optimization', True)
         self.declare_parameter('smoothing_weight', 0.5)  # Higher = smoother but less accurate
         self.declare_parameter('max_acceleration', 0.5)  # m/s^2
         self.declare_parameter('enable_collision_avoidance', True)
-        self.declare_parameter('safety_distance', 0.5)  # Minimum distance to obstacles (meters)
-        self.declare_parameter('emergency_stop_distance', 0.3)  # Emergency stop distance (meters)
+        self.declare_parameter('safety_distance', 0.6096)  # Start slowing at 2ft (meters)
+        self.declare_parameter('emergency_stop_distance', 0.4572)  # Full stop at 1.5ft (meters)
         self.declare_parameter('occupancy_threshold', 60)  # Cells with occupancy >= this are obstacles (0-100)
         self.declare_parameter('live_scan_topic', '/scan')
         self.declare_parameter('live_scan_max_age', 1.0)  # seconds; older scans are ignored (sensor stalled)
+        # localization_monitor.py only covers AMCL (/amcl_pose, /particlecloud),
+        # not this RTAB-Map SLAM path -- so there was zero live signal for
+        # "is current_pose's yaw actually trustworthy right now". This is a
+        # passive watchdog: current_pose only gets corrected against the map
+        # at a loop closure/proximity detection (see /rtabmap/info below); in
+        # between, it's raw wheel odom drifting. Warns, doesn't act -- doesn't
+        # touch cmd_vel, so it can't fight nav_deadman/the control loop.
+        self.declare_parameter('localization_stale_warn_sec', 20.0)
 
         self.use_nav2 = self.get_parameter('use_nav2').value
         self.lookahead_distance = self.get_parameter('lookahead_distance').value
@@ -92,6 +112,7 @@ class SimpleNavPlanner(Node):
         self.goal_tolerance = self.get_parameter('goal_tolerance').value
         self.path_resolution = self.get_parameter('path_resolution').value
         self.robot_radius = self.get_parameter('robot_radius').value
+        self.inflation_radius = self.get_parameter('inflation_radius').value
         self.use_traj_opt = self.get_parameter('use_trajectory_optimization').value
         self.smoothing_weight = self.get_parameter('smoothing_weight').value
         self.max_acceleration = self.get_parameter('max_acceleration').value
@@ -101,6 +122,10 @@ class SimpleNavPlanner(Node):
         self.occupancy_threshold = self.get_parameter('occupancy_threshold').value
         self.live_scan_topic = self.get_parameter('live_scan_topic').value
         self.live_scan_max_age = self.get_parameter('live_scan_max_age').value
+        self.localization_stale_warn_sec = self.get_parameter(
+            'localization_stale_warn_sec'
+        ).value
+        self._last_pose_correction_time = None
 
         # State
         self.state = NavigationState.IDLE
@@ -182,6 +207,23 @@ class SimpleNavPlanner(Node):
             scan_qos
         )
 
+        self.rtabmap_info_sub = self.create_subscription(
+            RtabmapInfo,
+            '/rtabmap/info',
+            self.rtabmap_info_callback,
+            10
+        )
+
+        # Kill switch: any publish here immediately halts motion and drops
+        # back to IDLE, regardless of current state. This is the only way
+        # to cancel an in-progress goal -- there is no other cancel path.
+        self.cancel_sub = self.create_subscription(
+            Empty,
+            '/nav_cancel',
+            self.cancel_callback,
+            10
+        )
+
         # Publishers
         self.cmd_vel_pub = self.create_publisher(Twist, '/cmd_vel', 10)
         path_qos = QoSProfile(
@@ -219,8 +261,8 @@ class SimpleNavPlanner(Node):
         self.control_timer = self.create_timer(0.1, self.control_loop)
         
         self.get_logger().info('Simple Navigation Planner initialized')
-        self.get_logger().info(f'Robot radius: {self.robot_radius}m (24 inches wide)')
-        self.get_logger().info(f'Path planning: Using robot radius of {self.robot_radius}m for obstacle inflation')
+        self.get_logger().info(f'Robot radius (live safety): {self.robot_radius}m')
+        self.get_logger().info(f'Path planning: Using inflation radius of {self.inflation_radius}m for obstacle inflation')
         self.get_logger().info(f'Dynamic collision avoidance: {"Enabled" if self.enable_collision_avoidance else "Disabled"}')
         self.get_logger().info('Set a goal pose in RViz2 using "2D Goal Pose" tool')
     
@@ -245,7 +287,15 @@ class SimpleNavPlanner(Node):
             self.navigate_with_nav2(msg)
         else:
             self.plan_and_navigate()
-    
+
+    def cancel_callback(self, msg: Empty):
+        """Kill switch: halt immediately and drop to IDLE from any state."""
+        self.get_logger().warn('Nav cancelled via /nav_cancel -- stopping now')
+        self.stop_robot(immediate=True)
+        self.goal_pose = None
+        self.current_path = None
+        self.state = NavigationState.IDLE
+
     def map_callback(self, msg: OccupancyGrid):
         """Store map data for path planning and create inflated map."""
         if self.map_data is None:
@@ -277,6 +327,13 @@ class SimpleNavPlanner(Node):
     def scan_callback(self, msg: LaserScan):
         """Store the latest live obstacle scan (see check_collision_ahead)."""
         self.latest_scan = msg
+
+    def rtabmap_info_callback(self, msg: RtabmapInfo):
+        """Track the last time map-frame current_pose actually got a fresh
+        correction (loop closure or proximity detection), vs. just drifting
+        as raw wheel odom -- see localization_stale_warn_sec."""
+        if msg.loop_closure_id > 0 or msg.proximity_detection_id > 0:
+            self._last_pose_correction_time = self.get_clock().now()
 
     def navigate_with_nav2(self, goal: PoseStamped):
         """Use Nav2 for navigation (requires Nav2 to be running)."""
@@ -350,6 +407,72 @@ class SimpleNavPlanner(Node):
         self.get_logger().info(f'Path planned with {len(self.current_path)} waypoints')
         self.publish_path_visualization()
     
+    def _expand_map_to_include(self, cells: List[Optional[Tuple[int, int]]]):
+        """Pad self.map_data / self.inflated_map / self.obstacle_map_raw (in
+        place) so every cell in `cells` falls within bounds, filling the new
+        region as unknown (-1) / free.
+
+        A map-free session's live grid only covers explored area, so a
+        floorplan click is normally outside it at first -- unknown cells are
+        already treated as passable everywhere else (is_free,
+        is_point_collision_free_grid via inflated_map=False); this is the
+        "straight-through-unknown" piece that makes that space reachable at
+        all. Purely additive/transient: the next real map_callback overwrites
+        this the moment the robot's own sensors actually cover the area.
+        """
+        if self.map_data is None:
+            return
+        width = self.map_data.info.width
+        height = self.map_data.info.height
+        resolution = self.map_data.info.resolution
+
+        xs = [c[0] for c in cells if c is not None]
+        ys = [c[1] for c in cells if c is not None]
+        if not xs:
+            return
+        min_x, max_x = min(xs + [0]), max(xs + [width - 1])
+        min_y, max_y = min(ys + [0]), max(ys + [height - 1])
+
+        if min_x >= 0 and max_x < width and min_y >= 0 and max_y < height:
+            return  # already covers every requested cell
+
+        margin = max(int(self.inflation_radius / resolution) + 2, 5)
+        pad_left = max(0, -min_x) + margin
+        pad_right = max(0, max_x - (width - 1)) + margin
+        pad_bottom = max(0, -min_y) + margin
+        pad_top = max(0, max_y - (height - 1)) + margin
+
+        new_width = width + pad_left + pad_right
+        new_height = height + pad_bottom + pad_top
+
+        old_data = np.array(self.map_data.data, dtype=np.int8).reshape((height, width))
+        new_data = np.full((new_height, new_width), -1, dtype=np.int8)
+        new_data[pad_bottom:pad_bottom + height, pad_left:pad_left + width] = old_data
+
+        new_inflated = np.zeros((new_height, new_width), dtype=bool)
+        if self.inflated_map is not None:
+            new_inflated[pad_bottom:pad_bottom + height, pad_left:pad_left + width] = self.inflated_map
+
+        new_obstacle_raw = np.zeros((new_height, new_width), dtype=bool)
+        if self.obstacle_map_raw is not None:
+            new_obstacle_raw[pad_bottom:pad_bottom + height, pad_left:pad_left + width] = self.obstacle_map_raw
+
+        new_msg = copy.deepcopy(self.map_data)
+        new_msg.info.width = new_width
+        new_msg.info.height = new_height
+        new_msg.info.origin.position.x -= pad_left * resolution
+        new_msg.info.origin.position.y -= pad_bottom * resolution
+        new_msg.data = new_data.flatten().tolist()
+
+        self.get_logger().info(
+            f'Expanded live map into unknown space for planning: '
+            f'{width}x{height} -> {new_width}x{new_height} cells '
+            f'(pad L{pad_left}/R{pad_right}/B{pad_bottom}/T{pad_top})'
+        )
+        self.map_data = new_msg
+        self.inflated_map = new_inflated
+        self.obstacle_map_raw = new_obstacle_raw
+
     def plan_path(self, start: Point, goal: Point) -> Optional[List[Point]]:
         """
         Simple A* path planner.
@@ -368,7 +491,13 @@ class SimpleNavPlanner(Node):
         # Convert world coordinates to grid coordinates
         start_grid = self.world_to_grid(start.x, start.y)
         goal_grid = self.world_to_grid(goal.x, goal.y)
-        
+
+        # A fresh/growing live map (map-free session) usually doesn't cover
+        # the goal yet -- expand into unknown space rather than failing.
+        self._expand_map_to_include([start_grid, goal_grid])
+        start_grid = self.world_to_grid(start.x, start.y)
+        goal_grid = self.world_to_grid(goal.x, goal.y)
+
         if start_grid is None:
             self.get_logger().error(
                 f'Path planning failed: Start position ({start.x:.2f}, {start.y:.2f}) is outside map bounds. '
@@ -388,11 +517,11 @@ class SimpleNavPlanner(Node):
             return None
         
         resolution = self.map_data.info.resolution
-        check_radius_cells = int(self.robot_radius / resolution)
-        
+        check_radius_cells = int(self.inflation_radius / resolution)
+
         self.get_logger().info(
             f'Planning path from grid ({start_grid[0]}, {start_grid[1]}) to ({goal_grid[0]}, {goal_grid[1]}). '
-            f'Inflating obstacles by {check_radius_cells} cells ({self.robot_radius:.2f}m)'
+            f'Inflating obstacles by {check_radius_cells} cells ({self.inflation_radius:.2f}m)'
         )
         
         # Simple A* implementation
@@ -456,7 +585,7 @@ class SimpleNavPlanner(Node):
         if not self.is_point_collision_free_grid(goal[0], goal[1]):
             self.get_logger().warn(
                 f'Goal cell ({goal[0]}, {goal[1]}) is occupied or too close to obstacles. '
-                f'Searching for nearest free cell with {self.robot_radius:.2f}m clearance...'
+                f'Searching for nearest free cell with {self.inflation_radius:.2f}m clearance...'
             )
             # Try to find nearest free cell
             original_goal = goal
@@ -579,7 +708,7 @@ class SimpleNavPlanner(Node):
         width = self.map_data.info.width
         height = self.map_data.info.height
         resolution = self.map_data.info.resolution
-        check_radius_cells = max(int(self.robot_radius / resolution), 1)
+        check_radius_cells = max(int(self.inflation_radius / resolution), 1)
 
         data = np.array(self.map_data.data, dtype=np.int8).reshape((height, width))
 
@@ -610,7 +739,7 @@ class SimpleNavPlanner(Node):
         self.get_logger().info(
             f'Inflated map created in {elapsed:.2f}s. '
             f'Obstacles: {raw_count} raw → {clean_count} after denoise. '
-            f'Inflation: {check_radius_cells} cells ({self.robot_radius:.2f}m). '
+            f'Inflation: {check_radius_cells} cells ({self.inflation_radius:.2f}m). '
             f'Free cells: {free_cells}/{width * height}'
         )
         
@@ -880,8 +1009,8 @@ class SimpleNavPlanner(Node):
             return False
         
         resolution = self.map_data.info.resolution
-        check_radius_cells = int(self.robot_radius / resolution)
-        
+        check_radius_cells = int(self.inflation_radius / resolution)
+
         # Check circular area around point
         for dx in range(-check_radius_cells, check_radius_cells + 1):
             for dy in range(-check_radius_cells, check_radius_cells + 1):
@@ -974,7 +1103,31 @@ class SimpleNavPlanner(Node):
         
         if self.current_pose is None or self.current_path is None:
             return
-        
+
+        # Localization drift visibility: current_pose is raw wheel odom
+        # transformed through map->odom, and map->odom only moves at a loop
+        # closure/proximity detection (rtabmap_info_callback). If none has
+        # landed in a while *while we're actively driving*, current_pose's
+        # yaw may just be accumulated wheel-odom bias -- there's no other
+        # signal for this on the RTAB-Map path (see localization_stale_warn_sec).
+        if self._last_pose_correction_time is None:
+            self.get_logger().warn(
+                'No RTAB-Map loop closure/proximity detection seen yet -- '
+                'current_pose is running on raw wheel odom only.',
+                throttle_duration_sec=self.localization_stale_warn_sec,
+            )
+        else:
+            stale_sec = (
+                self.get_clock().now() - self._last_pose_correction_time
+            ).nanoseconds / 1e9
+            if stale_sec > self.localization_stale_warn_sec:
+                self.get_logger().warn(
+                    f'Localization stale: {stale_sec:.0f}s since last loop '
+                    'closure/proximity detection -- current_pose yaw may '
+                    'have drifted from raw wheel odom.',
+                    throttle_duration_sec=self.localization_stale_warn_sec,
+                )
+
         # Check if we reached the goal
         if self.reached_goal():
             self.stop_robot()
@@ -1015,12 +1168,43 @@ class SimpleNavPlanner(Node):
                 self.collision_detected = True
                 self.visualize_obstacles(collision_info)
 
+                # Throttled heartbeat covering the whole wait->rotate->replan
+                # cycle (not just phase-transition log lines) -- added
+                # 2026-07-21 because "goal looked fine but it just rotates"
+                # was hard to diagnose from the transition-only logs alone.
+                # Includes localization staleness inline since a stale/never-
+                # corrected current_pose (see the warn earlier in this
+                # function) is the leading known cause: a wrong current_pose
+                # makes the planner see obstacles that aren't really there
+                # (or miss the real explanation for why replanning keeps
+                # failing), which is exactly what drives it into rotate.
+                stale_str = 'never corrected'
+                if self._last_pose_correction_time is not None:
+                    stale_sec = (
+                        now - self._last_pose_correction_time
+                    ).nanoseconds / 1e9
+                    stale_str = f'{stale_sec:.0f}s since last correction'
+                self.get_logger().warn(
+                    f'[obstacle-recovery] phase={self._obstacle_phase} '
+                    f'replan_attempts={self.replan_attempts}/5 '
+                    f'distance={collision_info["distance"]:.2f}m '
+                    f'source={collision_info["source"]} '
+                    f'localization={stale_str}',
+                    throttle_duration_sec=1.0,
+                )
+
                 # --- First confirmed detection: enter WAIT phase ---
                 if self.emergency_stop_time is None:
                     self.emergency_stop_time = now
                     self._obstacle_phase = 'wait'
                     self.stop_robot(immediate=True)
+                    bearing = collision_info['bearing_deg']
                     self.get_logger().warn(
+                        f'Obstacle confirmed at {collision_info["distance"]:.2f}m, '
+                        f'bearing {bearing:.0f}\N{DEGREE SIGN} '
+                        f'(source: {collision_info["source"]}) — '
+                        f'waiting 3 s for it to clear...'
+                        if bearing is not None else
                         f'Obstacle confirmed at {collision_info["distance"]:.2f}m — '
                         f'waiting 3 s for it to clear...'
                     )
@@ -1101,6 +1285,65 @@ class SimpleNavPlanner(Node):
                 and self.collision_detected
                 and collision_info is not None):
             cmd_vel = self.adjust_velocity_for_obstacles(cmd_vel, collision_info)
+
+        # Localization-independent safety floor -- see _raw_forward_clearance.
+        # Applies regardless of whether the map-frame check above found
+        # anything, so a bad/unconverged current_pose can't mask a real
+        # obstacle right in front of the physical robot.
+        #
+        # Only gates FORWARD linear motion, not angular.z or reversing.
+        # 2026-07-16 bug: originally zeroed the whole Twist (incl. rotation)
+        # whenever anything was within the forward cone, which froze
+        # in-place turning permanently once something sat ~1m ahead --
+        # rotating in place only sweeps robot_radius (~0.58m), so it doesn't
+        # need forward clearance the way driving straight at something does,
+        # and since the robot never turned, "forward" in base_link never
+        # changed, so it never un-stuck itself. Backing away from a front
+        # obstacle shouldn't be blocked by a forward-facing check either.
+        raw_range = raw_bearing = None
+        if self.enable_collision_avoidance and cmd_vel.linear.x > 0.0:
+            raw_range, raw_bearing = self._raw_forward_clearance(cmd_vel.angular.z)
+            raw_clearance = raw_range - self.robot_radius
+            if raw_clearance < self.emergency_stop_distance:
+                bearing_str = (f'{math.degrees(raw_bearing):.0f}\N{DEGREE SIGN}'
+                               if raw_bearing is not None else 'unknown')
+                self.get_logger().warn(
+                    f'RAW scan safety stop: {raw_clearance:.2f}m clearance at '
+                    f'bearing {bearing_str} in base_link frame '
+                    f'(localization-independent check)')
+                cmd_vel.linear.x = 0.0
+            elif raw_clearance < self.safety_distance:
+                scale = max(0.0, min(1.0,
+                    (raw_clearance - self.emergency_stop_distance)
+                    / (self.safety_distance - self.emergency_stop_distance)))
+                cmd_vel.linear.x *= scale
+
+        # Continuous obstacle-scan heartbeat (throttled to 1/s) -- prints
+        # every tick regardless of whether anything actually trips a
+        # threshold, so a live drive test shows the numbers approaching a
+        # trigger instead of only seeing a log line once something's already
+        # confirmed. Separate map-frame (saved map + live scan, in `map`
+        # frame, needs a converged pose) vs. raw base_link (live scan only,
+        # localization-independent) readings so it's obvious which check --
+        # and which data source -- is driving any given decision.
+        if self.enable_collision_avoidance:
+            map_str = 'n/a'
+            if collision_info is not None:
+                bd = collision_info['bearing_deg']
+                bd_str = f'{bd:.0f}\N{DEGREE SIGN}' if bd is not None else 'n/a'
+                map_str = (f'{collision_info["distance"]:.2f}m '
+                           f'src={collision_info["source"]} bearing={bd_str} '
+                           f'estop={collision_info["emergency_stop"]} '
+                           f'slow={collision_info["reduce_speed"]}')
+            raw_str = 'n/a (not driving forward)'
+            if raw_range is not None:
+                rb_str = (f'{math.degrees(raw_bearing):.0f}\N{DEGREE SIGN}'
+                          if raw_bearing is not None else 'n/a')
+                raw_str = f'{raw_range - self.robot_radius:.2f}m bearing={rb_str}'
+            self.get_logger().info(
+                f'[obstacle-scan] map={map_str} | raw={raw_str}',
+                throttle_duration_sec=1.0,
+            )
 
         self.cmd_vel_pub.publish(cmd_vel)
     
@@ -1321,10 +1564,10 @@ class SimpleNavPlanner(Node):
             return False
         grid = self.world_to_grid(wx, wy)
         if grid is None:
-            return True  # out-of-bounds = treat as occupied
+            return False  # out-of-bounds = unmapped, not occupied
         gx, gy = grid
         if not (0 <= gx < self.map_data.info.width and 0 <= gy < self.map_data.info.height):
-            return True
+            return False
         return bool(self.inflated_map[gy, gx])
 
     def _raw_occupied(self, wx: float, wy: float) -> bool:
@@ -1335,10 +1578,10 @@ class SimpleNavPlanner(Node):
             return False
         grid = self.world_to_grid(wx, wy)
         if grid is None:
-            return True
+            return False  # out-of-bounds = unmapped, not occupied
         gx, gy = grid
         if not (0 <= gx < self.map_data.info.width and 0 <= gy < self.map_data.info.height):
-            return True
+            return False
         return bool(self.obstacle_map_raw[gy, gx])
 
     def _live_scan_points_map_frame(self) -> Optional[List[Tuple[float, float]]]:
@@ -1388,6 +1631,83 @@ class SimpleNavPlanner(Node):
             angle += scan.angle_increment
         return points
 
+    def _raw_forward_clearance(self, angular_z: float = 0.0) -> Tuple[float, Optional[float]]:
+        """Minimum forward-cone range from the live scan, projected into
+        base_link -- NOT map. check_collision_ahead/_live_scan_points_map_frame
+        both require a map-frame pose/TF, which depends on RTAB-Map having
+        converged; while it's still initializing or has drifted, that check
+        can silently look for obstacles at the wrong physical location and
+        miss a real one. base_link<-scan_frame is a STATIC transform (fixed
+        sensor mount, published from t=0, never depends on odometry or SLAM
+        convergence), so this check works even when global localization is
+        absent or wrong. Added 2026-07-16 as an unconditional safety floor
+        under the map-frame checks, not a replacement for them.
+
+        `angular_z` is the commanded turn rate (rad/s); the cone widens with
+        it (see forward_half_angle below) since a curved pure-pursuit arc
+        sweeps the robot's flank sideways, not just straight ahead.
+
+        Returns (min_range, bearing_rad). bearing_rad is the base_link-frame
+        angle (0 = straight ahead) at which the nearest point was found, or
+        None if nothing was found / no scan or TF available -- kept alongside
+        the range purely so callers can log which direction an obstacle is
+        actually in, not just how far.
+        """
+        scan = self.latest_scan
+        if scan is None:
+            return float('inf'), None
+
+        scan_time = rclpy.time.Time.from_msg(scan.header.stamp)
+        age = (self.get_clock().now() - scan_time).nanoseconds / 1e9
+        if age > self.live_scan_max_age:
+            return float('inf'), None
+
+        try:
+            tf_stamped = self._tf_buffer.lookup_transform(
+                'base_link', scan.header.frame_id, rclpy.time.Time(),
+                timeout=Duration(seconds=0.05),
+            )
+        except (tf2_ros.LookupException, tf2_ros.ConnectivityException,
+                tf2_ros.ExtrapolationException):
+            return float('inf'), None
+
+        q = tf_stamped.transform.rotation
+        yaw = math.atan2(
+            2.0 * (q.w * q.z + q.x * q.y),
+            1.0 - 2.0 * (q.y * q.y + q.z * q.z),
+        )
+        tx = tf_stamped.transform.translation.x
+        ty = tf_stamped.transform.translation.y
+        cos_yaw, sin_yaw = math.cos(yaw), math.sin(yaw)
+
+        # Base matches check_collision_ahead's total coverage (its widest ray
+        # is offset 0.2 rad, widened by a further 0.35 rad half-angle -- so
+        # 0.55 rad here means this localization-independent backstop can't
+        # see LESS of the world than the check it's meant to cover for.
+        # Turning adds more: at max_angular_velocity (1.0 rad/s default) this
+        # adds ~0.4 rad (~23 deg), capped at a full forward hemisphere.
+        base_half_angle = 0.55  # rad
+        turn_widen_gain = 0.4   # rad added per rad/s of |angular_z|
+        forward_half_angle = min(
+            base_half_angle + turn_widen_gain * abs(angular_z),
+            math.pi / 2,
+        )
+        min_range = float('inf')
+        min_bearing = None
+        angle = scan.angle_min
+        for r in scan.ranges:
+            if not math.isnan(r) and not math.isinf(r) and scan.range_min <= r <= scan.range_max:
+                px, py = r * math.cos(angle), r * math.sin(angle)
+                bx = cos_yaw * px - sin_yaw * py + tx
+                by = sin_yaw * px + cos_yaw * py + ty
+                bearing = math.atan2(by, bx)
+                dist = math.hypot(bx, by)
+                if abs(bearing) <= forward_half_angle and dist < min_range:
+                    min_range = dist
+                    min_bearing = bearing
+            angle += scan.angle_increment
+        return min_range, min_bearing
+
     def check_collision_ahead(self) -> dict:
         """
         Cast narrow rays ahead of the robot against the **raw** (non-inflated)
@@ -1411,7 +1731,9 @@ class SimpleNavPlanner(Node):
                 'emergency_stop': False,
                 'reduce_speed': False,
                 'distance': float('inf'),
-                'obstacle_positions': []
+                'obstacle_positions': [],
+                'source': None,
+                'bearing_deg': None,
             }
 
         robot_x = self.current_pose.position.x
@@ -1420,6 +1742,12 @@ class SimpleNavPlanner(Node):
 
         min_distance = float('inf')
         obstacle_positions = []
+        # Which check found the nearest obstacle ('map' or 'live') and its
+        # bearing off the robot's heading (rad) -- purely for debug logging
+        # below, so a live drive test can tell whether a trigger came from
+        # stale saved-map data vs. something the sensor is seeing right now.
+        nearest_source = None
+        nearest_bearing = None
 
         check_angles = [0, -0.2, 0.2]
         check_distance = max(self.safety_distance * 1.5, 0.8)
@@ -1437,6 +1765,8 @@ class SimpleNavPlanner(Node):
                 if self._raw_occupied(check_x, check_y):
                     if dist < min_distance:
                         min_distance = dist
+                        nearest_source = 'map'
+                        nearest_bearing = angle_offset
                     obstacle_positions.append((check_x, check_y))
                     break
                 dist += step
@@ -1458,17 +1788,33 @@ class SimpleNavPlanner(Node):
                     if abs(self.normalize_angle(bearing - angle_offset)) <= ray_half_angle:
                         if dist < min_distance:
                             min_distance = dist
+                            nearest_source = 'live'
+                            nearest_bearing = bearing
                         obstacle_positions.append((px, py))
                         break
 
-        emergency_stop = min_distance < self.emergency_stop_distance
-        reduce_speed = min_distance < self.safety_distance
+        # min_distance is measured from the robot's POSE point, but the ray-cast
+        # starts at dist=robot_radius and live points closer than robot_radius
+        # are skipped above -- so min_distance can never be < robot_radius.
+        # emergency_stop_distance/safety_distance are meant as clearance BEYOND
+        # the robot's own edge (see their '-- full stop' / '-- start slowing'
+        # comments at the call site), so subtract robot_radius before comparing.
+        # Bug fixed 2026-07-16: this used to compare min_distance directly,
+        # which made emergency_stop structurally impossible to trigger whenever
+        # emergency_stop_distance < robot_radius (it was, by 7mm) -- effectively
+        # a dead emergency stop.
+        clearance = min_distance - self.robot_radius
+        emergency_stop = clearance < self.emergency_stop_distance
+        reduce_speed = clearance < self.safety_distance
 
         return {
             'emergency_stop': emergency_stop,
             'reduce_speed': reduce_speed,
-            'distance': min_distance,
-            'obstacle_positions': obstacle_positions
+            'distance': clearance,
+            'obstacle_positions': obstacle_positions,
+            'source': nearest_source,
+            'bearing_deg': (math.degrees(nearest_bearing)
+                            if nearest_bearing is not None else None),
         }
     
     def adjust_velocity_for_obstacles(self, cmd_vel: Twist, collision_info: dict) -> Twist:

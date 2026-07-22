@@ -30,7 +30,11 @@ from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
 from launch.conditions import IfCondition
-from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
+from launch.substitutions import (
+    LaunchConfiguration,
+    PathJoinSubstitution,
+    PythonExpression,
+)
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch_ros.actions import Node
 from launch_ros.substitutions import FindPackageShare
@@ -56,17 +60,40 @@ def generate_launch_description():
     # Pass-through to rtabmap_mapping.launch.py (see there for details/defaults).
     use_rplidar_arg = DeclareLaunchArgument('use_rplidar', default_value='true')
     rplidar_port_arg = DeclareLaunchArgument('rplidar_port', default_value='/dev/rplidar')
-    rplidar_x_arg = DeclareLaunchArgument('rplidar_x', default_value='0.25')
+    rplidar_x_arg = DeclareLaunchArgument('rplidar_x', default_value='0.1397')
     rplidar_y_arg = DeclareLaunchArgument('rplidar_y', default_value='0.0')
     rplidar_z_arg = DeclareLaunchArgument('rplidar_z', default_value='0.27')
     rplidar_yaw_arg = DeclareLaunchArgument('rplidar_yaw', default_value='1.5708')
+    use_ekf_odom_arg = DeclareLaunchArgument('use_ekf_odom', default_value='true')
+    continuous_mapping_arg = DeclareLaunchArgument(
+        'continuous_mapping', default_value='false',
+        description='false (default): locked localization -- reads the '
+                    'existing map_name DB read-only, never adds nodes to it. '
+                    'true: keeps real SLAM running against the existing DB '
+                    '(extends/refines it live while you drive) instead of '
+                    'freezing it. Trade-off: a bad loop closure can then '
+                    'permanently corrupt the graph, which locked mode can '
+                    'never do -- only turn on once you trust the fused '
+                    'localization (see use_ekf_odom).',
+    )
 
     mapping_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
             PathJoinSubstitution([aloha_pkg, 'launch', 'rtabmap_mapping.launch.py'])
         ),
         launch_arguments=[
-            ('localization', 'true'),
+            ('localization', PythonExpression([
+                "'false' if '",
+                LaunchConfiguration('continuous_mapping'),
+                "' == 'true' else 'true'",
+            ])),
+            # Never wipe the map we just loaded to localize/continue on --
+            # true whichever branch above is active (delete_db_on_start has
+            # "no effect in localization mode" per rtabmap_mapping.launch.py,
+            # but matters a lot the moment continuous_mapping flips
+            # localization to false: without this, its own default (true)
+            # would delete the existing DB on start).
+            ('delete_db_on_start', 'false'),
             ('rviz', 'false'),
             ('rtabmap_viz', LaunchConfiguration('rtabmap_viz')),
             ('map_name', LaunchConfiguration('map_name')),
@@ -76,6 +103,7 @@ def generate_launch_description():
             ('rplidar_y', LaunchConfiguration('rplidar_y')),
             ('rplidar_z', LaunchConfiguration('rplidar_z')),
             ('rplidar_yaw', LaunchConfiguration('rplidar_yaw')),
+            ('use_ekf_odom', LaunchConfiguration('use_ekf_odom')),
         ],
     )
 
@@ -102,6 +130,8 @@ def generate_launch_description():
         rplidar_y_arg,
         rplidar_z_arg,
         rplidar_yaw_arg,
+        use_ekf_odom_arg,
+        continuous_mapping_arg,
         mapping_launch,
         rviz_node,
     ])

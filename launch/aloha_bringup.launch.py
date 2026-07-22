@@ -357,6 +357,39 @@ def launch_setup(context, *args, **kwargs):
         condition=AndCondition([
             IfCondition(LaunchConfiguration('use_base')),
             IfCondition(LaunchConfiguration('use_joystick_teleop')),
+            IfCondition(LaunchConfiguration('use_direct_teleop')),
+        ]),
+    )
+
+    # Same config/topic-shape as joystick_teleop_node above, just remapped to
+    # publish on /nav_cmd_vel instead of /mobile_base/cmd_vel -- see
+    # use_nav_teleop's description for why this one is safe to run
+    # alongside nav_deadman while the direct-to-cmd_vel one above is not.
+    nav_teleop_node = Node(
+        package='teleop_twist_joy',
+        executable='teleop_node',
+        name='nav_joystick_teleop',
+        namespace='mobile_base',
+        # Inline, not base_joystick_teleop.yaml -- that file's params are
+        # scoped under the node name 'base_joystick_teleop' (mobile_base:
+        # base_joystick_teleop: ros__parameters: ...), so loading it under
+        # this node's different name (nav_joystick_teleop) silently matches
+        # nothing and falls back to teleop_twist_joy's own built-in defaults
+        # (button 5, not our L2/button 6) -- found 2026-07-21 when L2 held
+        # produced no /nav_cmd_vel output at all despite registering fine on
+        # /mobile_base/joy. Values below must be kept in sync with that file.
+        parameters=[{
+            'axis_linear.x': 1,
+            'scale_linear.x': 0.35,
+            'axis_angular.yaw': 3,
+            'scale_angular.yaw': 0.3,
+            'enable_button': 6,
+        }],
+        remappings=[('cmd_vel', '/nav_cmd_vel')],
+        condition=AndCondition([
+            IfCondition(LaunchConfiguration('use_base')),
+            IfCondition(LaunchConfiguration('use_joystick_teleop')),
+            IfCondition(LaunchConfiguration('use_nav_teleop')),
         ]),
     )
 
@@ -433,6 +466,7 @@ def launch_setup(context, *args, **kwargs):
         cam_pov_node,
         slate_base_node,
         joystick_teleop_node,
+        nav_teleop_node,
         joy_node,
         rviz2_node,
         loginfo_action,
@@ -610,7 +644,41 @@ def generate_launch_description():
             'use_joystick_teleop',
             default_value=LaunchConfiguration('use_base'),
             choices=('true', 'false'),
-            description='if `true`, launches a joystick teleop node for the base',
+            description='if `true`, launches joy_node (button/axis source) for the base',
+        )
+    )
+    declared_arguments.append(
+        DeclareLaunchArgument(
+            'use_direct_teleop',
+            default_value='true',
+            choices=('true', 'false'),
+            description=(
+                'if `true`, also launches teleop_twist_joy so the joystick '
+                'directly drives /mobile_base/cmd_vel (manual driving / mapping '
+                'sessions). MUST be `false` in nav mode: it shares enable_button '
+                '6 (L2) with nav_deadman and both publish to the same '
+                '/mobile_base/cmd_vel topic, so raw stick deflection fights the '
+                "planner's gated output -- set false and joy_node alone still "
+                'feeds nav_deadman the L2 signal it needs.'
+            ),
+        )
+    )
+    declared_arguments.append(
+        DeclareLaunchArgument(
+            'use_nav_teleop',
+            default_value='false',
+            choices=('true', 'false'),
+            description=(
+                '2026-07-21: manual joystick driving IN nav mode, without '
+                'the use_direct_teleop conflict above -- publishes to '
+                '/nav_cmd_vel (same pre-gate topic auto_localize and '
+                'simple_nav_planner already use) instead of straight to '
+                '/mobile_base/cmd_vel, so nav_deadman still owns the final '
+                'gated output and holding L2 is what makes it move either '
+                'way. Added so a person can drive around while rtabmap '
+                'looks for a match, instead of only auto_localize\'s '
+                'automatic in-place rotation.'
+            ),
         )
     )
     declared_arguments.append(

@@ -7,8 +7,17 @@ Monitors RTAB-Map for visual loop closures.  If the robot hasn't localized
 within a timeout, slowly rotates in place to show the camera different views.
 Once a loop closure is detected, stops rotating and reports success.
 
-Usage (after launching rtabmap_localization.launch.py):
+Publishes to /nav_cmd_vel (NOT /mobile_base/cmd_vel directly) -- that
+intermediate topic is what nav_deadman.py gates behind holding L2. Publishing
+straight to /mobile_base/cmd_vel would let this spin the robot with no
+deadman/kill-switch at all, the same class of bug as teleop_twist_joy fighting
+nav_deadman (see nav-wall-collision-teleop-fight memory) except worse -- no
+second publisher needed to cause harm, this alone would be enough.
+2026-07-20 fix: was publishing directly to /mobile_base/cmd_vel.
+
+Usage (after launching navigate_mission.launch.py / rtabmap_localization.launch.py):
     ros2 run aloha auto_localize
+    # Hold L2 on the controller while this runs -- it moves nothing until you do.
 """
 
 import math
@@ -38,7 +47,7 @@ class AutoLocalize(Node):
         self._rotating = False
 
         self._cmd_pub = self.create_publisher(
-            Twist, '/mobile_base/cmd_vel', 10
+            Twist, '/nav_cmd_vel', 10
         )
         self.create_subscription(
             Info, '/rtabmap/info', self._info_cb, 10
@@ -47,7 +56,8 @@ class AutoLocalize(Node):
 
         self.get_logger().info(
             f'Waiting for visual localization '
-            f'(will rotate after {self._timeout:.0f}s if needed)...'
+            f'(will rotate after {self._timeout:.0f}s if needed) -- '
+            'HOLD L2 on the controller, nav_deadman gates this...'
         )
 
     def _info_cb(self, msg):
@@ -94,7 +104,8 @@ class AutoLocalize(Node):
         if elapsed > self._timeout and not self._rotating:
             self._rotating = True
             self.get_logger().info(
-                'No match yet -- rotating to find visual landmarks...'
+                'No match yet -- rotating to find visual landmarks... '
+                '(hold L2 or this goes nowhere)'
             )
 
         if self._rotating:

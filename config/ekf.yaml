@@ -1,0 +1,91 @@
+# robot_localization EKF: fuses wheel odom (/mobile_base/odom) position/
+# forward-velocity with the D435i's madgwick-filtered gyro (yaw RATE only,
+# not its integrated absolute orientation -- the D435i has no magnetometer,
+# so that "orientation" is itself just gyro integration with no absolute
+# reference, no more trustworthy than wheel odom's yaw for the long term).
+#
+# Point of this file: wheel-slip-induced yaw error (the "off by a few
+# degrees" drift seen in testing 2026-07-20) is worst during turns, since
+# slip scales with turning effort, not straight-line travel. The gyro isn't
+# subject to wheel slip at all, so letting it own yaw-rate while wheel odom
+# still owns position/forward speed should give a meaningfully more honest
+# heading, especially through turns.
+#
+# publish_tf: was false on the assumption that slate_base (publish_tf=true,
+# odom_frame_name=odom, base_frame_name=base_link per its own ROS params)
+# broadcasts odom->base_link itself. Disproven 2026-07-21: with slate_base
+# alone running (fresh bringup, /mobile_base/odom flowing fine at 20Hz),
+# `ros2 topic echo /tf` showed ZERO odom->base_link broadcasts ever --
+# only rtabmap's own map->odom -- leaving two permanently disconnected TF
+# trees and blocking rtabmap entirely ("Tf has two or more unconnected
+# trees"). slate_base's publish_tf param claims true but the driver
+# doesn't appear to actually act on it. Flipped true here as the fix --
+# EKF is already fusing this exact odom data at 30Hz, so it's a natural
+# place to own the broadcast instead.
+#
+# KNOWN DEPENDENCY / risk: imu0's frame_id is a camera IMU optical frame, not
+# base_link, so ekf_node needs a working TF lookup between them to rotate the
+# gyro reading into base_link. That exact TF (base_link -> camera_imu_optical
+# _frame) was observed MISSING on every mapping_preflight.sh run in the
+# 2026-07-16 session (see nav-localization-independent-safety-net memory) --
+# if that's still broken, this node will silently just fall back to
+# odom-only (no crash, no fusion benefit either). Check
+# `ros2 run tf2_ros tf2_echo base_link camera_imu_optical_frame` resolves
+# before trusting this is doing anything.
+ekf_filter_node:
+  ros__parameters:
+    frequency: 30.0
+    sensor_timeout: 0.5
+    two_d_mode: true
+    publish_tf: true
+    map_frame: map
+    odom_frame: odom
+    base_link_frame: base_link
+    world_frame: odom
+
+    odom0: /mobile_base/odom
+    # Only forward velocity (index 6 = vX). NOT position (0,1) -- let the
+    # EKF integrate velocity itself rather than also ingesting the wheel
+    # odom's own already-integrated (and drifting) position estimate. NOT
+    # vyaw (index 11) -- that's the whole point, IMU owns yaw-rate instead.
+    odom0_config: [false, false, false,
+                   false, false, false,
+                   true,  false, false,
+                   false, false, false,
+                   false, false, false]
+    odom0_differential: false
+    odom0_relative: false
+    odom0_queue_size: 10
+
+    imu0: /cam_high/camera/imu/filtered
+    # 2026-07-22: this topic's frame_id is camera_imu_optical_frame -- the
+    # OPTICAL convention (Z = forward, into the lens), not the standard body
+    # convention (Z = up = yaw). Confirmed via ekf_node's own debug log
+    # (debug:true, debug_out_file): flagging raw index 11 (angular_velocity.z,
+    # "vyaw" in body-frame terms) as true, then watching ekf_node's internal
+    # base_link rotation of that flagged axis, showed the update vector's
+    # true bit landing on index 9 (vroll) after the transform, NOT index 11 --
+    # i.e. this camera's raw Z-axis gyro reading rotates into base_link's
+    # ROLL, not yaw. Since two_d_mode discards roll/pitch, that's a
+    # confirmed, direct rotation into a rate this filter throws away --
+    # true yaw was never being updated at all, no matter how much the robot
+    # actually turned (empirically verified live: /odometry/filtered's
+    # angular.z stayed at exactly 0.0 through several seconds of real,
+    # ~0.3-0.4 rad/s rotation, confirmed simultaneously via /mobile_base/odom
+    # and the raw IMU topic both showing a real, strong signal on angular_
+    # velocity.Y instead of Z). Flagging index 10 (angular_velocity.y, "vpitch"
+    # in body-frame terms) here instead makes ekf_node rotate THAT axis, which
+    # lands on index 11 (vyaw) post-transform -- confirmed against the same
+    # debug log after this change. Only angular velocity is fused, not
+    # orientation (3,4,5) -- see file header, madgwick's yaw has no absolute
+    # reference on a 6-axis IMU. NOT linear acceleration -- too noisy to be
+    # worth double-integrating for this use case.
+    imu0_config: [false, false, false,
+                  false, false, false,
+                  false, false, false,
+                  false, true, false,
+                  false, false, false]
+    imu0_differential: false
+    imu0_relative: true
+    imu0_queue_size: 10
+    imu0_remove_gravitational_acceleration: true

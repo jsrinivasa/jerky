@@ -50,6 +50,8 @@ setup(
             'robot_pose_marker = aloha.robot_pose_marker:main',
             'auto_explore = aloha.auto_explore:main',
             'aloha_tasks = aloha.aloha_tasks:main',
+            'nav_web_viewer = aloha.nav_web_viewer:main',
+            'nav_deadman = aloha.nav_deadman:main',
         ],
     },
 )

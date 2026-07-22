@@ -14,9 +14,13 @@
   <depend>interbotix_xs_modules</depend>
   <depend>interbotix_xs_msgs</depend>
   <depend>interbotix_xsarm_control</depend>
+  <depend>apriltag_ros</depend>
+  <depend>imu_filter_madgwick</depend>
   <depend>joy</depend>
   <depend>rclpy</depend>
   <depend>realsense2_camera</depend>
+  <depend>robot_localization</depend>
+  <depend>rtabmap_msgs</depend>
   <depend>rviz2</depend>
   <depend>sensor_msgs</depend>
   <depend>std_msgs</depend>

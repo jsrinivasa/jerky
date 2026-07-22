@@ -91,10 +91,24 @@ def generate_launch_description():
     # overrides through the include chain.
     use_rplidar_arg = DeclareLaunchArgument('use_rplidar', default_value='true')
     rplidar_port_arg = DeclareLaunchArgument('rplidar_port', default_value='/dev/rplidar')
-    rplidar_x_arg = DeclareLaunchArgument('rplidar_x', default_value='0.25')
+    rplidar_x_arg = DeclareLaunchArgument('rplidar_x', default_value='0.1397')
     rplidar_y_arg = DeclareLaunchArgument('rplidar_y', default_value='0.0')
     rplidar_z_arg = DeclareLaunchArgument('rplidar_z', default_value='0.27')
     rplidar_yaw_arg = DeclareLaunchArgument('rplidar_yaw', default_value='1.5708')
+    use_ekf_odom_arg = DeclareLaunchArgument(
+        'use_ekf_odom', default_value='true',
+        description='Feed simple_nav_planner from /odometry/filtered '
+                    '(wheel odom + IMU gyro yaw-rate fusion, see '
+                    'config/ekf.yaml) instead of raw /mobile_base/odom. '
+                    'Set false to roll back if the EKF misbehaves.',
+    )
+    continuous_mapping_arg = DeclareLaunchArgument(
+        'continuous_mapping', default_value='false',
+        description='false (default): locked localization against map_name, '
+                    'read-only. true: keeps extending/refining the existing '
+                    'DB live while navigating instead of freezing it -- see '
+                    'rtabmap_localization.launch.py for the trade-off.',
+    )
 
     use_sim_time = LaunchConfiguration('use_sim_time')
 
@@ -116,6 +130,8 @@ def generate_launch_description():
             ('rplidar_y', LaunchConfiguration('rplidar_y')),
             ('rplidar_z', LaunchConfiguration('rplidar_z')),
             ('rplidar_yaw', LaunchConfiguration('rplidar_yaw')),
+            ('use_ekf_odom', LaunchConfiguration('use_ekf_odom')),
+            ('continuous_mapping', LaunchConfiguration('continuous_mapping')),
         ],
     )
 
@@ -148,7 +164,8 @@ def generate_launch_description():
         name='robot_pose_marker',
         output='screen',
         parameters=[{
-            'robot_radius': 0.26,
+            'robot_length': 0.7112,  # 28in
+            'robot_width': 0.5588,   # 22in
             'arrow_length': 0.6,
             'publish_rate': 10.0,
         }],
@@ -167,20 +184,70 @@ def generate_launch_description():
             'max_linear_velocity': LaunchConfiguration('max_linear_velocity'),
             'max_angular_velocity': LaunchConfiguration('max_angular_velocity'),
             'goal_tolerance': 0.25,
-            'robot_radius': 0.25,
+            # Was 0.25, then 0.46 (half-diagonal of a 22x28in footprint
+            # assuming the pivot/base_link is at the geometric center).
+            # 2026-07-16: it isn't -- pivot sits toward the back, ~18.7in to
+            # the front edge but only ~9.3in to the back edge (measured along
+            # the 28in length), half-width 11in. Worst case (front corners,
+            # the direction that matters for forward driving) is
+            # sqrt(18.7^2 + 11^2) in = sqrt(0.4742^2 + 0.2794^2) m ~= 0.55m,
+            # not 0.46m -- the old value under-covered the front by ~9cm.
+            # 0.58m = that 0.55m plus a bit of extra margin.
+            # robot_radius is now used ONLY for live safety (emergency stop /
+            # raw scan floor) -- it needs to cover the worst case (turning).
+            'robot_radius': 0.58,
+            # inflation_radius is used for A* path-planning inflation only.
+            # 2026-07-16: was sharing robot_radius, which used the worst-case
+            # diagonal (0.58m) even for straight-through corridors, where
+            # only the ~11in (0.2794m) half-width matters -- rejected valid
+            # paths through gaps the robot actually fits through. 0.40m =
+            # half-width + ~4.5in margin for path-tracking imprecision.
+            'inflation_radius': 0.40,
             'occupancy_threshold': 95,
             'use_trajectory_optimization': False,
             'smoothing_weight': 0.8,
             'max_acceleration': 0.3,
             'enable_collision_avoidance': LaunchConfiguration('enable_collision_avoidance'),
-            'safety_distance': 0.5,
-            'emergency_stop_distance': 0.1,
+            'safety_distance': 0.6096,  # 2ft -- start slowing
+            'emergency_stop_distance': 0.4572,  # 1.5ft -- full stop
             'use_sim_time': use_sim_time,
         }],
         remappings=[
-            ('/odom', '/mobile_base/odom'),
-            ('/cmd_vel', '/mobile_base/cmd_vel'),
+            # use_ekf_odom:=true (default) -> the wheel+IMU fusion output
+            # (see config/ekf.yaml); false -> raw wheel odom, pre-fusion
+            # behavior, as a rollback switch.
+            ('/odom', PythonExpression([
+                "'/odometry/filtered' if '",
+                LaunchConfiguration('use_ekf_odom'),
+                "' == 'true' else '/mobile_base/odom'",
+            ])),
+            # Planner output goes to an INTERMEDIATE topic, gated to the base
+            # by the deadman below -- never straight to /mobile_base/cmd_vel.
+            ('/cmd_vel', '/nav_cmd_vel'),
         ],
+    )
+
+    # ==================== Deadman "hold-to-run" safety gate ==============
+    # Passes /nav_cmd_vel -> /mobile_base/cmd_vel ONLY while L2 (button 6) is
+    # held on /mobile_base/joy; otherwise publishes zero at 20Hz (robot stays
+    # put). Release L2 / drop the controller / planner stalls -> instant stop.
+    # NOTE: the joystick TELEOP node (teleop_twist_joy) must NOT be running in
+    # nav mode or it fights this gate on /mobile_base/cmd_vel -- run joy_node
+    # only. The base's physical E-STOP is the independent hardware kill.
+    nav_deadman_node = Node(
+        package='aloha',
+        executable='nav_deadman',
+        name='nav_deadman',
+        output='screen',
+        parameters=[{
+            'enable_button': 6,          # L2
+            'joy_topic': '/mobile_base/joy',
+            'input_topic': '/nav_cmd_vel',
+            'output_topic': '/mobile_base/cmd_vel',
+            'rate_hz': 20.0,
+            'joy_timeout': 0.5,
+            'cmd_timeout': 0.5,
+        }],
     )
 
     # ==================== Launch Description =============================
@@ -200,9 +267,12 @@ def generate_launch_description():
         rplidar_y_arg,
         rplidar_z_arg,
         rplidar_yaw_arg,
+        use_ekf_odom_arg,
+        continuous_mapping_arg,
 
         rtabmap_localization,
         map_server_node,
         nav_planner_node,
+        nav_deadman_node,
         robot_pose_marker_node,
     ])

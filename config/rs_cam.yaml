@@ -12,18 +12,47 @@
       enable_infra: false
       enable_infra1: false
       enable_infra2: false
+      spatial_filter:
+        enable: true
+      temporal_filter:
+        enable: true
 
 $(var cam_high_name):
   camera:
     ros__parameters:
-      serial_no: "230322275509"
+      # Confirmed via `rs-enumerate-devices --compact` 2026-07-14 (only one
+      # D435I connected). Was "230322275509" -- turns out that was never
+      # actually cam_high's D405; photo comparison showed it framing a
+      # gripper against the ceiling (a wrist view), same as cam_left_wrist's
+      # camera. Reassigned below to cam_right_wrist, its real role.
+      serial_no: "349522070494"
       enable_depth: true
       enable_color: true
+      enable_gyro: true
+      enable_accel: true
+      unite_imu_method: 2
+      # Was inheriting the /** default of 640,480,60. RTAB-Map never sees
+      # anywhere near 60fps of this (Rtabmap/DetectionRate is capped at
+      # 1.0Hz and visual_odometry:='false' -- rtabmap only consumes external
+      # /odom, not its own frame-to-frame odometry), so 60fps was pure USB3
+      # bandwidth + CPU load with no localization benefit. That load is a
+      # real suspect in this laptop's prior USB-instability and i915 GuC
+      # hang hard freezes. Dropped to 30fps; only this camera (the SLAM one)
+      # -- NOT the shared default, which the wrist/pov cams for recording
+      # also inherit.
+      rgb_camera:
+        profile: '640,480,30'
+      depth_module:
+        profile: '640,480,30'
 
 $(var cam_right_wrist_name):
   camera:
     ros__parameters:
-      serial_no: "218622272634"
+      # Was "218622272634" -- not even a currently-detected device (per
+      # rs-enumerate-devices 2026-07-14), and was the source of the original
+      # cam_high/cam_right_wrist mixup. Corrected to the D405 confirmed via
+      # photo to actually be a wrist camera (see cam_high comment above).
+      serial_no: "230322275509"
 
 $(var cam_left_wrist_name):
   camera:

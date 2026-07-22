@@ -1,5 +1,12 @@
 # Mobile ALOHA — Status Report
 
+> **HISTORICAL -- superseded, kept for context only (flagged 2026-07-20).**
+> This describes the PDF-floorplan + AMCL + Nav2 approach as of March 2026.
+> The nav stack has since moved to RTAB-Map visual SLAM + a custom
+> `simple_nav_planner` (A*/Pure-Pursuit), operated via `scripts/demo_ops.sh`.
+> See `NAV_RUNBOOK.md` for the current flow. Don't follow instructions in
+> this file as current operating procedure.
+
 **Date:** March 20, 2026
 **Team:** 2–3 engineers
 

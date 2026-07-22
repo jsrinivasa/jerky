@@ -3,8 +3,9 @@
 Robot Pose Marker Publisher
 
 Publishes highly visible RViz markers for the robot's current position and
-heading based on the map → base_link TF transform.  Markers include a large
-colored disc (body footprint) and a bold arrow (heading vector).
+heading based on the map → base_link TF transform.  Markers include a
+to-scale rectangular body footprint (22in x 28in) and a bold arrow
+(heading vector).
 """
 
 import math
@@ -22,11 +23,14 @@ class RobotPoseMarker(Node):
     def __init__(self):
         super().__init__('robot_pose_marker')
 
-        self.declare_parameter('robot_radius', 0.27)
+        # Measured robot footprint: ~22in wide x 28in long.
+        self.declare_parameter('robot_length', 0.7112)  # 28in, along forward (x)
+        self.declare_parameter('robot_width', 0.5588)   # 22in, lateral (y)
         self.declare_parameter('arrow_length', 0.6)
         self.declare_parameter('publish_rate', 10.0)
 
-        self._robot_radius = self.get_parameter('robot_radius').value
+        self._robot_length = self.get_parameter('robot_length').value
+        self._robot_width = self.get_parameter('robot_width').value
         self._arrow_length = self.get_parameter('arrow_length').value
         rate = self.get_parameter('publish_rate').value
 
@@ -34,6 +38,7 @@ class RobotPoseMarker(Node):
         self._tf_listener = tf2_ros.TransformListener(self._tf_buffer, self)
 
         self._pub = self.create_publisher(MarkerArray, '/robot_pose_markers', 10)
+        self._tf_was_missing = False
         self.create_timer(1.0 / rate, self._publish_markers)
 
     def _publish_markers(self):
@@ -44,7 +49,25 @@ class RobotPoseMarker(Node):
         except (tf2_ros.LookupException,
                 tf2_ros.ConnectivityException,
                 tf2_ros.ExtrapolationException):
+            # 2026-07-21: used to just return here, leaving whatever was
+            # published last on screen -- these markers use lifetime=0
+            # (never auto-expire in RViz), so a TF hiccup made the footprint
+            # silently freeze in place with zero indication it had gone
+            # stale (looked identical to a real, current pose). Explicitly
+            # clear it instead, so "no marker" honestly means "no current
+            # pose" rather than "last known pose, possibly minutes old."
+            if not self._tf_was_missing:
+                clear = MarkerArray()
+                for ns in ('robot_body', 'robot_heading'):
+                    d = Marker()
+                    d.header.frame_id = 'map'
+                    d.ns = ns
+                    d.action = Marker.DELETEALL
+                    clear.markers.append(d)
+                self._pub.publish(clear)
+                self._tf_was_missing = True
             return
+        self._tf_was_missing = False
 
         stamp = self.get_clock().now().to_msg()
         px = tf.transform.translation.x
@@ -55,40 +78,46 @@ class RobotPoseMarker(Node):
 
         markers = MarkerArray()
 
-        # --- Large disc (cylinder) for the robot body ---
+        # Rectangle markers need the robot's actual heading (a circle didn't
+        # care about orientation, but a to-scale footprint box does).
+        body_orientation_z = math.sin(yaw / 2.0)
+        body_orientation_w = math.cos(yaw / 2.0)
+
+        # --- To-scale rectangular footprint (22in x 28in) for the robot body ---
         body = Marker()
         body.header.frame_id = 'map'
         body.header.stamp = stamp
         body.ns = 'robot_body'
         body.id = 0
-        body.type = Marker.CYLINDER
+        body.type = Marker.CUBE
         body.action = Marker.ADD
         body.pose.position.x = px
         body.pose.position.y = py
         body.pose.position.z = 0.02
-        body.pose.orientation.w = 1.0
-        r = self._robot_radius
-        body.scale.x = r * 2.0
-        body.scale.y = r * 2.0
+        body.pose.orientation.z = body_orientation_z
+        body.pose.orientation.w = body_orientation_w
+        body.scale.x = self._robot_length
+        body.scale.y = self._robot_width
         body.scale.z = 0.04
         body.color = ColorRGBA(r=0.0, g=1.0, b=0.3, a=0.85)
         body.lifetime.sec = 0
         markers.markers.append(body)
 
-        # --- Bright ring outline around the disc ---
+        # --- Bright outline around the footprint ---
         ring = Marker()
         ring.header.frame_id = 'map'
         ring.header.stamp = stamp
         ring.ns = 'robot_body'
         ring.id = 1
-        ring.type = Marker.CYLINDER
+        ring.type = Marker.CUBE
         ring.action = Marker.ADD
         ring.pose.position.x = px
         ring.pose.position.y = py
         ring.pose.position.z = 0.03
-        ring.pose.orientation.w = 1.0
-        ring.scale.x = r * 2.0 + 0.08
-        ring.scale.y = r * 2.0 + 0.08
+        ring.pose.orientation.z = body_orientation_z
+        ring.pose.orientation.w = body_orientation_w
+        ring.scale.x = self._robot_length + 0.08
+        ring.scale.y = self._robot_width + 0.08
         ring.scale.z = 0.02
         ring.color = ColorRGBA(r=1.0, g=1.0, b=1.0, a=0.95)
         ring.lifetime.sec = 0

@@ -1,222 +1,139 @@
 # Mobile ALOHA Navigation Runbook
 
-Step-by-step instructions to go from a PDF floor plan to a robot navigating from point A to point B.
+Step-by-step instructions to go from an empty map to the robot driving itself
+from point A to point B.
+
+**Current approach (as of 2026-07-20): RTAB-Map visual SLAM + a custom
+`simple_nav_planner` (A* + Pure Pursuit), driven end-to-end by
+`scripts/demo_ops.sh`.** This replaces an earlier PDF-floorplan + AMCL + Nav2
+approach that this runbook used to describe (Phases 2/3 below, pre-2026-07-20)
+-- that code (`pdf_to_map.py`, `simple_navigation.launch.py`, AMCL) still
+exists in the repo but isn't part of the current recommended flow. If you're
+picking this up cold, start here, not with old commit history.
 
 ---
 
-## Phase 1: Test with the Existing Map (Simulation, No Hardware)
+## Phase 1: Learn the Planner (Simulation, No Hardware)
 
-This uses a map that's already in the workspace. No PDF needed. Good for verifying the software works before introducing your own map.
-
-### Step 1: Source the workspace
-
-```bash
-cd /home/aloha/interbotix_ws
-source install/setup.bash
-```
-
-You need to run this in **every new terminal** you open.
-
-### Step 2: Launch the simulation
+Exercises the real A*/Pure-Pursuit planner with fake odometry and no robot --
+best first step for understanding the code before touching hardware.
 
 ```bash
-ros2 launch aloha sim_navigation.launch.py
+cd /home/aloha/interbotix_ws && source install/setup.bash
+ros2 launch aloha sim_navigation.launch.py     # RViz opens
 ```
 
-This starts:
-- **Fake odometry** — simulates the robot moving (no real wheels needed)
-- **Map server** — loads the map from `my_robot_maps/maps/my_final_map_moderate.yaml`
-- **Navigation planner** — A* path planning + Pure Pursuit path following
-- **RViz** — visualization window
-
-### Step 3: Navigate in RViz
-
-1. **Wait** ~5 seconds for everything to start
-2. In RViz you should see the map (black lines = walls, white = open space)
-3. If the map doesn't appear:
-   - Click **Add** (bottom left) → **By topic** → expand `/map` → select **Map** → OK
-4. To send the robot to a destination:
-   - Click **"2D Goal Pose"** in the top toolbar (green arrow icon)
-   - **Click** on the map where you want the robot to go
-   - **Drag** to set the direction the robot should face when it arrives
-   - Release — you should see a planned path appear and the simulated robot "drive" along it
-
-### What to Expect
-
-- A colored line appears showing the planned path
-- The robot marker moves along the path
-- Terminal output shows planning/following status
-- If the path goes through an obstacle, the planner will route around it
-
-### Troubleshooting
+In RViz: click **"2D Goal Pose"**, click-and-drag on the map to set a
+destination + heading, release. You should see a planned path and the robot
+marker driving along it.
 
 | Problem | Fix |
 |---------|-----|
-| RViz opens but no map visible | Add `/map` topic manually (Add → By topic → /map → Map) |
-| "No map data" in terminal | Map server may not have started yet — wait 10 seconds |
-| Goal pose does nothing | Check that the goal is on a white (free) area of the map, not on a wall |
-| "Could not find path" | The goal may be unreachable (surrounded by walls) or too close to an obstacle |
-
-### Stop everything
-
-Press `Ctrl+C` in the terminal where you launched it.
+| RViz opens but no map visible | Add `/map` topic manually (Add -> By topic -> /map -> Map) |
+| Goal pose does nothing | Check the goal is on free (white) space, not a wall |
+| "Could not find path" | Goal may be unreachable or too close to an obstacle |
 
 ---
 
-## Phase 2: Convert Your PDF Floor Plan & Navigate On It
+## Phase 2: Build a Map (RTAB-Map SLAM, real hardware)
 
-### Step 1: Copy your PDF
-
-Place your Building 16 floor plan PDF somewhere accessible, e.g.:
-
-```bash
-cp ~/Downloads/building16_floorplan.pdf /home/aloha/interbotix_ws/src/aloha/maps/
-```
-
-### Step 2: Preview the conversion
+All of this is wrapped by `scripts/demo_ops.sh` -- run it with no arguments
+for the full command list. Every command below assumes the robot is docked
+to this laptop and powered on.
 
 ```bash
-cd /home/aloha/interbotix_ws/src/aloha/maps
-python3 ../scripts/pdf_to_map.py building16_floorplan.pdf --preview
+# Terminal 1 (or just use demo_ops.sh, which backgrounds everything):
+./scripts/demo_ops.sh bringup              # base + joystick teleop, no cameras
+# Drive the robot with the controller to wherever you want mapping to start.
+
+./scripts/demo_ops.sh map building16_v3    # starts RTAB-Map mapping + IMU fusion
+./scripts/demo_ops.sh preflight            # sanity check: IMU, TFs, odom, /scan alive
+# Now drive around with the controller to build the map. Watch rtabmap_viz
+# (opened automatically) for loop closures / drift.
+
+./scripts/demo_ops.sh save building16_v3   # writes ~/maps/building16_v3.{yaml,pgm} --
+                                            # MUST run before 'stop': it reads the
+                                            # live /rtabmap/map topic, not a file.
+./scripts/demo_ops.sh stop                 # tear down once saved
 ```
 
-This opens a window showing:
-- **Left**: your original floor plan
-- **Right**: the occupancy grid (green = free space, red = walls, gray = unknown)
+`demo_ops.sh maps` lists everything already saved in `~/maps` if you forget
+what you named a session.
 
-Look at the right side. If walls are not being detected correctly (too much red or not enough), adjust the threshold:
-
-```bash
-# Lower threshold = more things become walls (more strict)
-python3 ../scripts/pdf_to_map.py building16_floorplan.pdf --preview --wall_threshold 100
-
-# Higher threshold = fewer things become walls (more lenient)
-python3 ../scripts/pdf_to_map.py building16_floorplan.pdf --preview --wall_threshold 180
-```
-
-Press any key to close the preview.
-
-### Step 3: Figure out the scale (resolution)
-
-The map needs to know how many **real-world meters** each pixel represents. You need to know the length of *something* in the floor plan (a hallway, a room, anything).
-
-**Option A: Interactive measurement (recommended)**
-
-```bash
-python3 ../scripts/pdf_to_map.py building16_floorplan.pdf --measure
-```
-
-1. A window opens showing the floor plan
-2. **Click two endpoints** of something whose real length you know (e.g., a 20-meter hallway)
-3. Type the real-world distance in meters when prompted
-4. The script calculates the resolution for you
-
-**Option B: Manual calculation**
-
-If you know the building dimensions:
-```
-resolution = real_world_meters / pixels
-
-Example: Building is 50 meters wide. Image is 1000 pixels wide.
-resolution = 50 / 1000 = 0.05 meters per pixel
-```
-
-### Step 4: Generate the map files
-
-```bash
-python3 ../scripts/pdf_to_map.py building16_floorplan.pdf \
-    --resolution 0.05 \
-    --output building16 \
-    --wall_threshold 128
-```
-
-Replace `0.05` with the resolution you calculated. This creates:
-- `building16.pgm` — the occupancy grid image
-- `building16.yaml` — the metadata file (resolution, origin, thresholds)
-
-### Step 5: Test your map in simulation
-
-```bash
-cd /home/aloha/interbotix_ws
-source install/setup.bash
-ros2 launch aloha sim_navigation.launch.py \
-    map_file:=/home/aloha/interbotix_ws/src/aloha/maps/building16.yaml
-```
-
-Then use RViz to navigate as described in Phase 1, Step 3.
-
-### Step 6: Iterate
-
-- **Map looks wrong?** Go back to Step 2 and adjust `--wall_threshold`
-- **Scale is off?** Go back to Step 3 and re-measure
-- **Robot paths too close to walls?** Increase robot radius:
-  ```bash
-  ros2 launch aloha sim_navigation.launch.py \
-      map_file:=/home/aloha/interbotix_ws/src/aloha/maps/building16.yaml \
-      robot_radius:=0.4
-  ```
-- **Robot too slow?** Increase speed:
-  ```bash
-  ros2 launch aloha sim_navigation.launch.py \
-      map_file:=/home/aloha/interbotix_ws/src/aloha/maps/building16.yaml \
-      max_linear_velocity:=0.5
-  ```
+**If mapping looks unhealthy** (robot doesn't move, map doesn't grow, IMU
+warnings in the rtabmap terminal): re-run `./scripts/demo_ops.sh preflight` --
+it checks the specific things that have broken before (IMU orientation not
+initializing, `/mobile_base/odom` dying when the camera comes up, missing
+TFs) and tells you exactly which one, PASS/FAIL/WARN per check.
 
 ---
 
-## Phase 3: Run on Real Hardware (After Simulation Works)
-
-**Prerequisites:**
-- Phase 2 simulation works with your Building 16 map
-- ALOHA hardware powered on
-- RealSense cameras connected
-
-### Step 1: Launch the robot hardware
+## Phase 3: Navigate on a Saved Map
 
 ```bash
-# Terminal 1
-cd /home/aloha/interbotix_ws && source install/setup.bash
-ros2 launch aloha aloha_bringup.launch.py
+./scripts/demo_ops.sh bringup nav          # base + joy_node ONLY (no direct teleop --
+                                            # teleop_twist_joy fights nav_deadman for L2
+                                            # if both run, see nav_deadman.py)
+./scripts/demo_ops.sh maps                 # pick a map name
+./scripts/demo_ops.sh nav building16_v3    # starts localization + planner + L2 deadman gate
+./scripts/demo_ops.sh localize             # hold L2; rotates until RTAB-Map confirms
+                                            # 2 visual matches, then reports LOCALIZED
+./scripts/demo_ops.sh viewer               # open the printed URL
 ```
 
-### Step 2: Launch navigation with AMCL
+In the viewer: click a point on the map, **Confirm & Go**, then **hold L2**
+to let the robot drive there. **STOP** cancels immediately. Click again to
+send it somewhere else -- repeat as many times as you want, no restart needed.
+The robot moves *only* while L2 is held, full stop the instant you release it
+or hit STOP.
 
-```bash
-# Terminal 2
-cd /home/aloha/interbotix_ws && source install/setup.bash
-ros2 launch aloha simple_navigation.launch.py \
-    map_file:=/home/aloha/interbotix_ws/src/aloha/maps/building16.yaml \
-    use_amcl:=true
-```
+`nav` accepts two flags for testing (2026-07-20 additions, see
+`nav-drift-fixes-2026-07-20` notes for why):
+- `--no-ekf` -- skip the wheel+IMU sensor fusion (`config/ekf.yaml`) and use
+  raw wheel odometry instead. Use this if `robot_localization` isn't
+  installed yet, or if the fused estimate looks worse than raw odom.
+- `--continuous-mapping` -- keep extending/refining the saved map live while
+  navigating, instead of treating it as a frozen reference. Trade-off: a bad
+  loop closure can then permanently corrupt the map, which locked mode can't
+  do -- only turn this on once you trust localization.
 
-### Step 3: Localize the robot
-
-In RViz:
-1. Wait for the particle cloud to appear (scattered dots on the map)
-2. If the robot doesn't know where it starts, slowly rotate it — AMCL narrows down position as it sees more walls
-3. If you know where the robot starts, use **"2D Pose Estimate"** in RViz to set the initial position
-
-### Step 4: Navigate
-
-Once the particle cloud converges (dots cluster in one area):
-1. Click **"2D Goal Pose"** in RViz
-2. Click the destination on the map
-3. The robot should plan a path and drive there
+When you're done: `./scripts/demo_ops.sh stop` tears everything down cleanly
+(kills orphaned launch children by name, resets the ros2 daemon).
 
 ---
 
-## Quick Reference: All Launch Parameters
+## Known dependencies not yet installed (as of 2026-07-20)
+
+`nav` defaults to fusing wheel odom + IMU via `robot_localization`, which
+is **not installed** on this machine yet:
 
 ```bash
-ros2 launch aloha sim_navigation.launch.py \
-    map_file:=/path/to/map.yaml \       # Which map to load
-    robot_radius:=0.35 \                 # Safety clearance from walls (meters)
-    max_linear_velocity:=0.3 \           # Max forward speed (m/s)
-    max_angular_velocity:=1.0 \          # Max turning speed (rad/s)
-    goal_tolerance:=0.2 \                # How close is "arrived" (meters)
-    lookahead_distance:=0.5 \            # How far ahead the controller looks (meters)
-    enable_collision_avoidance:=false \   # Real-time obstacle checking
-    safety_distance:=0.5 \               # Slow down within this distance (meters)
-    emergency_stop_distance:=0.3 \       # Full stop within this distance (meters)
-    use_rviz:=true                       # Open RViz visualization
+sudo apt install ros-humble-robot-localization
+```
+
+Until then, either install it or pass `--no-ekf` to `nav` every time.
+
+A disabled-by-default AprilTag-landmark feature also exists
+(`use_apriltag_landmarks` in `rtabmap_mapping.launch.py`, not yet wired
+through `demo_ops.sh`/`navigate_mission.launch.py`) -- needs
+`ros-humble-apriltag-ros` installed AND physical tags printed, measured, and
+placed before it does anything. Not part of the normal flow yet.
+
+---
+
+## Quick Reference: simple_nav_planner parameters
+
+These apply whether you're in `sim_navigation.launch.py` or
+`navigate_mission.launch.py` (via `demo_ops.sh nav`):
+
+```bash
+robot_radius:=0.58                   # safety clearance (worst-case turning footprint)
+inflation_radius:=0.40               # A* path-planning inflation (straight-line half-width)
+max_linear_velocity:=0.3             # max forward speed (m/s)
+max_angular_velocity:=1.0            # max turning speed (rad/s)
+goal_tolerance:=0.2                  # how close counts as "arrived" (meters)
+lookahead_distance:=0.5              # pure-pursuit lookahead (meters)
+enable_collision_avoidance:=true     # live /scan-based obstacle reactions
+safety_distance:=0.6096              # start slowing within this clearance (2ft)
+emergency_stop_distance:=0.4572      # full stop within this clearance (1.5ft)
 ```

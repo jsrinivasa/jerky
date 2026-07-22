@@ -252,14 +252,30 @@ Visualization Manager:
       Max Value: 1
       Median window: 5
       Min Value: 0
-      Name: Camera Feed
+      Name: Camera Feed (cam_high, front)
       Normalize Range: true
       Topic:
-        Depth: 5
+        Depth: 1
         Durability Policy: Volatile
         History Policy: Keep Last
-        Reliability Policy: Reliable
-        Value: /cam_high/camera/color/image_rect_raw
+        Reliability Policy: Best Effort
+        Value: /cam_high/camera/color/image_raw
+      Value: true
+
+    - Alpha: 1
+      Class: rviz_default_plugins/Image
+      Enabled: true
+      Max Value: 1
+      Median window: 5
+      Min Value: 0
+      Name: Camera Feed (cam_low_back, rear -- will look upside-down, that's expected)
+      Normalize Range: true
+      Topic:
+        Depth: 1
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Reliability Policy: Best Effort
+        Value: /cam_low_back/camera/color/image_raw
       Value: true
 
     - Alpha: 1
@@ -330,7 +346,7 @@ Visualization Manager:
   Global Options:
     Background Color: 48; 48; 48
     Fixed Frame: map
-    Frame Rate: 30
+    Frame Rate: 15
   Name: root
   Tools:
     - Class: rviz_default_plugins/Interact
@@ -349,7 +365,7 @@ Visualization Manager:
         Durability Policy: Volatile
         History Policy: Keep Last
         Reliability Policy: Reliable
-        Value: /initialpose
+        Value: /rtabmap/initialpose
     - Class: rviz_default_plugins/SetGoal
       Topic:
         Depth: 5
@@ -374,7 +390,7 @@ Visualization Manager:
       Name: Current View
       Near Clip Distance: 0.01
       Scale: 50
-      Target Frame: base_link
+      Target Frame: map
       Value: TopDownOrtho (rviz_default_plugins)
       X: 0
       Y: 0

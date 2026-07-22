@@ -1,0 +1,24 @@
+# Disable USB autosuspend for Mobile ALOHA robot peripherals: RealSense
+# cameras (Intel, vendor 8086), RPLIDAR S2 (CP2102 bridge, 10c4:ea60), and
+# FTDI-based serial adapters used by the arms (U2D2, 0403:6014) and base.
+#
+# Why: 2026-07-16 the D435i (cam_high) threw a storm of USB protocol errors
+# (`Non-zero status (-71) in video completion handler`) and disconnected/
+# re-enumerated mid-session, immediately preceding a hard laptop crash
+# (journal just stops, no clean shutdown -- consistent with a USB4/xHCI
+# controller hang, not thermal/OOM). Autosuspend (2s idle default) on a
+# camera pushing sustained RGBD+IMU traffic over a hub chained through the
+# laptop's Thunderbolt/USB4 controller is a known trigger for this class of
+# fault. This rule keeps the affected devices always-on so idle-suspend can't
+# yank them mid-stream. Complements: keeping unused D405s/arm cables
+# physically unplugged during nav-only sessions reduces bandwidth/power load
+# on the same hub chain.
+#
+# Install (one-time, needs sudo):
+#   sudo cp config/99-usb-no-autosuspend.rules /etc/udev/rules.d/
+#   sudo udevadm control --reload-rules
+#   sudo udevadm trigger
+
+SUBSYSTEM=="usb", ATTR{idVendor}=="8086", TEST=="power/control", ATTR{power/control}="on"
+SUBSYSTEM=="usb", ATTR{idVendor}=="10c4", ATTR{idProduct}=="ea60", TEST=="power/control", ATTR{power/control}="on"
+SUBSYSTEM=="usb", ATTR{idVendor}=="0403", TEST=="power/control", ATTR{power/control}="on"

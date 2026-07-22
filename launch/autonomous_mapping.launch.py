@@ -27,7 +27,11 @@ Usage:
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
 from launch.conditions import IfCondition
-from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
+from launch.substitutions import (
+    LaunchConfiguration,
+    PathJoinSubstitution,
+    PythonExpression,
+)
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch_ros.actions import Node
 from launch_ros.substitutions import FindPackageShare
@@ -62,6 +66,47 @@ def generate_launch_description():
         'max_angular_velocity', default_value='1.0',
         description='Maximum angular velocity during exploration (rad/s)',
     )
+    use_ekf_odom_arg = DeclareLaunchArgument(
+        'use_ekf_odom', default_value='true',
+        description='Feed simple_nav_planner from /odometry/filtered '
+                    '(wheel odom + IMU gyro yaw-rate fusion -- rtabmap_mapping '
+                    'already runs ekf_node when this is true) instead of raw '
+                    '/mobile_base/odom. Set false to roll back if it misbehaves.',
+    )
+    use_auto_explore_arg = DeclareLaunchArgument(
+        'use_auto_explore', default_value='false',
+        description='true: frontier-based autonomous exploration drives the '
+                    'robot itself (original use of this launch file). '
+                    'false (default): no autonomous driving -- use with '
+                    'nav_web_viewer for user-clicked goals instead. Left off '
+                    'by default because auto_explore also currently publishes '
+                    'straight to /mobile_base/cmd_vel, bypassing nav_deadman.',
+    )
+    use_rplidar_arg = DeclareLaunchArgument(
+        'use_rplidar', default_value='true',
+        description='Include the RPLIDAR S2 in the merged /scan. false to '
+                    'isolate/rule out lidar contribution (e.g. comparing '
+                    'against camera-only obstacle data).',
+    )
+    use_cam_low_back_arg = DeclareLaunchArgument(
+        'use_cam_low_back', default_value='true',
+        description='Include the rear camera as a second RGBD source. false '
+                    'for cam_high-only mode (see rtabmap_mapping.launch.py '
+                    'for the rgbd_image/rgbd_cameras single-camera wiring '
+                    'this now correctly switches to).',
+    )
+    use_floorplan_map_arg = DeclareLaunchArgument(
+        'use_floorplan_map', default_value='true',
+        description='true (default): simple_nav_planner plans A* against '
+                    '/floorplan_map -- the architectural floorplan\'s own '
+                    'walls, warped into the robot frame via nav_web_viewer\'s '
+                    'anchor (published fresh on every Confirm Anchor) -- '
+                    'instead of the live, noisy SLAM-built /rtabmap/map. '
+                    'Live sensors still gate real-time collision avoidance '
+                    'either way, unaffected by this. false rolls back to the '
+                    'live grid (also needed if nav_web_viewer/no anchor has '
+                    'been set yet -- /floorplan_map won\'t exist until then).',
+    )
 
     use_sim_time = LaunchConfiguration('use_sim_time')
 
@@ -77,6 +122,9 @@ def generate_launch_description():
             ('rviz', LaunchConfiguration('use_rviz')),
             ('rtabmap_viz', LaunchConfiguration('rtabmap_viz')),
             ('map_name', LaunchConfiguration('map_name')),
+            ('use_ekf_odom', LaunchConfiguration('use_ekf_odom')),
+            ('use_rplidar', LaunchConfiguration('use_rplidar')),
+            ('use_cam_low_back', LaunchConfiguration('use_cam_low_back')),
         ],
     )
 
@@ -105,19 +153,57 @@ def generate_launch_description():
             'use_sim_time': use_sim_time,
         }],
         remappings=[
-            ('/map', '/rtabmap/map'),
-            ('/odom', '/mobile_base/odom'),
-            ('/cmd_vel', '/mobile_base/cmd_vel'),
+            ('/map', PythonExpression([
+                "'/floorplan_map' if '",
+                LaunchConfiguration('use_floorplan_map'),
+                "' == 'true' else '/rtabmap/map'",
+            ])),
+            # use_ekf_odom:=true (default) -> the wheel+IMU fusion output
+            # rtabmap_mapping.launch.py's ekf_node publishes; false -> raw
+            # wheel odom, same rollback pattern as navigate_mission.launch.py.
+            ('/odom', PythonExpression([
+                "'/odometry/filtered' if '",
+                LaunchConfiguration('use_ekf_odom'),
+                "' == 'true' else '/mobile_base/odom'",
+            ])),
+            # Planner output goes to an INTERMEDIATE topic, gated to the base
+            # by nav_deadman below -- never straight to /mobile_base/cmd_vel.
+            ('/cmd_vel', '/nav_cmd_vel'),
         ],
     )
 
-    # ==================== Auto Explore ==================================
+    # ==================== Deadman "hold-to-run" safety gate ==============
+    # Same as navigate_mission.launch.py: passes /nav_cmd_vel ->
+    # /mobile_base/cmd_vel ONLY while L2 (button 6) is held on
+    # /mobile_base/joy; otherwise publishes zero at 20Hz.
+    nav_deadman_node = Node(
+        package='aloha',
+        executable='nav_deadman',
+        name='nav_deadman',
+        output='screen',
+        parameters=[{
+            'enable_button': 6,          # L2
+            'joy_topic': '/mobile_base/joy',
+            'input_topic': '/nav_cmd_vel',
+            'output_topic': '/mobile_base/cmd_vel',
+            'rate_hz': 20.0,
+            'joy_timeout': 0.5,
+            'cmd_timeout': 0.5,
+        }],
+    )
+
+    # ==================== Auto Explore (off by default) ==================
+    # NOTE: this node still publishes straight to /mobile_base/cmd_vel,
+    # bypassing nav_deadman -- fine while gated off by default, but fix that
+    # remap the same way as nav_planner_node above before ever enabling it
+    # for a real drive.
 
     auto_explore_node = Node(
         package='aloha',
         executable='auto_explore',
         name='auto_explore',
         output='screen',
+        condition=IfCondition(LaunchConfiguration('use_auto_explore')),
         parameters=[{
             'min_frontier_size': 0.75,
             'exploration_rate': 0.2,
@@ -160,9 +246,15 @@ def generate_launch_description():
         use_sim_time_arg,
         max_linear_velocity_arg,
         max_angular_velocity_arg,
+        use_ekf_odom_arg,
+        use_auto_explore_arg,
+        use_rplidar_arg,
+        use_cam_low_back_arg,
+        use_floorplan_map_arg,
 
         rtabmap_mapping,
         nav_planner_node,
+        nav_deadman_node,
         auto_explore_node,
         robot_pose_marker_node,
     ])
