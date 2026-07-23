@@ -15,6 +15,13 @@ a quick one-off session in a space you don't need a persistent map of, pick
 this runbook's saved-map flow if you want the map to persist and be reused
 run over run.
 
+**Before spending time debugging this flow specifically**, read
+[`docs/KNOWN_ISSUES.md`](docs/KNOWN_ISSUES.md) -- the saved-map flow has a
+real, extensively-investigated, still-not-fully-resolved loop-closure
+history on this hardware (RTAB-Map getting exactly 0 inliers on every
+closure attempt in some sessions). That's a large part of why the
+map-free flow above was built.
+
 **Current approach (as of 2026-07-20): RTAB-Map visual SLAM + a custom
 `simple_nav_planner` (A* + Pure Pursuit), driven end-to-end by
 `scripts/demo_ops.sh`.** This replaces an earlier PDF-floorplan + AMCL + Nav2

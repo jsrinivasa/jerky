@@ -42,6 +42,9 @@ the arm teleop/dataset-collection tooling above.
   there.
 - **Saved-map flow** (build a map once, reuse it across sessions):
   [NAV_RUNBOOK.md](./NAV_RUNBOOK.md)
+- **Known hardware issues, crash modes, and lessons from past debugging
+  sessions on this machine** (read before assuming something new is
+  broken): [docs/KNOWN_ISSUES.md](./docs/KNOWN_ISSUES.md)
 
 Run with `scripts/demo_ops.sh` (no arguments for the full command list).
 

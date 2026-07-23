@@ -5,7 +5,10 @@
 No prebuilt map needed. Stand at the robot, tell it where it is and which way
 it's facing, then click destinations on the floorplan and it drives there.
 Built 2026-07-22 to replace needing a pre-saved, pre-localized RTAB-Map
-database (see `NAV_RUNBOOK.md` for that older, saved-map flow).
+database (see `NAV_RUNBOOK.md` for that older, saved-map flow, and
+[`KNOWN_ISSUES.md`](KNOWN_ISSUES.md) for why that flow was worth stepping
+around -- a real, still-not-fully-resolved loop-closure problem on this
+hardware, plus two distinct hard-crash modes this laptop has hit before).
 
 ## Operator quick reference (if you're new to this machine)
 
