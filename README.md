@@ -1,5 +1,10 @@
 # Cisco Research - Mobile ALOHA
 
+> **(2026-07-22)** Mobile base navigation instructions added -- see
+> [Mobile Base Navigation](#mobile-base-navigation) below, or jump straight
+> to [docs/MAPFREE_NAV.md](./docs/MAPFREE_NAV.md) for the click-to-go,
+> no-prebuilt-map flow.
+
 > Forked from Interbotix ALOHA repository
 
 Project Websites:
@@ -27,9 +32,9 @@ To train imitation learning algorithms, you would also need to install:
 
 # Mobile Base Navigation
 
-Click-to-go autonomous navigation for the mobile base (A* planning + pure
-pursuit + a hold-to-run safety gate) -- separate from the arm
-teleop/dataset-collection tooling above.
+*Added 2026-07-22.* Click-to-go autonomous navigation for the mobile base
+(A* planning + pure pursuit + a hold-to-run safety gate) -- separate from
+the arm teleop/dataset-collection tooling above.
 
 - **No prebuilt map needed** (recommended, most-tested as of 2026-07-22):
   [docs/MAPFREE_NAV.md](./docs/MAPFREE_NAV.md) -- anchor the robot's

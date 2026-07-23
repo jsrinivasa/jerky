@@ -1,5 +1,7 @@
 # Mobile ALOHA Navigation Runbook
 
+*Dependency status and links last verified: 2026-07-22.*
+
 Step-by-step instructions to go from an empty map to the robot driving itself
 from point A to point B.
 

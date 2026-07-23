@@ -1,5 +1,7 @@
 # Map-Free Click-to-Go Navigation
 
+*Built and last verified working end-to-end on real hardware: 2026-07-22.*
+
 No prebuilt map needed. Stand at the robot, tell it where it is and which way
 it's facing, then click destinations on the floorplan and it drives there.
 Built 2026-07-22 to replace needing a pre-saved, pre-localized RTAB-Map
