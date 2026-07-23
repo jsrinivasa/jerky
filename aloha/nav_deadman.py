@@ -147,6 +147,16 @@ class NavDeadman(Node):
         out = Twist()
         out.linear.x = self._out_linear_x
         out.angular.z = self._out_angular_z
+        # Untrottled per-tick log (20Hz) -- pairs with simple_nav_planner's
+        # own [control-tick] log so a choppy-motion diagnosis can compare
+        # what the PLANNER computed vs. what ACTUALLY reached the base
+        # after slew-limiting/gating here. Added for a short, controlled
+        # test drive -- not meant to run unthrottled long-term.
+        self.get_logger().info(
+            f'[deadman-tick] allow={allow} joy_ok={joy_ok} cmd_ok={cmd_ok} '
+            f'target_lin={target.linear.x:.3f} target_ang={target.angular.z:.3f} '
+            f'out_lin={out.linear.x:.3f} out_ang={out.angular.z:.3f}'
+        )
         self._pub.publish(out)
 
         if allow != self._was_enabled:

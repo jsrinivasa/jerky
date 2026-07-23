@@ -95,6 +95,13 @@ def generate_launch_description():
                     'for the rgbd_image/rgbd_cameras single-camera wiring '
                     'this now correctly switches to).',
     )
+    use_odom_locked_map_arg = DeclareLaunchArgument(
+        'use_odom_locked_map', default_value='true',
+        description='true (default): map->odom TF comes from nav_web_viewer\'s '
+                    'anchor (wheel+IMU odometry only), not rtabmap\'s own '
+                    'SLAM-corrected (but jittery/jumpy) pose. See '
+                    'rtabmap_mapping.launch.py for the full rationale.',
+    )
     use_floorplan_map_arg = DeclareLaunchArgument(
         'use_floorplan_map', default_value='true',
         description='true (default): simple_nav_planner plans A* against '
@@ -125,6 +132,7 @@ def generate_launch_description():
             ('use_ekf_odom', LaunchConfiguration('use_ekf_odom')),
             ('use_rplidar', LaunchConfiguration('use_rplidar')),
             ('use_cam_low_back', LaunchConfiguration('use_cam_low_back')),
+            ('use_odom_locked_map', LaunchConfiguration('use_odom_locked_map')),
         ],
     )
 
@@ -142,7 +150,28 @@ def generate_launch_description():
             'max_linear_velocity': LaunchConfiguration('max_linear_velocity'),
             'max_angular_velocity': LaunchConfiguration('max_angular_velocity'),
             'goal_tolerance': 0.35,
-            'robot_radius': 0.27,
+            # +2in (0.0508m) over the previous 0.27 -- 2026-07-22, reported
+            # slight physical bumping ON TURNS specifically. This is the
+            # WORST-CASE corner-to-pivot radius used by the LIVE safety
+            # checks (check_collision_ahead/_raw_forward_clearance), so a
+            # turn sweeping the physical footprint wider than this value
+            # accounts for is exactly what a live-reactive-but-not-quite-
+            # generous-enough radius would miss.
+            'robot_radius': 0.3208,
+            # Back to 0.6048 (default 0.3 + 12in) -- 2026-07-22 tried
+            # bumping this globally (first to 0.681, then 0.643) for a
+            # "bumping on turns" report, but a GLOBAL inflation bump also
+            # pushes every straight-line segment further from walls, which
+            # overcorrected (routes hugging corridor centers unnecessarily)
+            # for a problem that was only ever about turns specifically.
+            # Reverted here; the actual fix is simple_nav_planner.py's
+            # _widen_turns() -- a post-plan-path step that nudges ONLY
+            # sharp-direction-change waypoints outward a little, leaving
+            # every straight run exactly as A* planned it. This value is
+            # the A* PLANNED-path clearance from walls in general (not
+            # robot_radius, not baked into the floorplan obstacle grid
+            # itself, see that comment's history below).
+            'inflation_radius': 0.6048,
             'occupancy_threshold': 80,
             'use_trajectory_optimization': True,
             'smoothing_weight': 0.8,
@@ -231,7 +260,7 @@ def generate_launch_description():
         name='robot_pose_marker',
         output='screen',
         parameters=[{
-            'robot_radius': 0.27,
+            'robot_radius': 0.3208,  # kept in sync with nav_planner_node's value above
             'arrow_length': 0.6,
             'publish_rate': 10.0,
         }],
@@ -250,6 +279,7 @@ def generate_launch_description():
         use_auto_explore_arg,
         use_rplidar_arg,
         use_cam_low_back_arg,
+        use_odom_locked_map_arg,
         use_floorplan_map_arg,
 
         rtabmap_mapping,

@@ -12,6 +12,7 @@ License: MIT
 """
 
 import copy
+import heapq
 import time
 
 import rclpy
@@ -24,7 +25,7 @@ from geometry_msgs.msg import PoseStamped, Twist, Point
 from nav_msgs.msg import Path, OccupancyGrid, Odometry
 from sensor_msgs.msg import LaserScan
 from visualization_msgs.msg import Marker, MarkerArray
-from std_msgs.msg import ColorRGBA, Empty
+from std_msgs.msg import ColorRGBA, Empty, String
 from nav2_msgs.action import NavigateToPose
 from rtabmap_msgs.msg import Info as RtabmapInfo
 import tf2_ros
@@ -126,6 +127,7 @@ class SimpleNavPlanner(Node):
             'localization_stale_warn_sec'
         ).value
         self._last_pose_correction_time = None
+        self._last_control_tick_time = None  # see [control-tick] log in control_loop
 
         # State
         self.state = NavigationState.IDLE
@@ -235,6 +237,17 @@ class SimpleNavPlanner(Node):
         self.path_pub = self.create_publisher(Path, '/planned_path', path_qos)
         self.raw_path_pub = self.create_publisher(Path, '/raw_path', path_qos)
         self.smoothed_path_pub = self.create_publisher(Path, '/smoothed_path', path_qos)
+        # State visibility for nav_web_viewer -- TRANSIENT_LOCAL like the
+        # path topics above, so the page always has a current reading, not
+        # just when something happens to change. Added 2026-07-22: a failed
+        # replan (2nd goal, A* finds no path) left current_path/the
+        # /smoothed_path topic holding the FIRST goal's path forever (this
+        # method used to just `return` on failure, touching neither) --
+        # from the page, that looked exactly like "picking a new point
+        # shows the original route" with zero indication anything had gone
+        # wrong. See plan_and_navigate's failure branch for the other half
+        # of this fix (clearing current_path + publishing an empty path).
+        self.status_pub = self.create_publisher(String, '/nav_status', path_qos)
         self.marker_pub = self.create_publisher(MarkerArray, '/nav_markers', 10)
         self.obstacle_marker_pub = self.create_publisher(MarkerArray, '/obstacle_markers', 10)
         inflated_map_qos = QoSProfile(
@@ -293,8 +306,11 @@ class SimpleNavPlanner(Node):
         self.get_logger().warn('Nav cancelled via /nav_cancel -- stopping now')
         self.stop_robot(immediate=True)
         self.goal_pose = None
+        self.raw_path = None
         self.current_path = None
         self.state = NavigationState.IDLE
+        self._clear_path_visualization()
+        self._publish_status('idle')
 
     def map_callback(self, msg: OccupancyGrid):
         """Store map data for path planning and create inflated map."""
@@ -372,22 +388,41 @@ class SimpleNavPlanner(Node):
         
         # Plan path
         self.state = NavigationState.PLANNING
+        self._publish_status('planning')
         self.get_logger().info('Planning path...')
-        
+
         path = self.plan_path(
             self.current_pose.position,
             self.goal_pose.pose.position
         )
-        
+
         if path is None or len(path) < 2:
             self.get_logger().error(
                 'Path planning failed! Check the messages above for detailed reasons. '
             )
             self.state = NavigationState.FAILED
+            # Clear the OLD path (both local state and the actual
+            # TRANSIENT_LOCAL /smoothed_path+/raw_path topics) -- these used
+            # to be left untouched on failure, so a 2nd goal that couldn't
+            # be planned silently kept showing the 1st goal's route on the
+            # web page forever, with no indication anything had failed.
+            self.raw_path = None
+            self.current_path = None
+            self._clear_path_visualization()
+            self._publish_status('failed', 'no path found to the goal')
             return
-        
+
+        path = self._widen_turns(path)
         self.raw_path = path
-        
+
+        # astar() may have returned a route to the CLOSEST point it could
+        # actually reach rather than the literal requested goal (see its
+        # best_node fallback) -- sync goal_pose to where the path actually
+        # ends so reached_goal()/the deceleration ramp target where the
+        # robot is really headed. A no-op (~grid-quantization only, well
+        # under goal_tolerance) whenever the exact goal WAS reached.
+        self.goal_pose.pose.position = path[-1]
+
         # Apply trajectory optimization if enabled
         if self.use_traj_opt:
             self.get_logger().info('Optimizing trajectory...')
@@ -400,13 +435,41 @@ class SimpleNavPlanner(Node):
                 self.current_path = path
         else:
             self.current_path = path
-        
+
         self.path_index = 0
         self.state = NavigationState.FOLLOWING
-        
+        self._publish_status('following')
+
         self.get_logger().info(f'Path planned with {len(self.current_path)} waypoints')
         self.publish_path_visualization()
-    
+
+    def _clear_path_visualization(self):
+        """Publish empty Path messages on /raw_path and /smoothed_path so a
+        stale route doesn't linger on TRANSIENT_LOCAL subscribers (like
+        nav_web_viewer) after a failed replan. Companion to
+        publish_path_visualization, which only ever ADDS a path, never
+        clears one.
+        """
+        stamp = self.get_clock().now().to_msg()
+        empty = Path()
+        empty.header.frame_id = 'map'
+        empty.header.stamp = stamp
+        self.raw_path_pub.publish(empty)
+        self.smoothed_path_pub.publish(empty)
+
+    def _publish_status(self, state_str: str, reason: str = ''):
+        """Publish current navigation state (+ optional human-readable
+        reason, mainly for FAILED) on /nav_status so nav_web_viewer can show
+        it -- previously the web page had NO visibility into planner state
+        at all, so a failure was completely silent from the page's
+        perspective (see plan_and_navigate's failure branch for the bug
+        this was written to make visible).
+        """
+        msg = String()
+        msg.data = f'{state_str}:{reason}' if reason else state_str
+        self.status_pub.publish(msg)
+
+
     def _expand_map_to_include(self, cells: List[Optional[Tuple[int, int]]]):
         """Pad self.map_data / self.inflated_map / self.obstacle_map_raw (in
         place) so every cell in `cells` falls within bounds, filling the new
@@ -591,31 +654,68 @@ class SimpleNavPlanner(Node):
             original_goal = goal
             goal = self.find_nearest_free_cell(goal[0], goal[1])
             if goal is None:
-                self.get_logger().error(
-                    f'A* failed: Goal is in occupied space at ({original_goal[0]}, {original_goal[1]}) '
-                    f'and no free cells found within search radius. The goal may be completely surrounded by obstacles.'
+                # No free cell within find_nearest_free_cell's local
+                # (20-cell) radius -- rare (deep inside a large obstacle),
+                # but don't give up: fall through with the ORIGINAL goal
+                # as the search target. current==goal can then never be
+                # literally true (it's occupied, so it's never expanded/
+                # closed), but the best_node closest-approach fallback
+                # below will still find and route to whatever's nearest.
+                self.get_logger().warn(
+                    f'No free cell within local search radius of goal '
+                    f'({original_goal[0]}, {original_goal[1]}) -- falling back to '
+                    'routing as close as the live map allows.'
                 )
-                return None
+                goal = original_goal
             else:
                 self.get_logger().info(
                     f'Adjusted goal from ({original_goal[0]}, {original_goal[1]}) to nearest free cell ({goal[0]}, {goal[1]})'
                 )
         
-        # A* data structures
-        open_set = {start}
+        # A* data structures. Was a plain set + min(open_set, key=...) --
+        # an O(n) linear scan EVERY iteration to find the lowest f_score,
+        # so total cost degraded to roughly O(n^2) as the open set grew.
+        # Found 2026-07-22: on this floorplan's live grid (padded by
+        # _expand_map_to_include to ~2.5M cells for a goal outside the
+        # currently-explored area), that made most goals -- even ones only
+        # ~7m away in a straight line -- burn through the full 100,000-
+        # iteration budget without ever reaching the goal, logged as "A*
+        # failed: Maximum iterations reached" and misread as "no path
+        # exists" when the real problem was raw iteration/node-selection
+        # cost, not map connectivity. A binary heap (heapq) makes node
+        # selection O(log n) instead of O(n) -- standard fix, same A*
+        # semantics/cost function, just no longer near-quadratic. Uses the
+        # standard lazy-deletion pattern (heapq has no decrease-key): stale
+        # heap entries for a cell are just skipped via the `closed` check
+        # when popped, since g_score/came_from always hold the best-known
+        # values regardless of what's sitting in the heap.
+        counter = 0  # tie-breaker so heapq never has to compare cell tuples
+        open_heap = [(self.heuristic(start, goal), counter, start)]
         came_from = {}
         g_score = {start: 0}
-        f_score = {start: self.heuristic(start, goal)}
-        
+        closed = set()
+
+        # Track the closest-to-goal cell actually reached, so an
+        # unreachable/too-expensive literal goal still returns SOMETHING
+        # useful (route to the nearest point actually gotten to) instead of
+        # a hard failure -- "it doesn't have to get to the exact point, get
+        # as close as possible" per 2026-07-22 live feedback. Only updated
+        # for cells that get POPPED (i.e. actually finalized/closed with a
+        # real g_score + came_from chain), not merely pushed as a neighbor,
+        # so reconstruct_path_to below is always backed by a valid chain.
+        best_node = start
+        best_h = self.heuristic(start, goal)
+
         max_iterations = 100000
         iteration = 0
-        
-        while open_set and iteration < max_iterations:
+
+        while open_heap and iteration < max_iterations:
             iteration += 1
-            
-            # Get node with lowest f_score
-            current = min(open_set, key=lambda x: f_score.get(x, float('inf')))
-            
+
+            _, _, current = heapq.heappop(open_heap)
+            if current in closed:
+                continue
+
             if current == goal:
                 # Reconstruct path
                 path = [current]
@@ -625,45 +725,73 @@ class SimpleNavPlanner(Node):
                 path.reverse()
                 self.get_logger().info(f'A* succeeded after {iteration} iterations')
                 return path
-            
-            open_set.remove(current)
-            
+
+            closed.add(current)
+            h = self.heuristic(current, goal)
+            if h < best_h:
+                best_h = h
+                best_node = current
+
             # Check neighbors (8-connected)
             for dx, dy in [(-1, 0), (1, 0), (0, -1), (0, 1),
                           (-1, -1), (-1, 1), (1, -1), (1, 1)]:
                 neighbor = (current[0] + dx, current[1] + dy)
-                
+
+                if neighbor in closed:
+                    continue
+
                 # Check bounds
                 if not (0 <= neighbor[0] < width and 0 <= neighbor[1] < height):
                     continue
-                
+
                 # Check if free considering robot radius (inflate obstacles)
                 if not self.is_point_collision_free_grid(neighbor[0], neighbor[1]):
                     continue
-                
+
                 # Calculate cost
                 move_cost = 1.414 if dx != 0 and dy != 0 else 1.0
                 tentative_g_score = g_score[current] + move_cost
-                
+
                 if neighbor not in g_score or tentative_g_score < g_score[neighbor]:
                     came_from[neighbor] = current
                     g_score[neighbor] = tentative_g_score
-                    f_score[neighbor] = tentative_g_score + self.heuristic(neighbor, goal)
-                    open_set.add(neighbor)
-        
+                    counter += 1
+                    heapq.heappush(
+                        open_heap,
+                        (tentative_g_score + self.heuristic(neighbor, goal), counter, neighbor))
+
         if iteration >= max_iterations:
-            self.get_logger().error(
-                f'A* failed: Maximum iterations ({max_iterations}) reached. '
-                f'Start: ({start[0]}, {start[1]}), Goal: ({goal[0]}, {goal[1]}). '
-                f'Path may be extremely long or computationally expensive.'
+            self.get_logger().warn(
+                f'A*: hit the {max_iterations}-iteration budget before reaching '
+                f'goal ({goal[0]}, {goal[1]}) from ({start[0]}, {start[1]}).'
             )
         else:
-            self.get_logger().error(
-                f'A* failed: Open set exhausted after {iteration} iterations. '
-                f'No path exists between start ({start[0]}, {start[1]}) and goal ({goal[0]}, {goal[1]}). '
-                f'All possible routes are blocked by obstacles.'
+            self.get_logger().warn(
+                f'A*: open set exhausted after {iteration} iterations -- no path '
+                f'exists to goal ({goal[0]}, {goal[1]}) from ({start[0]}, {start[1]}). '
+                f'All routes to it are blocked by obstacles.'
             )
-        
+
+        # Route to the closest cell actually reached instead of failing
+        # outright -- see best_node/best_h above.
+        if best_node != start:
+            path = [best_node]
+            node = best_node
+            while node in came_from:
+                node = came_from[node]
+                path.append(node)
+            path.reverse()
+            self.get_logger().warn(
+                f"A*: couldn't reach the exact goal -- routing to the closest "
+                f'point actually reached instead: ({best_node[0]}, {best_node[1]}), '
+                f'{best_h:.1f} cells short.'
+            )
+            return path
+
+        self.get_logger().error(
+            f'A* failed completely: no progress at all from start '
+            f'({start[0]}, {start[1]}) -- it may be fully boxed in.'
+        )
         return None
     
     def heuristic(self, a: Tuple[int, int], b: Tuple[int, int]) -> float:
@@ -862,7 +990,79 @@ class SimpleNavPlanner(Node):
         
         simplified.append(path[-1])
         return simplified
-    
+
+    def _widen_turns(self, path: List[Point], extra_clearance_m: float = 0.15,
+                      angle_threshold_rad: float = 0.5, window: int = 3) -> List[Point]:
+        """Nudge sharp-turn waypoints outward (away from the inside of the
+        corner) for a bit of extra clearance there specifically, leaving
+        straight segments exactly where A* put them.
+
+        2026-07-22: "give it a little more clearance, it's bumping into
+        things slightly on turns." First tried raising inflation_radius
+        globally -- that gave every straight-line segment more margin too
+        (not what was asked, and the user immediately flagged it as
+        overcorrecting: paths hugging corridor centers unnecessarily). This
+        targets the actual complaint instead: only points where the path
+        genuinely CHANGES DIRECTION get pushed; straight runs are
+        untouched, planning behaves exactly as before everywhere else.
+
+        Direction is measured over a `window`-cell span rather than
+        adjacent single grid cells -- A*'s raw path is one point per grid
+        step, so a 1-step lookback/lookahead is dominated by grid-
+        quantization noise, not real path geometry (same reasoning as
+        simplify_path's angle check above, just windowed instead of
+        adjacent-only since this runs on the raw, unsimplified path).
+
+        For each turn point, "outward" is the bisector of the (normalized)
+        incoming and outgoing travel directions -- pointing through the
+        turn in the direction of travel, which moves the point away from
+        the turn's inside corner (the vertex a tight A* path cuts close
+        to). Nudged in small steps, re-checked against the inflated map
+        (the same source of truth A* itself used) after each step, and
+        stops at the last verified-safe position -- so this can only ever
+        move a point to a point A* would also have considered valid,
+        capped at extra_clearance_m, never introduces a new collision.
+        """
+        if len(path) < 2 * window + 1:
+            return path
+        widened = []
+        for i, p in enumerate(path):
+            if i < window or i >= len(path) - window:
+                widened.append(p)
+                continue
+            prev, curr, nxt = path[i - window], p, path[i + window]
+            in_dx, in_dy = curr.x - prev.x, curr.y - prev.y
+            out_dx, out_dy = nxt.x - curr.x, nxt.y - curr.y
+            in_len, out_len = math.hypot(in_dx, in_dy), math.hypot(out_dx, out_dy)
+            if in_len < 1e-6 or out_len < 1e-6:
+                widened.append(p)
+                continue
+            in_ux, in_uy = in_dx / in_len, in_dy / in_len
+            out_ux, out_uy = out_dx / out_len, out_dy / out_len
+            angle = math.acos(max(-1.0, min(1.0, in_ux * out_ux + in_uy * out_uy)))
+            if angle < angle_threshold_rad:
+                widened.append(p)  # not a real turn -- leave it exactly as planned
+                continue
+            bx, by = in_ux + out_ux, in_uy + out_uy
+            blen = math.hypot(bx, by)
+            if blen < 1e-6:
+                widened.append(p)  # ~180 degree reversal, no well-defined outward push
+                continue
+            bx, by = bx / blen, by / blen
+            best_x, best_y = curr.x, curr.y
+            step_m = 0.02
+            d = step_m
+            while d <= extra_clearance_m:
+                cand_x, cand_y = curr.x + bx * d, curr.y + by * d
+                if self._inflated_occupied(cand_x, cand_y):
+                    break
+                best_x, best_y = cand_x, cand_y
+                d += step_m
+            new_p = Point()
+            new_p.x, new_p.y, new_p.z = best_x, best_y, curr.z
+            widened.append(new_p)
+        return widened
+
     def smooth_trajectory(self, path: List[Point]) -> Optional[List[Point]]:
         """
         Smooth trajectory using cubic B-spline interpolation with rounded corners.
@@ -1132,6 +1332,7 @@ class SimpleNavPlanner(Node):
         if self.reached_goal():
             self.stop_robot()
             self.state = NavigationState.GOAL_REACHED
+            self._publish_status('goal_reached')
             self.get_logger().info('Goal reached!')
             return
         
@@ -1269,6 +1470,7 @@ class SimpleNavPlanner(Node):
                             'All 5 replan attempts exhausted — stopping'
                         )
                         self.state = NavigationState.FAILED
+                        self._publish_status('failed', 'blocked by an obstacle, all replan attempts exhausted')
                     return
 
             elif collision_info['reduce_speed']:
@@ -1345,8 +1547,29 @@ class SimpleNavPlanner(Node):
                 throttle_duration_sec=1.0,
             )
 
+        # Full-detail, UNTHROTTLED per-tick log (unlike [obstacle-scan] above,
+        # which is throttled to 1/s and so hides any real tick-to-tick timing
+        # or velocity jitter) -- added specifically to diagnose reported
+        # choppy motion: this directly shows both CONTROL-LOOP TIMING
+        # (tick_dt; should sit near 0.10s if the 10Hz timer is running
+        # cleanly -- a wandering/spiky value points at CPU contention/
+        # scheduling jitter, not the planner's own logic) and the ACTUAL
+        # published velocity every single tick (a jumpy linear_x/angular_z
+        # sequence with clean, regular tick_dt would instead point at the
+        # pure-pursuit lookahead/control math itself).
+        now_log = self.get_clock().now()
+        tick_dt = ((now_log - self._last_control_tick_time).nanoseconds / 1e9
+                   if self._last_control_tick_time is not None else float('nan'))
+        self._last_control_tick_time = now_log
+        self.get_logger().info(
+            f'[control-tick] dt={tick_dt:.4f}s lin={cmd_vel.linear.x:.3f} '
+            f'ang={cmd_vel.angular.z:.3f} pose=({self.current_pose.position.x:.3f},'
+            f'{self.current_pose.position.y:.3f}) path_idx={self.path_index}/'
+            f'{len(self.current_path) if self.current_path else 0}'
+        )
+
         self.cmd_vel_pub.publish(cmd_vel)
-    
+
     def _reset_obstacle_state(self):
         """Clear all obstacle-recovery state so the next detection starts fresh."""
         self.emergency_stop_time = None
@@ -1389,10 +1612,13 @@ class SimpleNavPlanner(Node):
         if new_path is None or len(new_path) < 2:
             self.get_logger().warn('Replanning failed - no valid path found')
             return False
-        
+
+        new_path = self._widen_turns(new_path)
         # Update paths
         self.raw_path = new_path
-        
+        # Same closest-approach sync as plan_and_navigate -- see its comment.
+        self.goal_pose.pose.position = new_path[-1]
+
         # Apply trajectory optimization if enabled
         if self.use_traj_opt:
             smoothed_path = self.smooth_trajectory(new_path)
@@ -1402,10 +1628,10 @@ class SimpleNavPlanner(Node):
                 self.current_path = new_path
         else:
             self.current_path = new_path
-        
+
         self.path_index = 0
         self.publish_path_visualization()
-        
+
         return True
     
     def pure_pursuit_control(self) -> Twist:

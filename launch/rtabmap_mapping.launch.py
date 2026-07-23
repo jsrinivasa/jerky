@@ -258,6 +258,21 @@ def generate_launch_description():
                         'own odom->base_footprint broadcast. Set false to '
                         'roll back to raw /mobile_base/odom if it misbehaves.',
         ),
+        DeclareLaunchArgument(
+            'use_odom_locked_map', default_value='true',
+            description='true (default): rtabmap does NOT publish the '
+                        'map->odom TF (publish_tf:=false below) -- instead '
+                        'nav_web_viewer publishes it once per anchor confirm, '
+                        'computed from wheel+IMU odometry only, never touched '
+                        'by SLAM loop-closure/registration corrections '
+                        'afterward. Fixes pose jitter/jumps (and the real '
+                        'motion jerkiness they caused) at the cost of '
+                        'accepting odometry drift over long distances -- '
+                        'fine for the short point-to-point trips this is '
+                        'built for. false rolls back to rtabmap owning the '
+                        'TF directly (its own SLAM-corrected, but jittery, '
+                        'pose) if this misbehaves.',
+        ),
 
         # ---- RPLIDAR S2 (front, near-bottom mount, rotated 90deg CW) -----
         # x corrected 2026-07-20 per user estimate: ~5-6in forward (was
@@ -595,7 +610,9 @@ def generate_launch_description():
                 'scan_row_step': 1,
                 'scan_time': 0.033,
                 'range_min': 0.1,
-                'range_max': 5.0,
+                # capped to the D435-series' actual trusted range, see the
+                # matching front-camera node's comment for why (~3m/10ft).
+                'range_max': 3.0,
                 'output_frame': 'cam_low_back_link',  # see camera_name rename comment above
             }],
             remappings=[
@@ -708,10 +725,12 @@ def generate_launch_description():
                 'scan_row_step': 1,
                 'scan_time': 0.033,
                 'range_min': 0.1,
-                # Was 3.0, tuned to the old D405's short reliable range.
-                # D435i is usable out to ~6m; 5.0 leaves margin before its
-                # far-range noise gets bad, still supplementary to the lidar.
-                'range_max': 5.0,
+                # 2026-07-22: capped to the D435i's actual trusted reliable
+                # range (~3m/10ft per direct guidance) -- was 5.0, which
+                # let increasingly noisy far-range depth get treated as
+                # real obstacles (shows as false "red" on the map) instead
+                # of just being ignored as out-of-range/unknown.
+                'range_max': 3.0,
                 'output_frame': 'camera_link',
             }],
             remappings=[
@@ -938,7 +957,12 @@ def generate_launch_description():
                 'frame_id': 'base_link',
                 'map_frame_id': 'map',
                 'odom_frame_id': 'odom',
-                'publish_tf': True,
+                # See use_odom_locked_map arg: normally True (rtabmap owns
+                # map->odom); False hands that TF to nav_web_viewer's
+                # anchor-derived, odometry-only broadcast instead.
+                'publish_tf': PythonExpression([
+                    "'", LaunchConfiguration('use_odom_locked_map'), "' != 'true'"
+                ]),
                 'use_action_for_goal': False,
                 'odom_tf_angular_variance': 0.01,
                 'odom_tf_linear_variance': 0.001,
@@ -1082,11 +1106,14 @@ def generate_launch_description():
                 " --Grid/MaxObstacleHeight 2.0"
                 " --Grid/NormalsSegmentation true"
                 " --Grid/CellSize 0.05"
-                # Was 3.0 (matched only cam_high's depth cone). With the
-                # lidar now feeding the grid too, capping at 3.0 would
-                # silently throw away its extra range -- 8.0 is a
-                # reasonable indoor ceiling for the S2's real range.
-                " --Grid/RangeMax 8.0"
+                # 2026-07-22: RangeMax now conditional -- camera-only (no
+                # lidar) caps back to the D435-series' actual trusted range
+                # (~3m/10ft) so far/noisy depth isn't treated as a real
+                # obstacle; 8.0 (below) is only correct when the lidar's
+                # longer real range is actually in the mix.
+                "' + (' --Grid/RangeMax 8.0' if '",
+                LaunchConfiguration('use_rplidar'),
+                "' == 'true' else ' --Grid/RangeMax 3.0') + '"
                 " --Grid/RangeMin 0.3"
                 " --Grid/NoiseFilteringRadius 0.1"
                 " --Grid/NoiseFilteringMinNeighbors 3"

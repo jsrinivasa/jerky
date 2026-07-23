@@ -33,6 +33,15 @@ start_bg() {
 
 cmd_bringup() {
     local mode="${1:-}"
+    # Always tear down first -- found 2026-07-22 that a leftover process
+    # from a previous session (specifically nav_joystick_teleop surviving a
+    # manual restart that skipped 'stop') is exactly what caused a real
+    # choppy-motion bug: two publishers fighting on /nav_cmd_vel with no
+    # arbitration. cmd_stop is idempotent (safe on a machine with nothing
+    # running yet), so this makes "clean bring-up" automatic instead of
+    # relying on remembering a separate 'stop' step every time.
+    echo "== Ensuring a clean slate first (stop is idempotent) =="
+    cmd_stop
     if [ "$mode" = "nav" ]; then
         echo "== Bringing up base + joy_node + nav-safe teleop (no cameras) =="
         echo "   (use_direct_teleop stays off -- that one fights nav_deadman for L2"
@@ -92,14 +101,28 @@ cmd_localize() {
 }
 
 cmd_mapfree() {
-    local name="${1:?usage: $0 mapfree <session_name>}"
+    local name="${1:?usage: $0 mapfree <session_name> [--single-cam] [--no-rplidar]}"
+    shift || true
+    local use_rplidar=true
+    local use_cam_low_back=true
+    for arg in "$@"; do
+        case "$arg" in
+            --single-cam)  use_cam_low_back=false ;;
+            --no-rplidar)  use_rplidar=false ;;
+            *) echo "Unknown flag: $arg (see '$0' with no args for usage)" >&2; exit 1 ;;
+        esac
+    done
     echo "== Starting map-free navigation: fresh SLAM + live A* + L2 deadman =="
     echo "   (autonomous_mapping.launch.py, use_auto_explore:=false -- goals"
     echo "    come from nav_web_viewer clicks, not frontier auto-exploration)"
+    echo "   use_rplidar=$use_rplidar use_cam_low_back=$use_cam_low_back"
     start_bg mapfree ros2 launch aloha autonomous_mapping.launch.py \
-        map_name:="$name" rtabmap_viz:=false use_auto_explore:=false
+        map_name:="$name" rtabmap_viz:=false use_auto_explore:=false \
+        use_rplidar:="$use_rplidar" use_cam_low_back:="$use_cam_low_back" \
+        use_floorplan_map:=true use_odom_locked_map:=true
     echo "Run '$0 viewer' next -- click an anchor (where the robot is + which"
-    echo "way it's facing), Confirm Anchor, then click-to-go as normal."
+    echo "way it's facing), Confirm Anchor (this also auto-stops manual nav"
+    echo "teleop so it can't fight the planner), then click-to-go as normal."
 }
 
 cmd_nav() {
@@ -212,7 +235,7 @@ case "${1:-}" in
     maps)      cmd_maps ;;
     preflight) cmd_preflight ;;
     save)      cmd_save "$2" ;;
-    mapfree)   cmd_mapfree "$2" ;;
+    mapfree)   shift; cmd_mapfree "$@" ;;
     nav)       shift; cmd_nav "$@" ;;
     localize)  cmd_localize ;;
     viewer)    cmd_viewer ;;
@@ -223,15 +246,22 @@ case "${1:-}" in
 Usage: $0 <command> [args]
 
   bringup             Base + joystick teleop only (no cameras). Drive the robot out.
+                      Always runs 'stop' first (idempotent) for a clean slate --
+                      no need to call 'stop' yourself before bringing up again.
   bringup nav         Base + joy_node only, NO direct teleop (nav mode -- avoids
                       teleop_twist_joy fighting nav_deadman for the L2 button).
   map <name>          Start RTAB-Map mapping (IMU + USB fixes applied). Drive to build map.
   maps                List saved maps in ~/maps (to pick one for 'nav' below).
   preflight           Run mapping_preflight.sh (IMU orientation, TFs, odom, /scan, map).
   save <name>         Save the 2D occupancy grid from the current mapping session.
-  mapfree <name>      Map-free session: fresh SLAM + live A* planning + L2 deadman,
+  mapfree <name> [flags]
+                      Map-free session: fresh SLAM + live A* planning + L2 deadman,
                       no prebuilt map needed. Pair with 'viewer' to click an anchor
                       (where the robot is + which way it's facing) then click-to-go.
+                      Confirming the anchor auto-stops nav_joystick_teleop so it
+                      can't fight the planner on /nav_cmd_vel during the drive.
+                      Flags: --single-cam (front camera only, no rear RGBD source)
+                             --no-rplidar (camera-derived /scan only, no RPLIDAR)
   nav <name> [flags]  Start navigate_mission (planner + L2 deadman gate) against a saved map.
                       Flags: --no-ekf (raw wheel odom, skip IMU fusion)
                              --continuous-mapping (keep extending the map, don't lock it)

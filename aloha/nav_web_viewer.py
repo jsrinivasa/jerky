@@ -16,24 +16,27 @@ Then open http://<this-machine's-LAN-ip>:8080/ in a browser.
 
 import json
 import math
+import subprocess
 import threading
 import time
 from io import BytesIO
 
 import numpy as np
-from PIL import Image
+from PIL import Image, ImageDraw
 from flask import Flask, Response, jsonify, request
 
 import rclpy
 from rclpy.node import Node
+from rclpy.duration import Duration
 from rclpy.qos import (
     QoSProfile, QoSDurabilityPolicy, QoSReliabilityPolicy, QoSHistoryPolicy,
 )
 import tf2_ros
 
-from geometry_msgs.msg import PoseStamped
+from geometry_msgs.msg import PoseStamped, TransformStamped
 from nav_msgs.msg import OccupancyGrid, Path
-from std_msgs.msg import Empty
+from sensor_msgs.msg import LaserScan
+from std_msgs.msg import Empty, String
 from std_srvs.srv import Empty as EmptySrv
 
 ROOMS_JSON = (
@@ -55,9 +58,20 @@ FALLBACK_YAML = '/home/aloha/maps/building16_with_parking_edited.yaml'
 # property of the floorplan itself (frame A's meters-per-unit), not of any
 # particular SLAM session, so a single anchor point + this fixed scale fully
 # determines the rotation+translation (Umeyama/least-squares needs >=2 points
-# only because it doesn't know the scale in advance). Value carried over from
-# the old building-wide multi-point calibration this file used to compute.
-FLOORPLAN_SCALE = 1.0849674771110611
+# only because it doesn't know the scale in advance).
+#
+# 2026-07-22: recalibrated via direct measurement -- clicked two points on
+# the live web map spanning a real, tape-measured 59in (1.4986m) desk run
+# (frame-A distance 1.5417 units between the clicks, logged via the
+# [CALIBRATION-CLICK] stage_goal log line), giving 1.5417/1.4986=1.028762.
+# This replaces the old value (1.0849674771110611, inherited from a prior
+# session's building-wide multi-point SLAM-vs-floorplan fit) -- 5.5% smaller,
+# meaning that old value was making every commanded distance undershoot the
+# real one by about 5%. A pixel-measurement of a door opening was tried
+# first and gave a wildly different (~2x) result, most likely from
+# misreading a double-door or icon detail -- discarded in favor of this
+# direct, click-based measurement against a real tape-measured reference.
+FLOORPLAN_SCALE = 1.028762
 
 SVG_RENDER_WIDTH = 2400
 SVG_RENDER_TIMEOUT_S = 60.0
@@ -187,7 +201,9 @@ class NavWebViewerNode(Node):
         self.lock = threading.Lock()
         self.staged_goal = None  # {'ax','ay','bx','by','yaw'} or None
         self.live_grid = None    # {'array': np.ndarray, 'resolution', 'origin_x', 'origin_y', 'width', 'height'}
+        self._live_map_png_cache = None  # (cache_key, png_bytes), see render_live_map_png
         self.pose = None         # {'x':.., 'y':.., 'yaw':..} in frame B (raw TF) or None
+        self._displayed_pose_a = None  # rate-limited version of pose_a, see get_state
 
         # ---- frame B -> frame A anchor (see set_anchor / /api/anchor) ----
         # Set once per session by the user clicking "here" + "facing this
@@ -243,13 +259,39 @@ class NavWebViewerNode(Node):
         floor_arr = np.array(Image.open(BytesIO(self.base_layer['png'])).convert('L'))
         occ_bin = (floor_arr < 240).astype(np.uint8)
         # Light denoise only (open, no dilate/close) -- thin real wall lines
-        # must survive; this just drops stray 1px noise.
+        # must survive; this just drops stray 1px noise. Deliberately RAW
+        # (no extra inflation) here: simple_nav_planner already has its own
+        # inflation_radius margin for A* clearance (see
+        # autonomous_mapping.launch.py) -- inflating the source data too
+        # double-stacked the two, closing off every corridor and making
+        # every goal "unreachable" (confirmed live: this is what broke
+        # Confirm & Go). Extra clearance belongs in inflation_radius, the
+        # one place that's actually meant to own it, not here too.
         kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
         occ_bin = cv2.morphologyEx(occ_bin, cv2.MORPH_OPEN, kernel)
         self.floorplan_occ_px = occ_bin  # frame-A PIXEL space, 1=wall/boundary, 0=free
         self.get_logger().info(
             f'Floorplan obstacle grid built from base layer: '
             f'{100 * occ_bin.mean():.1f}% marked occupied.')
+
+        # ---- named locations (rooms/desks) for "go to <label>" ----
+        # Same ROOMS_JSON already used above for fit_svg_affine -- map_x/
+        # map_y there are frame-A METERS (confirmed: fit_svg_affine fits
+        # svg_x = a*map_x+b, and this file's base_layer sx/sy/ox/oy compose
+        # that same fit with the render scale -- the exact chain the
+        # frontend's pxToMap/mapToPx already use), so no extra conversion
+        # is needed to feed them into stage_goal.
+        self.locations = []
+        try:
+            with open(ROOMS_JSON) as f:
+                self.locations = json.load(f)
+            self.get_logger().info(
+                f'Loaded {len(self.locations)} named locations from {ROOMS_JSON}')
+        except Exception as e:
+            self.get_logger().warn(
+                f'Could not load room locations ({type(e).__name__}: {e}) '
+                '-- "go to <label>" search will return no results.')
+        self._locations_by_label = {loc['label'].upper(): loc for loc in self.locations}
 
         # ---- ROS I/O ----
         map_qos = QoSProfile(
@@ -258,8 +300,41 @@ class NavWebViewerNode(Node):
             reliability=QoSReliabilityPolicy.RELIABLE,
             history=QoSHistoryPolicy.KEEP_LAST,
         )
+        # /floorplan_map, NOT /rtabmap/map: with use_odom_locked_map:=true,
+        # RTAB-Map's own internal pose (which /rtabmap/map's cells are built
+        # relative to) is completely decoupled from the locked "map" TF
+        # frame this whole page otherwise operates in -- self.calibration
+        # would warp it using the wrong transform entirely, and there's no
+        # TF published anymore to derive the right one from (that's the
+        # point of the lock). /floorplan_map is already published directly
+        # in the locked frame (see _publish_floorplan_map), so it's the only
+        # live_map source that's actually correctly aligned by construction.
         self.create_subscription(
-            OccupancyGrid, '/rtabmap/map', self._map_callback, map_qos)
+            OccupancyGrid, '/floorplan_map', self._map_callback, map_qos)
+
+        # Live camera/sensor-detected obstacles, shown as a SEPARATE overlay
+        # from the floorplan grid -- projected via the trustworthy locked
+        # map frame (map->base_link, now odometry-only) + the scan's own
+        # static TF to base_link, mirroring simple_nav_planner's own
+        # _live_scan_points_map_frame exactly. Deliberately NOT sourced from
+        # RTAB-Map's /rtabmap/map (see the comment above) -- that's still in
+        # RTAB-Map's own decoupled, unpublished internal frame.
+        scan_qos = QoSProfile(
+            depth=5,
+            durability=QoSDurabilityPolicy.VOLATILE,
+            reliability=QoSReliabilityPolicy.BEST_EFFORT,
+            history=QoSHistoryPolicy.KEEP_LAST,
+        )
+        self.latest_scan = None
+        # Accumulated camera-detected obstacle points, so the overlay builds
+        # up a picture of everywhere the robot has looked -- not just the
+        # latest single scan. Snapped to a coarse grid and stored as a set
+        # (see _accumulate_scan_points) so revisiting the same spot doesn't
+        # grow this unboundedly over a long session.
+        self._scan_accum_res = 0.05  # meters/cell
+        self.accumulated_scan_cells = set()
+        self._anchor_settle_until = None  # see _SCAN_ACCUM_SETTLE_S
+        self.create_subscription(LaserScan, '/scan', self._scan_callback, scan_qos)
 
         path_qos = QoSProfile(
             depth=1,
@@ -271,8 +346,19 @@ class NavWebViewerNode(Node):
         self.create_subscription(
             Path, '/smoothed_path', self._path_callback, path_qos)
 
+        # Planner state visibility -- previously this page had NO way to
+        # know if a goal's planning had failed (see simple_nav_planner.py's
+        # _publish_status/plan_and_navigate for the bug this was added to
+        # fix: a 2nd goal that couldn't be planned used to silently leave
+        # the FIRST goal's path on screen forever, with zero indication
+        # anything had gone wrong).
+        self.nav_status = 'idle'
+        self.create_subscription(
+            String, '/nav_status', self._nav_status_callback, path_qos)
+
         self._tf_buffer = tf2_ros.Buffer()
         self._tf_listener = tf2_ros.TransformListener(self._tf_buffer, self)
+        self._tf_static_broadcaster = tf2_ros.StaticTransformBroadcaster(self)
         self.create_timer(0.5, self._pose_tick)
 
         self.goal_pub = self.create_publisher(PoseStamped, '/goal_pose', 10)
@@ -305,6 +391,91 @@ class NavWebViewerNode(Node):
                 (p.pose.position.x, p.pose.position.y) for p in msg.poses
             ]
 
+    def _nav_status_callback(self, msg: String):
+        with self.lock:
+            self.nav_status = msg.data
+
+    # Throttle accumulation instead of running it on every incoming scan
+    # (camera publishes at ~15-30Hz) -- a full TF lookup + looping ~640
+    # ranges + a set-union on EVERY message measurably loaded the CPU
+    # (confirmed live: nav_web_viewer sustained ~48% CPU with this
+    # unthrottled), competing for scheduling time with simple_nav_planner's
+    # own 10Hz control loop on the same machine -- a very plausible real
+    # cause of choppy motion having nothing to do with the planner/safety
+    # logic itself. There's no benefit to accumulating faster than the
+    # display itself refreshes anyway (500ms, see refreshLiveScan).
+    _SCAN_ACCUM_MIN_INTERVAL_S = 0.5
+    _last_scan_accum_time = 0.0
+
+    def _scan_callback(self, msg: LaserScan):
+        self.latest_scan = msg
+        now = time.time()
+        if now - self._last_scan_accum_time >= self._SCAN_ACCUM_MIN_INTERVAL_S:
+            self._last_scan_accum_time = now
+            self._accumulate_scan_points(msg)
+
+    # Exactly the sensor's own trusted range (see depthimage_to_laserscan's
+    # range_max) -- no margin beyond it, so nothing shown as "seen" is
+    # farther than the camera can actually be trusted at.
+    _SCAN_ACCUM_MAX_DIST_M = 3.0
+    _SCAN_ACCUM_MAX_CELLS = 200000
+    # Skip accumulating for a short settle window right after a new anchor
+    # -- pose/TF right at that instant can still be catching up (matches
+    # the same startup-transient pattern seen elsewhere in this project),
+    # and unlike the old "latest scan only" rendering, bad early points now
+    # get baked in permanently instead of just self-correcting next tick.
+    _SCAN_ACCUM_SETTLE_S = 2.0
+
+    def _accumulate_scan_points(self, scan: LaserScan):
+        """Project this scan into the map frame (same trustworthy odometry-
+        locked chain render_live_scan_png uses) and fold its points into the
+        running accumulated set, so the overlay keeps everywhere the camera
+        has ever seen, not just the latest instant. Uses THIS scan's own TF
+        at receipt time, not whatever TF is current when later rendered --
+        each scan's points need to be placed using the pose the robot
+        actually had when it captured them.
+        """
+        if self._anchor_settle_until is not None and time.time() < self._anchor_settle_until:
+            return
+        with self.lock:
+            pose = self.pose
+        if pose is None:
+            return
+        try:
+            tf_stamped = self._tf_buffer.lookup_transform(
+                'map', scan.header.frame_id, rclpy.time.Time(),
+                timeout=Duration(seconds=0.05))
+        except (tf2_ros.LookupException, tf2_ros.ConnectivityException,
+                tf2_ros.ExtrapolationException):
+            return
+
+        q = tf_stamped.transform.rotation
+        yaw = math.atan2(2.0 * (q.w * q.z + q.x * q.y), 1.0 - 2.0 * (q.y * q.y + q.z * q.z))
+        tx = tf_stamped.transform.translation.x
+        ty = tf_stamped.transform.translation.y
+        cos_yaw, sin_yaw = math.cos(yaw), math.sin(yaw)
+        res = self._scan_accum_res
+
+        new_cells = set()
+        angle = scan.angle_min
+        for rng in scan.ranges:
+            if not (math.isnan(rng) or math.isinf(rng)) and scan.range_min <= rng <= scan.range_max:
+                px_, py_ = rng * math.cos(angle), rng * math.sin(angle)
+                map_x = cos_yaw * px_ - sin_yaw * py_ + tx
+                map_y = sin_yaw * px_ + cos_yaw * py_ + ty
+                if math.hypot(map_x - pose['x'], map_y - pose['y']) <= self._SCAN_ACCUM_MAX_DIST_M:
+                    new_cells.add((round(map_x / res), round(map_y / res)))
+            angle += scan.angle_increment
+
+        with self.lock:
+            self.accumulated_scan_cells |= new_cells
+            if len(self.accumulated_scan_cells) > self._SCAN_ACCUM_MAX_CELLS:
+                # Trim rather than grow forever -- exact set kept is
+                # arbitrary once over the cap, just bounding memory/render
+                # cost for an unusually long session.
+                self.accumulated_scan_cells = set(
+                    list(self.accumulated_scan_cells)[-self._SCAN_ACCUM_MAX_CELLS // 2:])
+
     def _pose_tick(self):
         try:
             tf = self._tf_buffer.lookup_transform(
@@ -317,6 +488,43 @@ class NavWebViewerNode(Node):
         yaw = math.atan2(2 * (q.w * q.z + q.x * q.y), 1 - 2 * (q.y * q.y + q.z * q.z))
         with self.lock:
             self.pose = {'x': t.x, 'y': t.y, 'yaw': yaw}
+
+    # Real motion can't exceed the planner's own velocity caps (0.3 m/s,
+    # 1.0 rad/s) -- these per-call step limits are generous relative to
+    # that (well above what a real ~0.5s poll interval implies), so real
+    # movement always keeps up, but a SLAM registration snap (the pose
+    # teleporting many degrees/meters in one tick, independent of actual
+    # robot motion -- the root cause behind today's "red dot jumps") gets
+    # confined to a bounded step per update instead of drawn instantly.
+    # Display-only: does not touch simple_nav_planner's own pose/control.
+    _POSE_STEP_MAX_M = 0.2
+    _POSE_STEP_MAX_RAD = 0.3
+
+    def _smooth_displayed_pose(self, pose_a):
+        """Caller must already hold self.lock. Returns a step-limited copy
+        of pose_a, and updates self._displayed_pose_a for next call."""
+        prev = self._displayed_pose_a
+        if prev is None:
+            self._displayed_pose_a = dict(pose_a)
+            return dict(pose_a)
+        dx = pose_a['x'] - prev['x']
+        dy = pose_a['y'] - prev['y']
+        dist = math.hypot(dx, dy)
+        if dist > self._POSE_STEP_MAX_M:
+            frac = self._POSE_STEP_MAX_M / dist
+            new_x = prev['x'] + dx * frac
+            new_y = prev['y'] + dy * frac
+        else:
+            new_x, new_y = pose_a['x'], pose_a['y']
+        dyaw = math.atan2(math.sin(pose_a['yaw'] - prev['yaw']),
+                           math.cos(pose_a['yaw'] - prev['yaw']))
+        if abs(dyaw) > self._POSE_STEP_MAX_RAD:
+            new_yaw = prev['yaw'] + math.copysign(self._POSE_STEP_MAX_RAD, dyaw)
+        else:
+            new_yaw = pose_a['yaw']
+        smoothed = {'x': new_x, 'y': new_y, 'yaw': new_yaw}
+        self._displayed_pose_a = smoothed
+        return smoothed
 
     # ---- called from Flask handlers (different thread) ----
 
@@ -342,6 +550,7 @@ class NavWebViewerNode(Node):
                     xa, ya = self.pose['x'], self.pose['y']  # wrong, but better than nothing
                     yaw_a = self.pose['yaw']
                 pose_a = {'x': xa, 'y': ya, 'yaw': yaw_a}
+                pose_a = self._smooth_displayed_pose(pose_a)
             staged = None
             if self.staged_goal:
                 sg = self.staged_goal
@@ -368,6 +577,7 @@ class NavWebViewerNode(Node):
                 'live_map': live_map,
                 'staged_goal': staged,
                 'path': path_a,
+                'nav_status': self.nav_status,
             }
 
     def render_live_map_png(self):
@@ -376,19 +586,29 @@ class NavWebViewerNode(Node):
         and frame-A-meters->base-layer-px into one affine (PIL resamples in
         one pass, so rotation from calibration comes along for free -- the
         frontend just draws the result full-canvas, no positioning math).
+
+        Cached on (grid, calib) identity -- /floorplan_map is published ONCE
+        per anchor and never changes until the next one, so redoing this
+        affine warp on every poll (previously every 1.5s) was pure waste,
+        found while tracking down unexpectedly high sustained CPU usage.
         """
         with self.lock:
             grid = self.live_grid
             calib = self.calibration
         if grid is None:
             return None
+        cache_key = (id(grid), id(calib))
+        if self._live_map_png_cache is not None and self._live_map_png_cache[0] == cache_key:
+            return self._live_map_png_cache[1]
         arr = grid['array']
-        rgba = np.zeros((*arr.shape, 4), dtype=np.uint8)
-        unknown = arr < 0
+        rgba = np.zeros((*arr.shape, 4), dtype=np.uint8)  # default transparent
         occupied = arr >= 50
-        free = (~unknown) & (~occupied)
-        rgba[free] = (60, 140, 255, 60)
-        rgba[occupied] = (220, 30, 30, 190)
+        # Free space left fully transparent (no blue wash) -- the floorplan
+        # grid covers the WHOLE building by construction (not just an
+        # explored patch like the old live SLAM grid did), so tinting free
+        # space would wash the entire visible floorplan in blue. Only mark
+        # what actually matters: real obstacles.
+        rgba[occupied] = (215, 90, 90, 130)  # softer/more translucent red
         # row index = y index (OccupancyGrid convention: data[row*width+col]),
         # baked directly into m1 below -- no image flip needed here.
         src_img = Image.fromarray(rgba, mode='RGBA')
@@ -406,6 +626,42 @@ class NavWebViewerNode(Node):
             (bl['width'], bl['height']), Image.AFFINE, coeffs, resample=Image.BILINEAR)
         buf = BytesIO()
         out.save(buf, format='PNG')
+        png = buf.getvalue()
+        self._live_map_png_cache = (cache_key, png)
+        return png
+
+    def render_live_scan_png(self):
+        """Render the ACCUMULATED set of camera-detected points (see
+        _accumulate_scan_points) -- everywhere the camera has looked this
+        anchor session, not just the latest instant -- as a scatter,
+        projected through the fixed frame-A<->map scale. A scatter, not an
+        affine-warped grid, since it's a sparse point set, not a dense
+        raster.
+
+        Returns None (caller sends 204) if there's nothing accumulated yet
+        or no anchor -- same "missing data must not look like a clear path"
+        rule render_live_map_png follows.
+        """
+        with self.lock:
+            calib = self.calibration
+            cells = list(self.accumulated_scan_cells)
+        if calib is None or not cells:
+            return None
+
+        bl = self.base_layer
+        img = Image.new('RGBA', (bl['width'], bl['height']), (0, 0, 0, 0))
+        draw = ImageDraw.Draw(img)
+        r = 1.5  # dot radius, px -- small relative to the floorplan detail
+        res = self._scan_accum_res
+
+        for gx, gy in cells:
+            map_x, map_y = gx * res, gy * res
+            fa_x, fa_y = apply_similarity(calib, map_x, map_y)
+            sx_, sy_ = fa_x * bl['sx'] + bl['ox'], fa_y * bl['sy'] + bl['oy']
+            draw.ellipse((sx_ - r, sy_ - r, sx_ + r, sy_ + r), fill=(255, 170, 60, 170))
+
+        buf = BytesIO()
+        img.save(buf, format='PNG')
         return buf.getvalue()
 
     def stage_goal(self, x, y, yaw):
@@ -421,6 +677,11 @@ class NavWebViewerNode(Node):
             pose_a = apply_similarity(calib, pose['x'], pose['y']) if (pose and calib) else \
                 ((pose['x'], pose['y']) if pose else None)
         dist = math.hypot(x - pose_a[0], y - pose_a[1]) if pose_a else None
+        # Logged for manual scale calibration -- clicking (staging) never
+        # moves the robot, only Confirm & Go does, so this is a safe way to
+        # read off exact frame-A coordinates for two physically-measured
+        # reference points.
+        self.get_logger().info(f'[CALIBRATION-CLICK] frame-A x={x:.4f} y={y:.4f}')
         return {'x': x, 'y': y, 'yaw': yaw, 'distance_m': dist, 'calibrated': calib is not None}
 
     def confirm_goal(self):
@@ -452,8 +713,141 @@ class NavWebViewerNode(Node):
             self.staged_goal = None
         self.cancel_pub.publish(Empty())
         self.get_logger().warn('STOP pressed: /nav_cancel published')
+        # _stop_nav_teleop (called on anchor-confirm) retires manual teleop
+        # for the rest of the session -- but STOP is exactly the moment a
+        # user needs to manually drive the robot again (e.g. back to a
+        # starting point after cancelling a bad drive), so bring it back
+        # here. Safe to call even if it was never running.
+        self._start_nav_teleop()
+
+    def _start_nav_teleop(self):
+        """Companion to _stop_nav_teleop: relaunch nav_joystick_teleop with
+        the exact same parameters aloha_bringup.launch.py's nav_teleop_node
+        uses (see that launch file for why these specific values -- must
+        stay in sync), so STOP gives manual control back instead of leaving
+        the robot strandable with no way to drive it except re-anchoring.
+
+        No-ops if an instance is already running (checked by node name, not
+        just "did we call this before" -- covers e.g. it having been left
+        running because an anchor was never confirmed this session).
+        """
+        check = subprocess.run(
+            ['pgrep', '-f', '__node:=nav_joystick_teleop'],
+            capture_output=True, timeout=2.0)
+        if check.returncode == 0:
+            return  # already running
+        try:
+            subprocess.Popen(
+                ['ros2', 'run', 'teleop_twist_joy', 'teleop_node',
+                 '--ros-args',
+                 '-r', '__node:=nav_joystick_teleop',
+                 '-r', '__ns:=/mobile_base',
+                 '-r', 'cmd_vel:=/nav_cmd_vel',
+                 '-p', 'axis_linear.x:=1',
+                 '-p', 'scale_linear.x:=0.35',
+                 '-p', 'axis_angular.yaw:=3',
+                 '-p', 'scale_angular.yaw:=0.3',
+                 '-p', 'enable_button:=6'],
+                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                start_new_session=True)
+            self.get_logger().info(
+                'Restarted nav_joystick_teleop -- hold L2 and use the stick '
+                'to drive manually (still gated by nav_deadman).')
+        except Exception as e:
+            self.get_logger().warn(
+                f'_start_nav_teleop failed ({type(e).__name__}: {e}) -- '
+                'manual teleop unavailable; restart demo_ops.sh bringup nav '
+                'if you need it.')
+
+    # ---- named-location lookup ("go to <label>") ----
+
+    def search_locations(self, query, limit=20):
+        """Case-insensitive match against room/desk labels (e.g. "314",
+        "D3-12", "jaws"). Exact match first, then prefix, then substring --
+        same ranking navigate_to_room.py's fuzzy_match_rooms left implicit
+        by picking shortest-label-wins; made explicit here since this
+        drives a live autocomplete dropdown, not a single CLI pick.
+        """
+        q = query.strip().upper()
+        if not q:
+            return []
+        exact, prefix, contains = [], [], []
+        for loc in self.locations:
+            label = loc['label'].upper()
+            if label == q:
+                exact.append(loc)
+            elif label.startswith(q):
+                prefix.append(loc)
+            elif q in label:
+                contains.append(loc)
+        results = (exact + prefix + contains)[:limit]
+        return [{'label': l['label'], 'category': l['category']} for l in results]
+
+    def goto_location(self, label):
+        """Resolve a room/desk label to its own (map_x, map_y) and stage it
+        as a goal via the normal stage_goal path (same as a click) -- so
+        Confirm & Go, the distance readout, and everything else downstream
+        is unchanged; this is purely an alternate way to PICK the point.
+
+        Always the label's own center/icon location -- no separate
+        "outside"/doorway-standoff mode. That was tried (ray-casting for a
+        real doorway, even switching to a proper walls-only mask + a
+        clearance check) but still wasn't landing reliably right in
+        practice. simple_nav_planner's own A* already refuses to plan
+        through occupied/inflated cells (is_point_collision_free_grid gates
+        every neighbor in astar()) and already snaps an occupied/unreachable
+        goal to find_nearest_free_cell -- so "never cross a wall to get
+        there, stop at the nearest reachable point instead" is the
+        planner's job, not something to re-solve here with floorplan pixel
+        geometry.
+        """
+        loc = self._locations_by_label.get(label.strip().upper())
+        if loc is None:
+            return None, f"no location named '{label}'"
+        result = self.stage_goal(loc['map_x'], loc['map_y'], 0.0)
+        result['label'] = loc['label']
+        result['category'] = loc['category']
+        return result, 'ok'
 
     # ---- single-click anchor (see compute_anchor_transform) ----
+
+    def _broadcast_map_odom_tf(self, ax, ay, yaw_a, odom_x, odom_y, odom_yaw):
+        """Publish map->odom as a FIXED transform derived once from wheel+IMU
+        odometry at anchor time -- not RTAB-Map's own SLAM pose. This is the
+        actual fix for the pose jitter/jumps (and the real robot motion
+        jerkiness they caused): once set, odom continues purely from wheel
+        encoders + IMU gyro (robot_localization's EKF), never touched again
+        by SLAM loop-closure/registration corrections, so map->base_link
+        (TF composition of this fixed transform with the live
+        odom->base_link) can only change as smoothly/boundedly as real
+        robot motion allows.
+
+        map frame is defined to share frame A's (the floorplan's) origin
+        and global orientation exactly, differing only by the fixed
+        floorplan<->real-meters scale -- so the anchor click (ax, ay,
+        yaw_a), in frame-A units, is converted to real meters (divided by
+        FLOORPLAN_SCALE) before being used as this transform's target.
+
+        Requires rtabmap_mapping.launch.py's use_odom_locked_map:=true (the
+        default) so rtabmap itself isn't ALSO trying to publish map->odom --
+        two publishers on the same transform would silently conflict.
+        """
+        ax_m, ay_m = ax / FLOORPLAN_SCALE, ay / FLOORPLAN_SCALE
+        calib = compute_anchor_transform(
+            ax_m, ay_m, yaw_a, odom_x, odom_y, odom_yaw, scale=1.0)
+        msg = TransformStamped()
+        msg.header.stamp = self.get_clock().now().to_msg()
+        msg.header.frame_id = 'map'
+        msg.child_frame_id = 'odom'
+        msg.transform.translation.x = calib['tx']
+        msg.transform.translation.y = calib['ty']
+        msg.transform.translation.z = 0.0
+        msg.transform.rotation.z = math.sin(calib['theta'] / 2.0)
+        msg.transform.rotation.w = math.cos(calib['theta'] / 2.0)
+        self._tf_static_broadcaster.sendTransform(msg)
+        self.get_logger().info(
+            f"Broadcast map->odom: theta={math.degrees(calib['theta']):.1f}deg "
+            f"tx={calib['tx']:.2f} ty={calib['ty']:.2f} (real meters)")
 
     def set_anchor(self, ax, ay, hx, hy):
         """(ax, ay): where the user clicked "the robot is here" on the
@@ -483,21 +877,103 @@ class NavWebViewerNode(Node):
                 'rtabmap trigger_new_map service not available -- anchoring '
                 'against the map as-is (may still include older data).')
 
-        with self.lock:
-            pose = self.pose
-        if pose is None:
-            return None, 'no live robot pose yet -- is the mapping/nav stack running?'
+        # Read ODOMETRY (odom->base_link), not RTAB-Map's own map->base_link --
+        # the whole point of this anchor is to define "map" as a fixed
+        # transform from wheel+IMU odometry alone, never touched again by
+        # SLAM loop-closure/registration corrections (see
+        # _broadcast_map_odom_tf's docstring for the full rationale: this is
+        # what actually fixed the pose jitter/jumps, not just their display).
+        try:
+            odom_tf = self._tf_buffer.lookup_transform(
+                'odom', 'base_link', rclpy.time.Time(),
+                timeout=Duration(seconds=1.0))
+        except (tf2_ros.LookupException, tf2_ros.ConnectivityException,
+                tf2_ros.ExtrapolationException) as e:
+            return None, f'no live odom->base_link TF yet ({type(e).__name__}) -- is the base driver running?'
+        ot = odom_tf.transform.translation
+        oq = odom_tf.transform.rotation
+        odom_yaw = math.atan2(2 * (oq.w * oq.z + oq.x * oq.y), 1 - 2 * (oq.y * oq.y + oq.z * oq.z))
+
         yaw_a = math.atan2(hy - ay, hx - ax)
-        transform = compute_anchor_transform(
-            ax, ay, yaw_a, pose['x'], pose['y'], pose['yaw'])
+        self._broadcast_map_odom_tf(ax, ay, yaw_a, ot.x, ot.y, odom_yaw)
+
         with self.lock:
+            # map frame is now DEFINED (by the broadcast above) to share
+            # frame A's origin and orientation globally, differing only by
+            # the fixed floorplan<->real-meters scale -- so unlike the old
+            # per-anchor rotation+translation fit, this is now always the
+            # same simple pure-scale transform regardless of where/how the
+            # robot was anchored.
+            transform = {'theta': 0.0, 'scale': FLOORPLAN_SCALE, 'tx': 0.0, 'ty': 0.0}
             self.calibration = transform
+            # A path published under a PREVIOUS anchor is meaningless once
+            # the anchor changes (different frame-B origin) -- ROS's
+            # TRANSIENT_LOCAL durability means a fresh subscriber otherwise
+            # immediately redelivers whatever /smoothed_path last published,
+            # even from a session/anchor ago. Cleared here; a real path
+            # reappears once an actual goal is planned under this anchor.
+            self.planned_path = None
+            self._displayed_pose_a = None  # also reset the pose smoother below
+            # Same reasoning as planned_path above: accumulated scan points
+            # are stored in map-frame meters, which this anchor just
+            # redefined -- old points would be silently mis-registered
+            # (a "wrong place" glitch, not just a boring stale display) if
+            # carried across the anchor boundary. Builds back up fresh from
+            # here for this session.
+            self.accumulated_scan_cells = set()
+            self._anchor_settle_until = time.time() + self._SCAN_ACCUM_SETTLE_S
         self.get_logger().info(
             f"Anchor set: floorplan=({ax:.2f},{ay:.2f}) heading={math.degrees(yaw_a):.0f}deg "
-            f"<-> robot frame-B pose=({pose['x']:.2f},{pose['y']:.2f},"
-            f"{math.degrees(pose['yaw']):.0f}deg), scale={transform['scale']:.3f}")
+            f"<-> robot odom pose=({ot.x:.2f},{ot.y:.2f},"
+            f"{math.degrees(odom_yaw):.0f}deg), scale={transform['scale']:.3f}")
         self._publish_floorplan_map()
+        self._stop_nav_teleop()
         return transform, 'ok'
+
+    def _stop_nav_teleop(self):
+        """Kill nav_joystick_teleop (aloha_bringup.launch.py's
+        teleop_twist_joy instance, remapped to /nav_cmd_vel for manual
+        repositioning before an anchor is set) the moment an anchor is
+        confirmed.
+
+        Found 2026-07-22: it shares nav_deadman's enable button (L2) with
+        the autonomous planner. Holding L2 for the deadman gate while NOT
+        touching the drive stick makes teleop_twist_joy publish an all-zero
+        Twist on every joystick message -- at the joystick's native poll
+        rate, much faster than the planner's 10Hz -- straight onto the same
+        /nav_cmd_vel topic the planner publishes real commands to. With no
+        arbitration between the two publishers, nav_deadman mostly saw
+        teleop's zeros (confirmed via [deadman-tick]/[control-tick] log
+        cross-reference: 60-75% of ticks read target_lin=0.000 despite the
+        planner's own log showing a clean continuous ~0.3 the whole time),
+        which is what "smooth for a second, stutter, smooth again" actually
+        was. An anchor means positioning is done and autonomous driving is
+        about to start, so this is the one clean point to retire teleop for
+        the rest of the session -- no need to relaunch it until the next
+        fresh bringup.
+
+        Matches by the node's ROS-args name (unique to this one process,
+        set by aloha_bringup.launch.py's `name='nav_joystick_teleop'`), not
+        a generic 'teleop' pattern, so it can't catch anything else.
+        Best-effort: joy_node and nav_deadman are untouched either way, so
+        even if this no-ops (already dead, or bringup used
+        use_nav_teleop:=false), L2 still gates all motion as normal.
+        """
+        try:
+            result = subprocess.run(
+                ['pkill', '-f', '__node:=nav_joystick_teleop'],
+                capture_output=True, timeout=2.0)
+            if result.returncode == 0:
+                self.get_logger().info(
+                    'Anchor confirmed -- stopped nav_joystick_teleop so it '
+                    "can't fight the planner on /nav_cmd_vel for the rest "
+                    'of this session (joy_node + nav_deadman untouched, L2 '
+                    'still gates all motion).')
+        except Exception as e:
+            self.get_logger().warn(
+                f'_stop_nav_teleop: pkill failed ({type(e).__name__}: {e}) '
+                '-- if motion is choppy, check for a stray nav_joystick_teleop '
+                'process manually.')
 
     def reset_anchor(self):
         with self.lock:
@@ -594,6 +1070,13 @@ def create_app(node: NavWebViewerNode):
             return Response(status=204)
         return Response(png, mimetype='image/png')
 
+    @app.get('/api/live_scan.png')
+    def live_scan_png():
+        png = node.render_live_scan_png()
+        if png is None:
+            return Response(status=204)
+        return Response(png, mimetype='image/png')
+
     @app.get('/api/state')
     def state():
         return jsonify(node.get_state())
@@ -627,6 +1110,21 @@ def create_app(node: NavWebViewerNode):
         node.reset_anchor()
         return jsonify({'ok': True})
 
+    @app.get('/api/locations')
+    def search_locations():
+        q = request.args.get('q', '')
+        return jsonify(node.search_locations(q))
+
+    @app.post('/api/goto_location')
+    def goto_location():
+        body = request.get_json(force=True)
+        label = str(body.get('label', ''))
+        result, msg = node.goto_location(label)
+        if result is None:
+            return jsonify({'ok': False, 'message': msg})
+        result['ok'] = True
+        return jsonify(result)
+
     return app
 
 
@@ -638,8 +1136,10 @@ INDEX_HTML = """<!doctype html>
 <style>
   body { font-family: system-ui, sans-serif; margin: 0; background: #1b1b1f; color: #eee; }
   #wrap { display: flex; flex-direction: column; align-items: center; padding: 12px; }
-  #stage { position: relative; border: 1px solid #444; max-width: 95vw; overflow: auto; }
+  #stage { position: relative; border: 1px solid #444; max-width: 95vw; max-height: 80vh; overflow: auto; }
   canvas { display: block; cursor: crosshair; }
+  #zoomHud { display: flex; gap: 6px; align-items: center; }
+  #zoomHud button { padding: 4px 10px; border-radius: 4px; border: none; cursor: pointer; background: #333; color: #eee; }
   #hud { margin: 8px 0; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
   #stop {
     background: #c62828; color: white; border: none; border-radius: 6px;
@@ -663,6 +1163,28 @@ INDEX_HTML = """<!doctype html>
   #anchorBanner button { padding: 6px 14px; border-radius: 4px; border: none; cursor: pointer; }
   #anchorConfirm { background: #2e7d32; color: white; }
   #anchorRedo { background: #555; color: white; }
+  #locationSearch { position: relative; width: 100%; max-width: 420px; margin-bottom: 8px; }
+  #locInput {
+    width: 100%; box-sizing: border-box; padding: 8px 10px; border-radius: 6px;
+    border: 1px solid #555; background: #2a2a30; color: #eee; font-size: 14px;
+  }
+  #locResults {
+    display: none; position: absolute; top: 100%; left: 0; right: 0; z-index: 5;
+    background: #2a2a30; border: 1px solid #555; border-radius: 0 0 6px 6px;
+    max-height: 260px; overflow-y: auto;
+  }
+  .locRow {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 6px 10px; border-top: 1px solid #3a3a40; font-size: 13px;
+  }
+  .locRow:first-child { border-top: none; }
+  .locLabel { font-weight: bold; }
+  .locCategory { color: #999; font-size: 11px; margin-left: 6px; }
+  .locBtns button {
+    margin-left: 6px; padding: 3px 9px; border-radius: 4px; border: none;
+    cursor: pointer; font-size: 12px; background: #444; color: #eee;
+  }
+  .locBtns button:hover { background: #555; }
 </style>
 </head>
 <body>
@@ -675,12 +1197,23 @@ INDEX_HTML = """<!doctype html>
   <div id="hud">
     <span class="badge" id="poseBadge">pose: --</span>
     <span class="badge" id="layerBadge">layer: --</span>
+    <span class="badge" id="navStatusBadge">nav: --</span>
     <button class="badgebtn" id="reanchor">re-anchor</button>
+    <div id="zoomHud">
+      <button id="zoomOut">&minus;</button>
+      <span class="badge" id="zoomLabel">100%</span>
+      <button id="zoomIn">+</button>
+      <button id="zoomReset">fit</button>
+    </div>
     <button id="stop">STOP</button>
+  </div>
+  <div id="locationSearch">
+    <input id="locInput" type="text" placeholder="Go to a room/desk, e.g. 314 or D3-12" autocomplete="off">
+    <div id="locResults"></div>
   </div>
   <div id="confirmBox">
     Send robot to (<span id="cx"></span>, <span id="cy"></span>),
-    ~<span id="cd"></span> m away?
+    ~<span id="cd"></span> m away<span id="cLabel"></span>?
     <button id="go">Confirm &amp; Go</button>
     <button id="cancelStage">Cancel</button>
   </div>
@@ -701,6 +1234,7 @@ const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
 const floorplanImg = new Image();
 let liveMapImg = new Image();
+let liveScanImg = new Image();
 let floorplanReady = false;
 
 floorplanImg.onload = () => { floorplanReady = true; draw(); };
@@ -712,6 +1246,69 @@ function mapToPx(x, y) {
 function pxToMap(px, py) {
   return [(px - layer.ox) / layer.sx, (py - layer.oy) / layer.sy];
 }
+
+// ---- named-location search ("go to <label>") ----
+let locSearchTimer = null;
+const locInput = document.getElementById('locInput');
+const locResults = document.getElementById('locResults');
+
+locInput.addEventListener('input', () => {
+  clearTimeout(locSearchTimer);
+  const q = locInput.value;
+  if (!q.trim()) { locResults.style.display = 'none'; locResults.innerHTML = ''; return; }
+  locSearchTimer = setTimeout(async () => {
+    const r = await fetch('/api/locations?q=' + encodeURIComponent(q));
+    const matches = await r.json();
+    renderLocResults(matches);
+  }, 200);
+});
+
+function renderLocResults(matches) {
+  if (!matches.length) {
+    locResults.innerHTML = '<div class="locRow">no matches</div>';
+    locResults.style.display = 'block';
+    return;
+  }
+  locResults.innerHTML = matches.map(m => `
+    <div class="locRow">
+      <span><span class="locLabel">${m.label}</span><span class="locCategory">${m.category}</span></span>
+      <span class="locBtns">
+        <button data-label="${m.label}">Go To</button>
+      </span>
+    </div>
+  `).join('');
+  locResults.style.display = 'block';
+  locResults.querySelectorAll('button').forEach(btn => {
+    btn.onclick = () => goToLocation(btn.dataset.label);
+  });
+}
+
+async function goToLocation(label) {
+  if (!(latestState && latestState.calibrated)) {
+    alert('Not anchored yet -- click an anchor on the page first.');
+    return;
+  }
+  const r = await fetch('/api/goto_location', {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({label}),
+  });
+  const j = await r.json();
+  if (!j.ok) { alert('Could not resolve "' + label + '": ' + j.message); return; }
+  pending = { x: j.x, y: j.y };
+  document.getElementById('cx').textContent = j.x.toFixed(2);
+  document.getElementById('cy').textContent = j.y.toFixed(2);
+  document.getElementById('cd').textContent = (j.distance_m != null ? j.distance_m.toFixed(1) : '?');
+  document.getElementById('cLabel').textContent = ' (' + j.label + ')';
+  document.getElementById('confirmBox').style.display = 'block';
+  locResults.style.display = 'none';
+  draw();
+}
+
+document.addEventListener('click', (ev) => {
+  if (!locResults.contains(ev.target) && ev.target !== locInput) {
+    locResults.style.display = 'none';
+  }
+});
 
 let latestState = null;
 
@@ -730,6 +1327,11 @@ function draw() {
     // put the already-correctly-rotated image in the wrong place/shape for
     // any real anchor rotation, which is every anchor set in practice.)
     ctx.drawImage(liveMapImg, 0, 0, layer.width, layer.height);
+  }
+  if (liveScanImg.complete && liveScanImg.naturalWidth > 0) {
+    // Live camera/sensor-detected obstacles (orange dots) -- separate from
+    // the floorplan's static walls (red), rendered full-canvas the same way.
+    ctx.drawImage(liveScanImg, 0, 0, layer.width, layer.height);
   }
   if (latestState && latestState.pose) {
     const [px, py] = mapToPx(latestState.pose.x, latestState.pose.y);
@@ -809,10 +1411,15 @@ async function refreshState() {
   if (!layer) {
     layer = s.base_layer;
     document.getElementById('layerBadge').textContent = 'layer: ' + layer.type;
+    applyZoom();
   }
   document.getElementById('poseBadge').textContent = s.pose
     ? `pose: x=${s.pose.x.toFixed(2)} y=${s.pose.y.toFixed(2)} yaw=${(s.pose.yaw*180/Math.PI).toFixed(0)}deg`
     : 'pose: unknown';
+  const navStatusEl = document.getElementById('navStatusBadge');
+  const [statusWord, statusReason] = (s.nav_status || 'idle').split(':');
+  navStatusEl.textContent = 'nav: ' + statusWord + (statusReason ? ' (' + statusReason + ')' : '');
+  navStatusEl.style.background = (statusWord === 'failed') ? '#c62828' : '#333';
   document.getElementById('anchorBanner').style.display = s.calibrated ? 'none' : 'flex';
   draw();
 }
@@ -823,12 +1430,89 @@ function refreshLiveMap() {
   img.src = '/api/live_map.png?t=' + Date.now();
 }
 
-canvas.addEventListener('click', (ev) => {
+function refreshLiveScan() {
+  const img = new Image();
+  img.onload = () => { liveScanImg = img; draw(); };
+  img.src = '/api/live_scan.png?t=' + Date.now();
+}
+
+// ---- Pan (drag) + zoom -- purely a CSS display-size change on top of the
+// canvas's own full-resolution internal pixel grid, so all existing click
+// coordinate math (getBoundingClientRect + canvas.width/rect.width) keeps
+// working unmodified regardless of zoom level. Panning uses #stage's own
+// native scroll (scrollLeft/scrollTop), not a custom transform.
+const stageEl = document.getElementById('stage');
+let viewScale = 1;
+const ZOOM_MIN = 0.2, ZOOM_MAX = 4;
+
+function applyZoom() {
+  if (!layer) return;
+  canvas.style.width = (layer.width * viewScale) + 'px';
+  canvas.style.height = (layer.height * viewScale) + 'px';
+  document.getElementById('zoomLabel').textContent = Math.round(viewScale * 100) + '%';
+}
+function setZoom(newScale, anchorClientX, anchorClientY) {
+  newScale = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, newScale));
+  if (!layer) { viewScale = newScale; return; }
+  // Keep the point under the cursor (if given) visually stationary.
+  const rect = stageEl.getBoundingClientRect();
+  const cx = anchorClientX != null ? anchorClientX - rect.left : rect.width / 2;
+  const cy = anchorClientY != null ? anchorClientY - rect.top : rect.height / 2;
+  const worldX = (stageEl.scrollLeft + cx) / viewScale;
+  const worldY = (stageEl.scrollTop + cy) / viewScale;
+  viewScale = newScale;
+  applyZoom();
+  stageEl.scrollLeft = worldX * viewScale - cx;
+  stageEl.scrollTop = worldY * viewScale - cy;
+}
+document.getElementById('zoomIn').onclick = () => setZoom(viewScale * 1.25);
+document.getElementById('zoomOut').onclick = () => setZoom(viewScale / 1.25);
+document.getElementById('zoomReset').onclick = () => {
+  if (!layer) return;
+  const rect = stageEl.getBoundingClientRect();
+  setZoom(Math.min(rect.width / layer.width, rect.height / layer.height, 1));
+};
+stageEl.addEventListener('wheel', (ev) => {
+  ev.preventDefault();
+  setZoom(viewScale * (ev.deltaY < 0 ? 1.1 : 1 / 1.1), ev.clientX, ev.clientY);
+}, { passive: false });
+
+// Drag-to-pan vs. click-to-place: only treat it as a tap (anchor/goal
+// click) if the pointer barely moved -- otherwise it was a pan, and must
+// NOT stage a goal/anchor point.
+let dragState = null; // {startX, startY, startScrollLeft, startScrollTop, moved}
+const DRAG_THRESHOLD_PX = 6;
+
+stageEl.addEventListener('mousedown', (ev) => {
+  dragState = {
+    startX: ev.clientX, startY: ev.clientY,
+    startScrollLeft: stageEl.scrollLeft, startScrollTop: stageEl.scrollTop,
+    moved: false,
+  };
+});
+window.addEventListener('mousemove', (ev) => {
+  if (!dragState) return;
+  const dx = ev.clientX - dragState.startX;
+  const dy = ev.clientY - dragState.startY;
+  if (Math.hypot(dx, dy) > DRAG_THRESHOLD_PX) dragState.moved = true;
+  if (dragState.moved) {
+    stageEl.scrollLeft = dragState.startScrollLeft - dx;
+    stageEl.scrollTop = dragState.startScrollTop - dy;
+  }
+});
+window.addEventListener('mouseup', (ev) => {
+  if (!dragState) return;
+  if (!dragState.moved) handleTap(ev);
+  dragState = null;
+});
+
+function handleTap(ev) {
   const rect = canvas.getBoundingClientRect();
   const scaleX = canvas.width / rect.width;
   const scaleY = canvas.height / rect.height;
   const px = (ev.clientX - rect.left) * scaleX;
   const py = (ev.clientY - rect.top) * scaleY;
+  if (px < 0 || py < 0 || px > canvas.width || py > canvas.height) return; // outside canvas
   const [mx, my] = pxToMap(px, py);
 
   if (!(latestState && latestState.calibrated)) {
@@ -849,13 +1533,14 @@ canvas.addEventListener('click', (ev) => {
   document.getElementById('cx').textContent = mx.toFixed(2);
   document.getElementById('cy').textContent = my.toFixed(2);
   document.getElementById('cd').textContent = dist;
+  document.getElementById('cLabel').textContent = '';
   document.getElementById('confirmBox').style.display = 'block';
   fetch('/api/stage_goal', {
     method: 'POST', headers: {'Content-Type': 'application/json'},
     body: JSON.stringify({x: mx, y: my, yaw: 0.0}),
   });
   draw();
-});
+}
 
 document.getElementById('anchorConfirm').onclick = async () => {
   const r = await fetch('/api/anchor', {
@@ -904,8 +1589,15 @@ document.getElementById('stop').onclick = async () => {
 
 updateAnchorUI();
 refreshState();
-setInterval(refreshState, 500);
-setInterval(refreshLiveMap, 1500);
+// 2026-07-22: slowed down from 500/500/1500ms -- Flask's dev server spawns
+// a fresh OS thread per request (not built for sustained polling), and at
+// the old rate this measurably loaded the CPU (confirmed live: ~45-48%
+// sustained) enough to plausibly steal scheduling time from
+// simple_nav_planner's own 10Hz control loop on the same machine -- a real
+// candidate for choppy motion having nothing to do with the planner logic.
+setInterval(refreshState, 800);
+setInterval(refreshLiveMap, 2000);
+setInterval(refreshLiveScan, 1000);
 </script>
 </body>
 </html>
