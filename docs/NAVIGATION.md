@@ -1,5 +1,13 @@
 # Simple Navigation Path Planner
 
+> **For actually running navigation today, see [`../NAV_RUNBOOK.md`](../NAV_RUNBOOK.md)
+> (saved-map flow) or [`MAPFREE_NAV.md`](MAPFREE_NAV.md) (no map needed,
+> most-tested as of 2026-07-22) instead** -- both are driven by
+> `scripts/demo_ops.sh`, not the raw RViz "2D Goal Pose" flow this page
+> describes. This page is still accurate about the underlying algorithm
+> (A* + pure pursuit, same `simple_nav_planner.py`) but predates the
+> operational tooling those two docs cover.
+
 A straightforward path planning and navigation system for your ALOHA mobile base.
 
 ## Features

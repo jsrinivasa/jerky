@@ -25,6 +25,21 @@ To train imitation learning algorithms, you would also need to install:
 - [``scripts``](./scripts/): Python scripts for teleop and data collection
 - [``docs``](./docs/): Documentation for VLM control and other features
 
+# Mobile Base Navigation
+
+Click-to-go autonomous navigation for the mobile base (A* planning + pure
+pursuit + a hold-to-run safety gate) -- separate from the arm
+teleop/dataset-collection tooling above.
+
+- **No prebuilt map needed** (recommended, most-tested as of 2026-07-22):
+  [docs/MAPFREE_NAV.md](./docs/MAPFREE_NAV.md) -- anchor the robot's
+  position on a floorplan, then click or type a room/desk name to send it
+  there.
+- **Saved-map flow** (build a map once, reuse it across sessions):
+  [NAV_RUNBOOK.md](./NAV_RUNBOOK.md)
+
+Run with `scripts/demo_ops.sh` (no arguments for the full command list).
+
 # Natural Language Control (NEW!)
 
 Control your Mobile ALOHA robot using natural language commands powered by Vision-Language-Action models!
