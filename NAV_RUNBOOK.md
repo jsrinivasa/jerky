@@ -3,6 +3,16 @@
 Step-by-step instructions to go from an empty map to the robot driving itself
 from point A to point B.
 
+**No prebuilt map? Start with [`docs/MAPFREE_NAV.md`](docs/MAPFREE_NAV.md)
+instead of this file.** As of 2026-07-22 that's the most-tested, working
+click-to-go flow -- floorplan-anchored, no saved RTAB-Map database required,
+fresh SLAM every session. This runbook's Phases 2-3 below are for the OLDER
+flow: build and save a real map once, then localize against it on future
+runs. Both are real, working, currently-maintained flows -- pick map-free for
+a quick one-off session in a space you don't need a persistent map of, pick
+this runbook's saved-map flow if you want the map to persist and be reused
+run over run.
+
 **Current approach (as of 2026-07-20): RTAB-Map visual SLAM + a custom
 `simple_nav_planner` (A* + Pure Pursuit), driven end-to-end by
 `scripts/demo_ops.sh`.** This replaces an earlier PDF-floorplan + AMCL + Nav2
@@ -102,22 +112,20 @@ When you're done: `./scripts/demo_ops.sh stop` tears everything down cleanly
 
 ---
 
-## Known dependencies not yet installed (as of 2026-07-20)
+## Dependency status (checked 2026-07-22)
 
-`nav` defaults to fusing wheel odom + IMU via `robot_localization`, which
-is **not installed** on this machine yet:
-
-```bash
-sudo apt install ros-humble-robot-localization
-```
-
-Until then, either install it or pass `--no-ekf` to `nav` every time.
+`ros-humble-robot-localization` (wheel+IMU EKF fusion, `nav`/`mapfree`'s
+default) and `ros-humble-apriltag-ros` are both **installed** on this
+machine now -- the `--no-ekf` flag / "install this first" instructions
+below are no longer needed day-to-day, kept only as a rollback if EKF fusion
+ever misbehaves.
 
 A disabled-by-default AprilTag-landmark feature also exists
 (`use_apriltag_landmarks` in `rtabmap_mapping.launch.py`, not yet wired
-through `demo_ops.sh`/`navigate_mission.launch.py`) -- needs
-`ros-humble-apriltag-ros` installed AND physical tags printed, measured, and
-placed before it does anything. Not part of the normal flow yet.
+through `demo_ops.sh`/`navigate_mission.launch.py`) -- the package is
+installed, but this still needs physical tags printed, measured, and placed,
+and the actual wiring done, before it does anything. Not part of the normal
+flow yet.
 
 ---
 

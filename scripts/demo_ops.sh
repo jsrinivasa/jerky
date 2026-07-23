@@ -273,7 +273,9 @@ Usage: $0 <command> [args]
 
 Typical map-free flow (no prebuilt map -- click where the robot is, click where to go):
   $0 bringup nav              # base + joy_node only, no direct teleop
-  $0 mapfree session1         # fresh SLAM session (starts building a map from scratch)
+  $0 mapfree session1 --single-cam --no-rplidar  # fresh SLAM session (from scratch);
+                              # these flags are what's actually been tested working --
+                              # drop them to try the full sensor set instead
   $0 viewer                   # open the URL it prints:
                               #   1. click where the robot physically is right now
                               #   2. click a point it's facing toward, Confirm Anchor

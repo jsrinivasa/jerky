@@ -3,6 +3,23 @@
 """
 Navigate to a Room by Name
 
+NOT part of the current map-free flow (see docs/MAPFREE_NAV.md) -- kept as
+a reference implementation. Its find_room_entrance() doorway-detection
+algorithm (free->wall->free ray-cast) was adapted into that flow's own
+attempt at a "stand outside the door" mode, which was tried, found
+unreliable in live testing, and dropped in favor of letting
+simple_nav_planner's own A* degrade gracefully instead (see MAPFREE_NAV.md's
+"Search by room/desk code" and "What was tried and dropped" sections).
+
+Also: DEFAULT_MAP_YAML/DEFAULT_ROOMS_JSON below point at files that no
+longer exist on disk (superseded by floorplan_real_2_nav_rooms_corrected.json
+and the _walls_inflated.{pgm,yaml} variants) -- running this as-is will fail
+to load until pointed at current files via --map-yaml/--rooms-json. It also
+publishes /goal_pose using room map_x/map_y AS-IS in the 'map' frame, which
+is only correct under the older prebuilt-map /calibrate flow, not the
+map-free anchor architecture (frame-A floorplan coordinates there are tied
+to frame-B robot coordinates only through a runtime anchor, not directly).
+
 Looks up a room by name (fuzzy match) from the rooms JSON, computes
 the entrance/approach point using the occupancy grid (ray-casting to
 find the doorway), and publishes a goal pose to /goal_pose.

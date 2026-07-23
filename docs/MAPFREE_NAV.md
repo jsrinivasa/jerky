@@ -5,6 +5,40 @@ it's facing, then click destinations on the floorplan and it drives there.
 Built 2026-07-22 to replace needing a pre-saved, pre-localized RTAB-Map
 database (see `NAV_RUNBOOK.md` for that older, saved-map flow).
 
+## Operator quick reference (if you're new to this machine)
+
+**Code**: `~/interbotix_ws/src/aloha/` -- the nodes for this flow live in
+`aloha/` (`nav_web_viewer.py`, `simple_nav_planner.py`, `nav_deadman.py`),
+launch files in `launch/` (`autonomous_mapping.launch.py` is the one this
+flow uses), operational tooling in `scripts/` (`demo_ops.sh`), floorplan/room
+data in `maps/` (`floorplan.svg`, `floorplan_real_2_nav_rooms_corrected.json`
+-- both tracked in git, needed for this to work at all).
+
+**Logs**: `demo_ops.sh` writes each subcommand's full stdout/stderr to
+`~/.aloha_demo/logs/<name>.log` (`bringup.log`, `mapfree.log`, `viewer.log`)
+-- these are overwritten fresh each time that command runs, not appended, so
+"the log" always means the CURRENT/most recent session unless you've copied
+it elsewhere first. This directory is NOT in git (correctly -- it's runtime
+output) and accumulates across many separate sessions/nights (214MB as of
+2026-07-22, going back to 07-16) -- nothing deletes old logs automatically.
+Separately, ROS 2's own per-node default logging goes to `~/.ros/log/`
+(1.3GB as of 2026-07-22) -- check there if something's missing from the
+`demo_ops.sh` logs specifically (e.g. a node that crashed before `demo_ops.sh`
+even started capturing its output, or per-node `rosout` detail).
+
+**Saved map-free databases pile up**: each `mapfree <name>` session writes a
+live RTAB-Map database to `~/maps/<name>.db` for the duration of that run
+(nothing explicitly calls `save` in this flow -- RTAB-Map just always writes
+its own db somewhere) -- as of 2026-07-22 there are 20+ `session*.db` files
+in `~/maps/` from testing, none of it cleaned up automatically. Harmless to
+leave (each session starts fresh via `--delete_db_on_start` regardless of
+what's already there), but worth knowing about if `~/maps/` looks cluttered
+or disk space matters.
+
+**Status while running**: `demo_ops.sh status` lists tracked jobs + live ROS
+processes. The web page's `nav:` HUD badge shows live planner state
+(`planning`/`following`/`goal_reached`/`failed (reason)`).
+
 ## Quick start
 
 All commands run in the **same terminal**, one after another --
@@ -177,6 +211,46 @@ from walls, `autonomous_mapping.launch.py`) stays at the original 0.6048 --
 a global bump was tried first and overcorrected, pushing straight-line
 segments away from walls too, not just turns, which is a different ask than
 what was actually reported.
+
+## What was tried and dropped
+
+Things that were built, tested live, and deliberately abandoned in favor of
+what's described above -- kept here so nobody re-discovers the same dead end.
+
+- **"Stand outside the door" goal mode.** Two attempts. First: ray-cast
+  doorway detection against `floorplan_occ_px` (the same simple "any dark
+  pixel is a wall" mask used for A* planning) -- landed on furniture
+  outlines, text remnants, and door swing-arcs as often as real walls, so
+  approach points ended up on clutter or facing an arc instead of the
+  doorway. Second attempt: switched to `scripts/svg_to_map.py`'s real
+  structural-walls-only mask (proper wall classification + morphological
+  line extraction that curves can't survive) plus a clearance-disk check
+  that pushed the point outward until genuinely verified-free. Both
+  individually tested correct in isolation (offline validation against real
+  floorplan data), but combined still wasn't reliable enough in live
+  testing to trust. Dropped per direct feedback ("lets make it easier") --
+  `goto_location` now always targets the room/desk's own center, and
+  `simple_nav_planner`'s own A* (which already won't plan through a wall,
+  and now degrades to "closest reachable point" instead of failing, see
+  above) does the actual "don't end up somewhere bad" job instead. The
+  abandoned ray-cast code is `find_room_entrance()` in
+  `aloha/navigate_to_room.py` if this is ever worth revisiting with a
+  cleaner wall/furniture-classified map as the input.
+- **Global `inflation_radius` bump for turn clearance.** Raised from 0.6048
+  to 0.681 (+3in), then 0.643 (+1.5in) after live feedback that 0.681 was
+  too much. Both applied clearance to EVERY segment of every path, not just
+  turns -- overcorrected straight-line corridors (routes visibly hugging
+  corridor centers). Reverted to the original 0.6048; replaced with
+  `_widen_turns()`, which only touches waypoints where the path actually
+  changes direction.
+- **Killing `nav_joystick_teleop` unconditionally at anchor-confirm, with no
+  way back.** First version of the teleop-vs-planner fix did this and
+  nothing else -- worked for the stutter bug, but then STOP had no way to
+  restore manual control, leaving no way to drive the robot back to a
+  start position after cancelling a bad drive short of a full stack
+  restart. Added `_start_nav_teleop()` as the companion, triggered by STOP,
+  so manual control comes back without losing the current anchor/SLAM
+  session.
 
 ## Troubleshooting
 
