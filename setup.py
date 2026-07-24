@@ -53,6 +53,7 @@ setup(
             'nav_web_viewer = aloha.nav_web_viewer:main',
             'nav_deadman = aloha.nav_deadman:main',
             'arm_gestures = aloha.arm_gestures:main',
+            'depth_border_mask = aloha.depth_border_mask:main',
         ],
     },
 )

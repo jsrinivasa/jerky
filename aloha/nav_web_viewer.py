@@ -30,7 +30,7 @@ goto/goto_xy are refused until set_pose has succeeded once this session.
 
 Also exposes arm control (a separate hardware subsystem -- see
 NavWebViewerNode.__init__'s ArmGestures note -- not gated by set_pose):
-    POST /api/arm/wave           {side, cycles}                     sleep -> wave -> sleep, blocks til done
+    POST /api/arm/wave           {side, cycles}                     wave -> sleep, blocks til done
     POST /api/arm/extend         {side, moving_time}                slowly reach forward, blocks til done
     POST /api/arm/open_gripper   {side, moving_time}                blocks til done
     POST /api/arm/close_gripper  {side, moving_time, hold_fraction} blocks til done
@@ -1650,12 +1650,11 @@ def create_app(node: NavWebViewerNode):
             },
             'POST /api/arm/wave': {
                 'body': {'side': 'string, default "right"', 'cycles': 'int, default 3'},
-                'description': 'Guarantees the arm starts at its resting/'
-                               'sleep pose (moves it there first if not '
-                               'already), raises it and rocks the wrist '
-                               'side to side `cycles` times, then returns '
-                               'to the resting/sleep pose. Blocks until '
-                               'done. side="left" will fail (409) until '
+                'description': 'Raises the arm (unless it is already '
+                               'raised/extended) and rocks the wrist side '
+                               'to side `cycles` times, then folds down to '
+                               'the resting/sleep pose. Blocks until done. '
+                               'side="left" will fail (409) until '
                                "that arm's hardware fault is fixed -- "
                                'see arm_gestures.py; only "right" is live.',
             },

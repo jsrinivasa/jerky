@@ -701,6 +701,25 @@ def generate_launch_description():
             condition=IfCondition(LaunchConfiguration('use_apriltag_landmarks')),
         ),
 
+        # -- Depth border mask (cam_high) ------------------------------------
+        # Blanks the outer 5% of columns on each side before depthimage_to_
+        # laserscan sees them -- the robot's own arm/hand tends to sit near
+        # the image edges when it's in frame, and without this it reads as a
+        # real obstacle. Only feeds depthimage_to_laserscan below; RTAB-Map's
+        # own registration/loop-closure depth (aligned_depth_to_color, via
+        # rgbd_sync) is untouched.
+        Node(
+            package='aloha',
+            executable='depth_border_mask',
+            name='depth_border_mask',
+            output='screen',
+            parameters=[{
+                'input_topic': '/cam_high/camera/depth/image_rect_raw',
+                'output_topic': '/cam_high/camera/depth/image_rect_raw_masked',
+                'border_fraction': 0.05,
+            }],
+        ),
+
         # -- Depth to LaserScan (cam_high) ----------------------------------
         # Narrow-FOV supplement to the RPLIDAR below, and the sole live scan
         # source if use_rplidar:=false. Own topic; laser_scan_merger folds
@@ -734,7 +753,7 @@ def generate_launch_description():
                 'output_frame': 'camera_link',
             }],
             remappings=[
-                ('depth', '/cam_high/camera/depth/image_rect_raw'),
+                ('depth', '/cam_high/camera/depth/image_rect_raw_masked'),
                 ('depth_camera_info', '/cam_high/camera/depth/camera_info'),
                 ('scan', '/scan_depth_cam_high'),
             ],

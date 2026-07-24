@@ -39,7 +39,13 @@ from aloha.constants import (
     FOLLOWER_GRIPPER_JOINT_CLOSE,
     FOLLOWER_GRIPPER_JOINT_OPEN,
 )
-from aloha.robot_utils import move_arms, move_grippers, setup_follower_bot, sleep_arms
+from aloha.robot_utils import (
+    get_arm_joint_positions,
+    move_arms,
+    move_grippers,
+    setup_follower_bot,
+    sleep_arms,
+)
 from interbotix_common_modules.common_robot.robot import (
     create_interbotix_global_node,
     robot_shutdown,
@@ -61,6 +67,9 @@ RAISED_POSE = [0.0, -0.6, 0.6, 0.0, -0.3, 0.0]
 EXTEND_POSE = [0.0, -0.3, 0.3, 0.0, 0.0, 0.0]
 
 READY_TIMEOUT_S = 3.0
+# How close (radians, per joint) counts as "already there" for skipping a
+# redundant raise move in wave().
+POSE_TOL = 0.15
 
 
 class ArmGestures:
@@ -107,10 +116,19 @@ class ArmGestures:
                 f'include it once the hardware issue is resolved.')
         return self._bots[side]
 
+    def _near(self, bot, pose, tol: float = POSE_TOL) -> bool:
+        current = get_arm_joint_positions(bot)
+        return all(abs(c - t) <= tol for c, t in zip(current, pose[:5]))
+
     def wave(self, side: str = 'left', cycles: int = 3, moving_time: float = 0.6):
-        """Raise the arm, rock the wrist side to side `cycles` times, lower back home."""
+        """Rock the wrist side to side `cycles` times, then lower back
+        home. Raises to RAISED_POSE first, unless the arm is already
+        raised or extended (within POSE_TOL) -- in which case it waves
+        from right where it is instead of detouring through an extra
+        up-then-into-place move."""
         bot = self._bot(side)
-        move_arms([bot], [RAISED_POSE], moving_time=1.5)
+        if not (self._near(bot, RAISED_POSE) or self._near(bot, EXTEND_POSE)):
+            move_arms([bot], [RAISED_POSE], moving_time=1.5)
         swing = 0.6
         for _ in range(cycles):
             move_arms([bot], [RAISED_POSE[:5] + [swing]], moving_time=moving_time)
@@ -118,17 +136,14 @@ class ArmGestures:
         move_arms([bot], [HOME_POSE], moving_time=1.5)
 
     def wave_from_sleep(self, side: str = 'right', cycles: int = 3, moving_time: float = 0.6):
-        """The demo-ready version of wave(): guarantees the arm is actually
-        AT its resting/sleep pose before starting (not just assumed to be
-        -- calls sleep() regardless of current position, which is a no-op-
-        sized move if it's already there), does the wave, then explicitly
-        returns to sleep() afterward too, rather than wave()'s own default
-        of stopping at the home pose. Three sleep_arms/move_arms calls
-        total (before, the wave itself via wave(), after); each already
-        interpolates from wherever the arm currently is, so this composes
-        safely regardless of what state it started in.
+        """The demo-ready version of wave(): comes up and waves from
+        wherever the arm currently is (see wave()'s own already-raised/
+        extended check), then folds down to the true sleep pose
+        afterward. Used to also force the arm down to sleep *before*
+        waving (guaranteeing a consistent start pose), but that produced
+        a visible "turn on, turn off, then wave" stutter that wasn't
+        wanted -- removed in favor of just waving from the current pose.
         """
-        self.sleep(side)
         self.wave(side, cycles=cycles, moving_time=moving_time)
         self.sleep(side)
 

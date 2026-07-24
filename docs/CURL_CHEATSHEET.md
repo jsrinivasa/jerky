@@ -74,8 +74,8 @@ curl "http://$ROBOT_IP:8080/api/camera?cam=front"
 ## Arm (blocks until motion finishes -- no L2 gate, moves the instant you call it)
 
 ```bash
-# Wave -- sleep -> wave -> sleep, chained. Takes ~25-30s, use --max-time well above that.
-curl --max-time 40 -X POST http://$ROBOT_IP:8080/api/arm/wave \
+# Wave -- wave -> sleep, chained. Takes ~15-20s, use --max-time well above that.
+curl --max-time 30 -X POST http://$ROBOT_IP:8080/api/arm/wave \
   -H 'Content-Type: application/json' \
   -d '{"side": "right", "cycles": 3}'
 

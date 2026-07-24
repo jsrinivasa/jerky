@@ -179,7 +179,7 @@ cmd_stop() {
     echo "== Tearing down: killing by executable name (not PID tree) =="
     pkill -9 -f "ros2 launch|ros2 run aloha nav_web_viewer" 2>/dev/null || true
     pkill -9 -f "robot_state_publisher|teleop_node|joy_node|slate_base_node|xs_sdk" 2>/dev/null || true
-    pkill -9 -f "rtabmap|realsense2_camera|rplidar|nav_deadman|simple_nav_planner|nav_web_viewer|laser_scan_merger|depthimage_to_laserscan|imu_filter_madgwick|ekf_node|apriltag_node|auto_localize|static_map_publisher" 2>/dev/null || true
+    pkill -9 -f "rtabmap|realsense2_camera|rplidar|nav_deadman|simple_nav_planner|nav_web_viewer|laser_scan_merger|depthimage_to_laserscan|depth_border_mask|imu_filter_madgwick|ekf_node|apriltag_node|auto_localize|static_map_publisher" 2>/dev/null || true
     # base_to_camera_tf / base_to_camera_low_back_tf / base_to_rplidar_tf
     # (static_transform_publisher, part of the nav launch chain) were missing
     # from every pattern above -- found 2026-07-21 that these leak on every

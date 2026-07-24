@@ -57,7 +57,7 @@ notification" contract as `/api/goto`.
 
 | Method | Path | Body | What it does |
 |---|---|---|---|
-| POST | `/api/arm/wave` | `{side="right", cycles=3}` | Moves to resting/sleep pose first (if not already there), raises the arm and rocks the wrist `cycles` times, then returns to resting/sleep pose. **Takes ~25-30s** -- it's three chained moves, not one; use a generous client-side timeout (40s+). |
+| POST | `/api/arm/wave` | `{side="right", cycles=3}` | Raises the arm (unless it's already raised/extended) and rocks the wrist `cycles` times, then folds down to the resting/sleep pose. **Takes ~15-20s** -- use a generous client-side timeout (30s+). |
 | POST | `/api/arm/extend` | `{side="right", moving_time=4.0}` | Slowly reaches forward from wherever the arm currently is. ~4s. |
 | POST | `/api/arm/open_gripper` | `{side="right", moving_time=2.5}` | Slowly opens the gripper fully. ~2.5s. |
 | POST | `/api/arm/close_gripper` | `{side="right", moving_time=2.5, hold_fraction=0.6}` | Slowly closes the gripper. `hold_fraction` 0-1, default 0.6 = mostly closed but not all the way (as if holding something); 1.0 = fully closed. ~2.5s. |
@@ -128,10 +128,9 @@ robot API's job stops at handing you the raw sensor/position data
   physical hold-to-move interlock for the arm -- a `/api/arm/*` call moves
   it immediately. Nothing to check before it'll work, but also nothing
   stopping it besides `/api/arm/*` not being called.
-- **`/api/arm/wave` is slow (~25-30s)** -- it's sleep-pose -> wave ->
-  sleep-pose chained as one call, not a quick gesture. Use a client
-  timeout well above that (40s+), and don't assume a call that's taking
-  20+ seconds has hung.
+- **`/api/arm/wave` takes ~15-20s** -- it's wave -> sleep-pose chained as
+  one call, not a quick gesture. Use a client timeout well above that
+  (30s+), and don't assume a call that's taking 10+ seconds has hung.
 
 ## 3. Suggested mapping to demo scenarios
 
