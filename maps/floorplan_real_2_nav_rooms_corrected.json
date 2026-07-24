@@ -87,7 +87,10 @@
     "svg_x": 582.0,
     "svg_y": -1050.5,
     "tri_id": "24E8B",
-    "category": "numbered_room"
+    "category": "numbered_room",
+    "aliases": [
+      "Break Room"
+    ]
   },
   {
     "label": "308",
@@ -213,7 +216,10 @@
     "svg_x": 2485.5,
     "svg_y": -1050.5,
     "tri_id": "24E85",
-    "category": "numbered_room"
+    "category": "numbered_room",
+    "aliases": [
+      "Kitchen"
+    ]
   },
   {
     "label": "325",

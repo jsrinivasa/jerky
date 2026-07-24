@@ -12,17 +12,44 @@ treats as an immediate kill switch regardless of what it's doing.
 Run with the nav stack already up (e.g. navigate_mission.launch.py):
     ros2 run aloha nav_web_viewer
 Then open http://<this-machine's-LAN-ip>:8080/ in a browser.
+
+Also exposes a programmatic API for a script/LLM (no browser/clicking) at
+the same host:port -- GET /api for a self-describing route list, or see
+'programmatic API' below the human-facing routes in create_app():
+    POST /api/set_pose        {x, y, yaw}            tell it where it is
+    GET  /api/locations/all                          all locations + distance_m
+    GET  /api/nearest                                nearest room/desk/any, roll-up
+    GET  /api/map_labeled.png?radius=12               floorplan w/ nearby labels + robot marker
+    POST /api/goto            {label, timeout_s}     go to a named location (fuzzy), blocks til done
+    POST /api/goto_xy         {x, y, yaw, timeout_s}  go to a raw (x, y), blocks til done
+    GET  /api/camera.jpg?cam=front|rear               latest camera frame as JPEG
+    GET  /api/camera?cam=front|rear                   same, as JSON + base64
+    POST /api/stop                                    immediate stop (alias: /api/cancel)
+All of it rides on the same anchor/goal machinery the human page uses --
+goto/goto_xy are refused until set_pose has succeeded once this session.
+
+Also exposes arm control (a separate hardware subsystem -- see
+NavWebViewerNode.__init__'s ArmGestures note -- not gated by set_pose):
+    POST /api/arm/wave           {side, cycles}                     sleep -> wave -> sleep, blocks til done
+    POST /api/arm/extend         {side, moving_time}                slowly reach forward, blocks til done
+    POST /api/arm/open_gripper   {side, moving_time}                blocks til done
+    POST /api/arm/close_gripper  {side, moving_time, hold_fraction} blocks til done
+    POST /api/arm/retract        {side, moving_time}                slowly back to TRUE sleep pose, blocks til done
+side defaults to "right" everywhere above (only follower_right's driver is
+live as of 2026-07-23 -- see arm_gestures.py's header for the follower_left
+hardware fault); "left" will 409 until that's fixed.
 """
 
 import json
 import math
+import re
 import subprocess
 import threading
 import time
 from io import BytesIO
 
 import numpy as np
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageFont
 from flask import Flask, Response, jsonify, request
 
 import rclpy
@@ -31,11 +58,17 @@ from rclpy.duration import Duration
 from rclpy.qos import (
     QoSProfile, QoSDurabilityPolicy, QoSReliabilityPolicy, QoSHistoryPolicy,
 )
+
+# Reused (not reimplemented) for the /api/goto category-word fallback below --
+# aloha_tasks.py already solved "map a friendly spoken word like 'elevator'
+# or 'bathroom' to the JSON's actual category string" for its own go_to_room.
+from aloha.aloha_tasks import CATEGORY_ALIASES
 import tf2_ros
 
 from geometry_msgs.msg import PoseStamped, TransformStamped
 from nav_msgs.msg import OccupancyGrid, Path
 from sensor_msgs.msg import LaserScan
+from sensor_msgs.msg import Image as RosImage
 from std_msgs.msg import Empty, String
 from std_srvs.srv import Empty as EmptySrv
 
@@ -45,6 +78,15 @@ ROOMS_JSON = (
 FLOORPLAN_SVG = '/home/aloha/interbotix_ws/src/aloha/maps/floorplan.svg'
 FALLBACK_PGM = '/home/aloha/maps/building16_with_parking_edited.pgm'
 FALLBACK_YAML = '/home/aloha/maps/building16_with_parking_edited.yaml'
+
+# Same RGB topics rtabmap_mapping.launch.py feeds SLAM from (see that file's
+# default_rgb comment: the color sensor only ever publishes 'image_raw', not
+# 'image_rect_raw', despite most other launch files in this repo asking for
+# the rectified name).
+CAMERA_TOPICS = {
+    'front': '/cam_high/camera/color/image_raw',
+    'rear': '/cam_low_back/camera/color/image_raw',
+}
 
 # The robot navigates in whatever frame its OWN live SLAM session establishes
 # (frame "B") -- a fresh map-free session each run, so frame B's origin is
@@ -291,7 +333,16 @@ class NavWebViewerNode(Node):
             self.get_logger().warn(
                 f'Could not load room locations ({type(e).__name__}: {e}) '
                 '-- "go to <label>" search will return no results.')
-        self._locations_by_label = {loc['label'].upper(): loc for loc in self.locations}
+        # Keyed by both the canonical label ("321") AND any human-friendly
+        # aliases a location was given ("KITCHEN") -- see maps/*_rooms_corrected.json's
+        # optional "aliases" list -- so an exact lookup (goto_location,
+        # /api/goto_location) resolves either one with no separate alias
+        # handling needed at the call site.
+        self._locations_by_label = {}
+        for loc in self.locations:
+            self._locations_by_label[loc['label'].upper()] = loc
+            for alias in loc.get('aliases', []):
+                self._locations_by_label[alias.upper()] = loc
 
         # ---- ROS I/O ----
         map_qos = QoSProfile(
@@ -326,6 +377,24 @@ class NavWebViewerNode(Node):
             history=QoSHistoryPolicy.KEEP_LAST,
         )
         self.latest_scan = None
+
+        # ---- raw RGB frames, for /api/camera (VLM "what do you see") ----
+        # Stored as the bare msg only -- decoding/encoding happens lazily in
+        # render_camera_jpeg, on request, not per-frame at ~15-30Hz (same
+        # lesson as _SCAN_ACCUM_MIN_INTERVAL_S above: don't do per-frame work
+        # nothing is currently asking for).
+        self.latest_camera_frame = {'front': None, 'rear': None}
+        img_qos = QoSProfile(
+            depth=1,
+            durability=QoSDurabilityPolicy.VOLATILE,
+            reliability=QoSReliabilityPolicy.BEST_EFFORT,
+            history=QoSHistoryPolicy.KEEP_LAST,
+        )
+        for cam_name, topic in CAMERA_TOPICS.items():
+            self.create_subscription(
+                RosImage, topic,
+                lambda msg, cam=cam_name: self._camera_callback(cam, msg), img_qos)
+
         # Accumulated camera-detected obstacle points, so the overlay builds
         # up a picture of everywhere the robot has looked -- not just the
         # latest single scan. Snapped to a coarse grid and stored as a set
@@ -372,6 +441,29 @@ class NavWebViewerNode(Node):
         self._new_map_client = self.create_client(
             EmptySrv, '/rtabmap/rtabmap/trigger_new_map')
 
+        # ---- arm control (/api/arm/*) --------------------------------
+        # Separate hardware subsystem from everything above (own xs_sdk
+        # driver(s), own ROS node internally, own background executor
+        # thread -- see ArmGestures/robot_startup) -- constructed once
+        # here and kept alive for the server's whole lifetime, same as
+        # everything else on this node. Never call self.arms.shutdown()
+        # from a request handler: ArmGestures.shutdown() -> robot_shutdown()
+        # calls rclpy.shutdown() UNCONDITIONALLY, which would kill this
+        # entire process's ROS context -- nav included, not just arms.
+        # Wrapped in try/except so an arm-side problem (or, previously,
+        # follower_left's motor fault) can't take the nav API down with it;
+        # ArmGestures itself already fails a single unavailable side
+        # gracefully (see its own get_robot_info readiness check), this
+        # guards against something unexpected instead.
+        try:
+            from aloha.arm_gestures import ArmGestures
+            self.arms = ArmGestures(sides=('left', 'right'))
+        except Exception as e:
+            self.get_logger().warn(
+                f'Arm control unavailable ({type(e).__name__}: {e}) -- '
+                '/api/arm/* will report errors, nav is unaffected.')
+            self.arms = None
+
     def _map_callback(self, msg: OccupancyGrid):
         arr = np.array(msg.data, dtype=np.int8).reshape(
             (msg.info.height, msg.info.width))
@@ -413,6 +505,39 @@ class NavWebViewerNode(Node):
         if now - self._last_scan_accum_time >= self._SCAN_ACCUM_MIN_INTERVAL_S:
             self._last_scan_accum_time = now
             self._accumulate_scan_points(msg)
+
+    def _camera_callback(self, cam_name: str, msg: RosImage):
+        self.latest_camera_frame[cam_name] = msg
+
+    def render_camera_jpeg(self, cam_name: str = 'front'):
+        """Decode the latest stored frame for `cam_name` to JPEG bytes, or
+        None if that camera has never published a frame yet (topic name
+        typo'd, camera not up, etc.) -- caller sends 204, same convention as
+        render_live_map_png/render_live_scan_png.
+
+        Decoded from the raw sensor_msgs/Image ourselves (no cv_bridge
+        dependency) -- step-aware reshape handles row padding, which a naive
+        `.reshape(h, w, c)` would get subtly wrong whenever step != width*c.
+        """
+        msg = self.latest_camera_frame.get(cam_name)
+        if msg is None:
+            return None
+        channels = {'rgb8': 3, 'bgr8': 3, 'mono8': 1}.get(msg.encoding)
+        if channels is None:
+            self.get_logger().warn(
+                f"camera '{cam_name}': unsupported encoding '{msg.encoding}'")
+            return None
+        arr = np.frombuffer(msg.data, dtype=np.uint8).reshape(msg.height, msg.step)
+        arr = arr[:, :msg.width * channels].reshape(msg.height, msg.width, channels)
+        if channels == 1:
+            img = Image.fromarray(arr[:, :, 0], mode='L').convert('RGB')
+        elif msg.encoding == 'bgr8':
+            img = Image.fromarray(arr[:, :, ::-1], mode='RGB')
+        else:
+            img = Image.fromarray(arr, mode='RGB')
+        buf = BytesIO()
+        img.save(buf, format='JPEG', quality=85)
+        return buf.getvalue()
 
     # Exactly the sensor's own trusted range (see depthimage_to_laserscan's
     # range_max) -- no margin beyond it, so nothing shown as "seen" is
@@ -692,6 +817,12 @@ class NavWebViewerNode(Node):
             return False, 'no goal staged'
         if goal['bx'] is None:
             return False, 'not anchored -- click an anchor on the page before sending real goals'
+        # Reset to a sentinel the planner never publishes, so a caller that
+        # polls nav_status for completion (see goto_xy_and_wait) can't read
+        # a stale 'goal_reached'/'failed' left over from the PREVIOUS goal
+        # and report false success/failure before this one has even started.
+        with self.lock:
+            self.nav_status = '__pending__'
         msg = PoseStamped()
         msg.header.frame_id = 'map'
         msg.header.stamp = self.get_clock().now().to_msg()
@@ -761,27 +892,54 @@ class NavWebViewerNode(Node):
 
     # ---- named-location lookup ("go to <label>") ----
 
+    @staticmethod
+    def _best_match_tier(loc, q):
+        """Best (tier, display_text) for `loc` against uppercased query `q`,
+        checked against BOTH the canonical label and any aliases -- tier 0
+        exact / 1 prefix / 2 substring, lower wins. None if no text on this
+        location matches at all. Shared by search_locations (dropdown) and
+        _resolve_location_for_api (goto/nearest) so the two don't drift.
+        """
+        best = None
+        for display in [loc['label']] + loc.get('aliases', []):
+            text = display.upper()
+            if text == q:
+                tier = 0
+            elif text.startswith(q):
+                tier = 1
+            elif q in text:
+                tier = 2
+            else:
+                continue
+            if best is None or tier < best[0]:
+                best = (tier, display)
+        return best
+
     def search_locations(self, query, limit=20):
         """Case-insensitive match against room/desk labels (e.g. "314",
-        "D3-12", "jaws"). Exact match first, then prefix, then substring --
-        same ranking navigate_to_room.py's fuzzy_match_rooms left implicit
-        by picking shortest-label-wins; made explicit here since this
-        drives a live autocomplete dropdown, not a single CLI pick.
+        "D3-12", "jaws") AND any aliases a location has ("kitchen" -> room
+        321) -- see _best_match_tier. Exact match first, then prefix, then
+        substring; drives the live autocomplete dropdown.
+
+        A location matched via alias is returned with that alias as its
+        displayed 'label' (e.g. "Kitchen", not "321") -- the friendly name
+        is the whole point of an alias existing. Round-trips fine: the
+        click handler sends this 'label' straight back to
+        /api/goto_location, and _locations_by_label (see __init__) already
+        resolves aliases too.
         """
         q = query.strip().upper()
         if not q:
             return []
-        exact, prefix, contains = [], [], []
+        scored = []
         for loc in self.locations:
-            label = loc['label'].upper()
-            if label == q:
-                exact.append(loc)
-            elif label.startswith(q):
-                prefix.append(loc)
-            elif q in label:
-                contains.append(loc)
-        results = (exact + prefix + contains)[:limit]
-        return [{'label': l['label'], 'category': l['category']} for l in results]
+            m = self._best_match_tier(loc, q)
+            if m is not None:
+                tier, display = m
+                scored.append((tier, loc, display))
+        scored.sort(key=lambda t: t[0])
+        return [{'label': display, 'category': loc['category']}
+                for _, loc, display in scored[:limit]]
 
     def goto_location(self, label):
         """Resolve a room/desk label to its own (map_x, map_y) and stage it
@@ -808,6 +966,262 @@ class NavWebViewerNode(Node):
         result['label'] = loc['label']
         result['category'] = loc['category']
         return result, 'ok'
+
+    # ---- programmatic API (for an LLM/script, not a human clicking) ------
+    #
+    # The routes above (stage_goal / confirm_goal / goto_location) are a
+    # two-step stage-then-confirm UX built for a human watching the page.
+    # The methods below collapse that into single blocking calls that stage,
+    # confirm, and wait for the planner's own /nav_status to reach a
+    # terminal state ('goal_reached' or 'failed:<reason>') -- the shape an
+    # LLM tool-call wants: call, block, get back a final result.
+
+    def list_all_locations(self):
+        """Every named location, with distance_m from the current pose (frame
+        A meters) if we have one -- None if not yet anchored/localized.
+        Sorted nearest-first so 'nowhere yet' locations sort last, not first.
+        """
+        with self.lock:
+            pose = self.pose
+            calib = self.calibration
+        pose_a = apply_similarity(calib, pose['x'], pose['y']) if (pose and calib) else None
+        out = []
+        for loc in self.locations:
+            d = math.hypot(loc['map_x'] - pose_a[0], loc['map_y'] - pose_a[1]) if pose_a else None
+            out.append({
+                'label': loc['label'], 'aliases': loc.get('aliases', []),
+                'category': loc['category'],
+                'x': loc['map_x'], 'y': loc['map_y'],
+                'distance_m': round(d, 2) if d is not None else None,
+            })
+        out.sort(key=lambda r: (r['distance_m'] is None, r['distance_m'] or 0.0))
+        return out
+
+    # "Room" and "desk" aren't first-class categories in the rooms JSON (see
+    # docs/VLM_DEMO_API.md's "Room vs. desk labels" section) -- a desk is a
+    # named_space entry labeled like "D3-12", indistinguishable from other
+    # named_space entries (break rooms, area letters) by category alone.
+    # Centralized here so an API caller doesn't need to know that quirk
+    # itself just to answer "what room/desk is closest".
+    _DESK_LABEL_RE = re.compile(r'^D\d')
+    _ROOM_CATEGORIES = ('numbered_room', 'conference_room')
+
+    def nearest_locations(self):
+        """Roll-up for 'where are you' / 'what's closest' voice queries:
+        the single nearest room, nearest desk, and nearest location of any
+        kind, each with its distance -- one call instead of the caller
+        fetching all 556 and filtering/label-matching itself."""
+        all_locs = self.list_all_locations()  # already nearest-first
+        nearest_room = next(
+            (l for l in all_locs if l['category'] in self._ROOM_CATEGORIES), None)
+        nearest_desk = next(
+            (l for l in all_locs if self._DESK_LABEL_RE.match(l['label'])), None)
+        return {
+            'room': nearest_room,
+            'desk': nearest_desk,
+            'any': all_locs[0] if all_locs else None,
+            'calibrated': self.calibration is not None,
+        }
+
+    def render_labeled_map_png(self, radius_m=12.0, max_labels=40):
+        """Floorplan with room/desk labels and the robot's own position/
+        heading burned in as text/markers -- for a VLM asked to reason
+        visually about "where are you" rather than off the numeric
+        locations/all list.
+
+        With a live pose, cropped to `radius_m` meters around the robot and
+        limited to the `max_labels` nearest so it stays legible (all 556
+        labels on one image at once is unreadable at any sane resolution --
+        confirmed by just how dense the raw floorplan already is). Pass
+        radius_m=None for the uncropped full building (still capped to
+        max_labels nearest-to-center, or first-in-file order if unanchored).
+        """
+        with self.lock:
+            pose = self.pose
+            calib = self.calibration
+        bl = self.base_layer
+        img = Image.open(BytesIO(bl['png'])).convert('RGB')
+        draw = ImageDraw.Draw(img)
+        try:
+            font = ImageFont.truetype(
+                '/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf', 22)
+        except OSError:
+            font = ImageFont.load_default()  # tiny, but never fails
+
+        def to_px(x, y):
+            return x * bl['sx'] + bl['ox'], y * bl['sy'] + bl['oy']
+
+        pose_a = None
+        if pose is not None and calib is not None:
+            pose_a = apply_similarity(calib, pose['x'], pose['y'])
+            yaw_a = pose['yaw'] + calib['theta']
+
+        if pose_a is not None:
+            ranked = sorted(
+                self.locations,
+                key=lambda loc: math.hypot(loc['map_x'] - pose_a[0], loc['map_y'] - pose_a[1]))
+            if radius_m is not None:
+                ranked = [loc for loc in ranked if math.hypot(
+                    loc['map_x'] - pose_a[0], loc['map_y'] - pose_a[1]) <= radius_m]
+            to_draw = ranked[:max_labels]
+        else:
+            to_draw = self.locations[:max_labels]
+
+        for loc in to_draw:
+            px, py = to_px(loc['map_x'], loc['map_y'])
+            draw.ellipse((px - 5, py - 5, px + 5, py + 5), fill=(30, 110, 220))
+            draw.text((px + 8, py - 12), str(loc['label']), fill=(0, 0, 0),
+                       font=font, stroke_width=3, stroke_fill=(255, 255, 255))
+
+        if pose_a is not None:
+            px, py = to_px(*pose_a)
+            r = 12
+            draw.ellipse((px - r, py - r, px + r, py + r), fill=(220, 20, 20))
+            ahead_x = pose_a[0] + 1.2 * math.cos(yaw_a)
+            ahead_y = pose_a[1] + 1.2 * math.sin(yaw_a)
+            hx, hy = to_px(ahead_x, ahead_y)
+            draw.line((px, py, hx, hy), fill=(220, 20, 20), width=5)
+
+            if radius_m is not None:
+                rx, ry = abs(radius_m * bl['sx']), abs(radius_m * bl['sy'])
+                left = max(0, int(px - rx))
+                upper = max(0, int(py - ry))
+                right = min(bl['width'], int(px + rx))
+                lower = min(bl['height'], int(py + ry))
+                if right > left and lower > upper:
+                    img = img.crop((left, upper, right, lower))
+
+        buf = BytesIO()
+        img.save(buf, format='PNG')
+        return buf.getvalue()
+
+    def set_pose(self, x, y, yaw):
+        """API-friendly wrapper over set_anchor: caller gives one (x, y, yaw)
+        in floorplan meters instead of clicking two separate points
+        (position, then a second 'facing this way' point) -- yaw picks a
+        facing point 1m ahead for compute_anchor_transform to use.
+        """
+        hx, hy = x + math.cos(yaw), y + math.sin(yaw)
+        return self.set_anchor(x, y, hx, hy)
+
+    def _wait_for_nav_result(self, timeout_s: float):
+        """Poll self.nav_status (reset to the '__pending__' sentinel by
+        confirm_goal right before publishing) until the planner reports a
+        terminal state or timeout_s elapses.
+
+        'idle' counts as terminal (cancelled) alongside 'goal_reached' and
+        'failed:...' -- cancel_callback (see simple_nav_planner.py, invoked
+        by /api/stop's /nav_cancel) drops straight to 'idle', not a
+        'failed:...' string, and the ONLY other place the planner ever
+        publishes 'idle' is once at its own startup, long before any given
+        goal's '__pending__' reset -- so this can't misfire on a goal that's
+        simply still in progress. Without this, a blocking /api/goto call
+        would sit until timeout_s even after being explicitly stopped.
+        """
+        start = time.time()
+        while time.time() - start < timeout_s:
+            with self.lock:
+                status = self.nav_status
+            if status == 'goal_reached':
+                return True, status, time.time() - start
+            if status.startswith('failed') or status == 'idle':
+                return False, status, time.time() - start
+            time.sleep(0.3)
+        return False, 'timeout', timeout_s
+
+    def goto_xy_and_wait(self, x, y, yaw=0.0, timeout_s=180.0):
+        """Stage (x, y, yaw) in floorplan meters, confirm immediately, and
+        block until arrival/failure/timeout. This is the direct 'select an
+        (x, y) and go' entry point -- no room-name lookup."""
+        staged = self.stage_goal(x, y, yaw)
+        if not staged['calibrated']:
+            return {**staged, 'ok': False,
+                    'message': 'not anchored -- call /api/set_pose first'}
+        ok_confirm, cmsg = self.confirm_goal()
+        if not ok_confirm:
+            return {**staged, 'ok': False, 'message': cmsg}
+        ok, status, elapsed = self._wait_for_nav_result(timeout_s)
+        return {**staged, 'ok': ok, 'status': status, 'elapsed_s': round(elapsed, 1)}
+
+    def _resolve_location_for_api(self, query):
+        """Resolve a free-text query (e.g. a voice transcript) to a single
+        location dict, or None.
+
+        Deliberately NOT goto_location()'s exact-only dict lookup -- that
+        one is built for the web page's autocomplete-then-click flow, where
+        the human already picked an exact label off a dropdown. An API
+        caller (an LLM, or a voice transcript) has no dropdown step, so this
+        needs the same exact->prefix->substring ranking search_locations
+        already uses for the autocomplete itself (via _best_match_tier,
+        which also covers per-location aliases like "kitchen" -> room 321),
+        PLUS a category-word fallback (CATEGORY_ALIASES, same as
+        aloha_tasks.py's go_to_room) so "go to the bathroom"/"take me to an
+        elevator" resolves at all -- those words don't appear in any actual
+        label. When a query resolves to several equally-ranked candidates
+        (a name match) or a whole category (an alias match, e.g. all
+        restrooms), pick the NEAREST one by current distance -- the only
+        sane default for "go to a/the X" with no further disambiguation
+        from the caller.
+        """
+        q = query.strip().upper()
+        if not q:
+            return None
+        cat = CATEGORY_ALIASES.get(query.strip().lower())
+        pool = [loc for loc in self.locations if (cat is None or loc['category'] == cat)]
+
+        # (tier_int, loc) pairs -- _best_match_tier returns (tier, display),
+        # unpacked immediately here since display text isn't needed for
+        # resolving a goal, only for the dropdown (search_locations).
+        matches = []
+        for loc in pool:
+            m = self._best_match_tier(loc, q)
+            if m is not None:
+                matches.append((m[0], loc))
+        candidates = []
+        if matches:
+            # Keep only the single best tier present (exact beats prefix
+            # beats substring) -- distance only breaks ties WITHIN that
+            # tier, same as the plain exact-or-prefix-or-contains logic
+            # this replaced. Flattening every tier together would let a
+            # merely-closer substring match outrank a real exact match.
+            best_tier = min(tier for tier, _ in matches)
+            candidates = [loc for tier, loc in matches if tier == best_tier]
+        if not candidates:
+            # Pure category word (e.g. "elevator") with no label overlap at
+            # all -- fall back to the whole category pool so it still
+            # resolves to *something*, same as resolve_room's behavior.
+            candidates = pool if cat is not None else []
+        if not candidates:
+            return None
+
+        with self.lock:
+            pose = self.pose
+            calib = self.calibration
+        pose_a = apply_similarity(calib, pose['x'], pose['y']) if (pose and calib) else None
+        if pose_a is None or len(candidates) == 1:
+            return candidates[0]
+        return min(candidates, key=lambda loc: math.hypot(
+            loc['map_x'] - pose_a[0], loc['map_y'] - pose_a[1]))
+
+    def goto_label_and_wait(self, label, timeout_s=180.0):
+        """Resolve `label` (fuzzy, see _resolve_location_for_api) to a
+        location, confirm immediately, and block until
+        arrival/failure/timeout -- the 'pick a location by name and go'
+        entry point."""
+        loc = self._resolve_location_for_api(label)
+        if loc is None:
+            return {'ok': False, 'message': f"no location matching '{label}'"}
+        result = self.stage_goal(loc['map_x'], loc['map_y'], 0.0)
+        result['label'] = loc['label']
+        result['category'] = loc['category']
+        if not result['calibrated']:
+            return {**result, 'ok': False,
+                    'message': 'not anchored -- call /api/set_pose first'}
+        ok_confirm, cmsg = self.confirm_goal()
+        if not ok_confirm:
+            return {**result, 'ok': False, 'message': cmsg}
+        ok, status, elapsed = self._wait_for_nav_result(timeout_s)
+        return {**result, 'ok': ok, 'status': status, 'elapsed_s': round(elapsed, 1)}
 
     # ---- single-click anchor (see compute_anchor_transform) ----
 
@@ -1055,6 +1469,35 @@ class NavWebViewerNode(Node):
 def create_app(node: NavWebViewerNode):
     app = Flask(__name__)
 
+    # ---- request logging for the API surface -------------------------
+    # Flask/werkzeug already logs every request as a bare access line
+    # (method, path, status) to this same process's stdout, which
+    # demo_ops.sh redirects into ~/.aloha_demo/logs/viewer.log -- fine for
+    # "was this hit", but silent on WHICH label/coords a POST body carried,
+    # and (for a blocking call like /api/goto) says nothing until the whole
+    # drive is already over. Logged through the node's own ROS logger
+    # (same log file) rather than a separate one, so `tail -f
+    # viewer.log` shows one interleaved timeline. Scoped to POST-under-/api
+    # only -- GETs here take everything as query params, which werkzeug's
+    # own line already shows in the path, so a second copy would be noise.
+    @app.before_request
+    def _log_api_call_start():
+        if request.method == 'POST' and request.path.startswith('/api/'):
+            request._api_log_start = time.time()
+            body = request.get_json(silent=True) or {}
+            node.get_logger().info(
+                f'[api] <- {request.remote_addr} POST {request.path} body={body}')
+
+    @app.after_request
+    def _log_api_call_end(response):
+        if request.method == 'POST' and request.path.startswith('/api/') \
+                and hasattr(request, '_api_log_start'):
+            elapsed_ms = (time.time() - request._api_log_start) * 1000
+            node.get_logger().info(
+                f'[api] -> {request.remote_addr} POST {request.path} '
+                f'{response.status_code} ({elapsed_ms:.0f}ms)')
+        return response
+
     @app.get('/')
     def index():
         return INDEX_HTML
@@ -1098,6 +1541,14 @@ def create_app(node: NavWebViewerNode):
         node.cancel()
         return jsonify({'ok': True})
 
+    @app.post('/api/stop')
+    def stop():
+        """Same action as /api/cancel (kept for the human page's existing
+        STOP button) under the name an LLM/voice intent for "stop"/"stop
+        moving" is actually going to reach for."""
+        node.cancel()
+        return jsonify({'ok': True})
+
     @app.post('/api/anchor')
     def set_anchor():
         body = request.get_json(force=True)
@@ -1124,6 +1575,252 @@ def create_app(node: NavWebViewerNode):
             return jsonify({'ok': False, 'message': msg})
         result['ok'] = True
         return jsonify(result)
+
+    # ---- programmatic API: for an LLM / script, not a human in a browser --
+
+    @app.get('/api')
+    def api_directory():
+        """Self-describing route list, so a caller (LLM or otherwise) that
+        has never seen this file can discover the whole programmatic surface
+        from one GET instead of reading the source."""
+        return jsonify({
+            'POST /api/set_pose': {
+                'body': {'x': 'float', 'y': 'float', 'yaw': 'float (radians, default 0)'},
+                'description': 'Tell the robot where it is on the floorplan '
+                               '(position + heading). Call once at startup '
+                               'before any goto call -- goals are refused '
+                               'until this succeeds.',
+            },
+            'GET /api/locations/all': {
+                'description': 'Every named location with distance_m from '
+                               'the current pose (null if not yet set_pose'"'"'d), '
+                               'nearest first.',
+            },
+            'GET /api/nearest': {
+                'description': 'Roll-up for "where are you" queries: '
+                               '{room, desk, any, calibrated}, each the '
+                               'nearest location of that kind with its '
+                               'distance_m -- saves filtering locations/all '
+                               'yourself.',
+            },
+            'GET /api/map_labeled.png?radius=12&max_labels=40': {
+                'description': 'Floorplan image with nearby room/desk labels '
+                               'and the robot'"'"'s own position+heading drawn '
+                               'on it, cropped to `radius` meters around the '
+                               'robot (radius=full for the whole building, '
+                               'still capped to max_labels). For a VLM asked '
+                               'to reason visually about "where are you" '
+                               'rather than off the numeric location list.',
+            },
+            'POST /api/goto': {
+                'body': {'label': 'string', 'timeout_s': 'float, default 180'},
+                'description': 'Resolve a location by name (fuzzy: exact, '
+                               'prefix, substring, or a category word like '
+                               '"elevator"/"bathroom" -- nearest match wins '
+                               'ties) and drive there. Blocks until arrival, '
+                               'failure, or timeout; the response IS the '
+                               'completion message.',
+            },
+            'POST /api/goto_xy': {
+                'body': {'x': 'float', 'y': 'float', 'yaw': 'float, default 0',
+                          'timeout_s': 'float, default 180'},
+                'description': 'Drive to an arbitrary (x, y) on the '
+                               'floorplan. Blocks until arrival, failure, '
+                               'or timeout.',
+            },
+            'GET /api/camera.jpg?cam=front|rear': {
+                'description': 'Latest camera frame as a raw JPEG image '
+                               '(204 if that camera has no frame yet).',
+            },
+            'GET /api/camera?cam=front|rear': {
+                'description': 'Latest camera frame as JSON '
+                               '{ok, cam, width, height, mimetype, image_base64} '
+                               'for callers that want the bytes inline '
+                               'rather than a second image fetch.',
+            },
+            'POST /api/stop': {
+                'description': 'Immediate stop -- publishes /nav_cancel, '
+                               'cancels any staged/in-flight goal. Same '
+                               'action as /api/cancel (kept as an alias '
+                               'for the human page\'s button); use this '
+                               'name for a "stop"/"stop moving" intent.',
+            },
+            'POST /api/cancel': {
+                'description': 'Alias for /api/stop.',
+            },
+            'POST /api/arm/wave': {
+                'body': {'side': 'string, default "right"', 'cycles': 'int, default 3'},
+                'description': 'Guarantees the arm starts at its resting/'
+                               'sleep pose (moves it there first if not '
+                               'already), raises it and rocks the wrist '
+                               'side to side `cycles` times, then returns '
+                               'to the resting/sleep pose. Blocks until '
+                               'done. side="left" will fail (409) until '
+                               "that arm's hardware fault is fixed -- "
+                               'see arm_gestures.py; only "right" is live.',
+            },
+            'POST /api/arm/extend': {
+                'body': {'side': 'string, default "right"',
+                          'moving_time': 'float seconds, default 4.0'},
+                'description': 'Slowly extends the arm forward from '
+                               'wherever it currently is. Blocks until done.',
+            },
+            'POST /api/arm/open_gripper': {
+                'body': {'side': 'string, default "right"',
+                          'moving_time': 'float seconds, default 2.5'},
+                'description': 'Slowly opens the gripper fully. Blocks until done.',
+            },
+            'POST /api/arm/close_gripper': {
+                'body': {'side': 'string, default "right"',
+                          'moving_time': 'float seconds, default 2.5',
+                          'hold_fraction': 'float 0-1, default 0.6'},
+                'description': 'Slowly closes the gripper -- hold_fraction '
+                               'controls how far (1.0 = fully closed, '
+                               '0.6 default = mostly closed, as if holding '
+                               'something, not all the way). Blocks until done.',
+            },
+            'POST /api/arm/retract': {
+                'body': {'side': 'string, default "right"',
+                          'moving_time': 'float seconds, default 5.0'},
+                'description': 'Slowly returns the arm to its TRUE resting/'
+                               'sleep pose (home first, then the fold it '
+                               'physically rests in under gravity with no '
+                               'torque -- not just the mid-way "home" pose '
+                               'extend uses). Safe to leave the arm there '
+                               'indefinitely. Blocks until done.',
+            },
+        })
+
+    @app.post('/api/set_pose')
+    def set_pose():
+        body = request.get_json(force=True)
+        x, y = float(body['x']), float(body['y'])
+        yaw = float(body.get('yaw', 0.0))
+        transform, msg = node.set_pose(x, y, yaw)
+        return jsonify({'ok': transform is not None, 'transform': transform, 'message': msg})
+
+    @app.get('/api/locations/all')
+    def locations_all():
+        return jsonify(node.list_all_locations())
+
+    @app.get('/api/nearest')
+    def nearest():
+        return jsonify(node.nearest_locations())
+
+    @app.get('/api/map_labeled.png')
+    def map_labeled_png():
+        radius = request.args.get('radius', '12')
+        radius_m = None if radius.lower() in ('0', 'full', 'none') else float(radius)
+        max_labels = int(request.args.get('max_labels', 40))
+        png = node.render_labeled_map_png(radius_m=radius_m, max_labels=max_labels)
+        return Response(png, mimetype='image/png')
+
+    @app.post('/api/goto')
+    def goto():
+        body = request.get_json(force=True)
+        label = str(body.get('label', ''))
+        timeout_s = float(body.get('timeout_s', 180.0))
+        return jsonify(node.goto_label_and_wait(label, timeout_s))
+
+    @app.post('/api/goto_xy')
+    def goto_xy():
+        body = request.get_json(force=True)
+        x, y = float(body['x']), float(body['y'])
+        yaw = float(body.get('yaw', 0.0))
+        timeout_s = float(body.get('timeout_s', 180.0))
+        return jsonify(node.goto_xy_and_wait(x, y, yaw, timeout_s))
+
+    @app.get('/api/camera.jpg')
+    def camera_jpg():
+        cam = request.args.get('cam', 'front')
+        jpg = node.render_camera_jpeg(cam)
+        if jpg is None:
+            return Response(status=204)
+        return Response(jpg, mimetype='image/jpeg')
+
+    @app.get('/api/camera')
+    def camera_json():
+        import base64
+        cam = request.args.get('cam', 'front')
+        jpg = node.render_camera_jpeg(cam)
+        if jpg is None:
+            return jsonify({'ok': False, 'cam': cam, 'message': 'no frame yet from this camera'})
+        msg = node.latest_camera_frame.get(cam)
+        return jsonify({
+            'ok': True, 'cam': cam, 'width': msg.width, 'height': msg.height,
+            'mimetype': 'image/jpeg',
+            'image_base64': base64.b64encode(jpg).decode('ascii'),
+        })
+
+    # ---- arm control (see NavWebViewerNode.__init__'s ArmGestures note) --
+    # All block until the motion completes and return {ok, side, message} --
+    # arm moves have a KNOWN bounded duration (moving_time), unlike nav
+    # goals, so there's no separate "wait for completion" polling needed
+    # the way /api/goto has one; the HTTP response IS the completion.
+
+    def _run_arm_action(fn, side):
+        if node.arms is None:
+            return jsonify({'ok': False, 'side': side,
+                             'message': 'arm control unavailable on this server'}), 503
+        try:
+            fn()
+            return jsonify({'ok': True, 'side': side, 'message': 'done'})
+        except RuntimeError as e:
+            # _bot()'s own error for "that side's driver isn't up" -- a
+            # normal, expected outcome (e.g. follower_left right now), not
+            # a server bug, so 409 (conflict with current state) not 500.
+            return jsonify({'ok': False, 'side': side, 'message': str(e)}), 409
+        except Exception as e:
+            node.get_logger().error(f'arm action failed: {type(e).__name__}: {e}')
+            return jsonify({'ok': False, 'side': side,
+                             'message': f'{type(e).__name__}: {e}'}), 500
+
+    @app.post('/api/arm/wave')
+    def arm_wave():
+        body = request.get_json(silent=True) or {}
+        side = body.get('side', 'right')
+        cycles = int(body.get('cycles', 3))
+        # wave_from_sleep, not wave() -- guarantees sleep pose both before
+        # and after, per what was actually asked for this endpoint (wave()
+        # itself, unchanged, still just goes to/from the home pose -- used
+        # by the CLI/test script).
+        return _run_arm_action(lambda: node.arms.wave_from_sleep(side, cycles=cycles), side)
+
+    @app.post('/api/arm/extend')
+    def arm_extend():
+        body = request.get_json(silent=True) or {}
+        side = body.get('side', 'right')
+        moving_time = float(body.get('moving_time', 4.0))
+        return _run_arm_action(lambda: node.arms.extend(side, moving_time=moving_time), side)
+
+    @app.post('/api/arm/open_gripper')
+    def arm_open_gripper():
+        body = request.get_json(silent=True) or {}
+        side = body.get('side', 'right')
+        moving_time = float(body.get('moving_time', 2.5))
+        return _run_arm_action(lambda: node.arms.open_gripper(side, moving_time=moving_time), side)
+
+    @app.post('/api/arm/close_gripper')
+    def arm_close_gripper():
+        body = request.get_json(silent=True) or {}
+        side = body.get('side', 'right')
+        moving_time = float(body.get('moving_time', 2.5))
+        hold_fraction = float(body.get('hold_fraction', 0.6))
+        return _run_arm_action(
+            lambda: node.arms.close_gripper(
+                side, moving_time=moving_time, hold_fraction=hold_fraction),
+            side)
+
+    @app.post('/api/arm/retract')
+    def arm_retract():
+        """'Retract' here means the arm's true resting/sleep pose (see
+        arm_gestures.py's sleep()) -- what was actually asked for this
+        endpoint -- NOT the home pose ArmGestures.retract()/extend() use.
+        """
+        body = request.get_json(silent=True) or {}
+        side = body.get('side', 'right')
+        moving_time = float(body.get('moving_time', 5.0))
+        return _run_arm_action(lambda: node.arms.sleep(side, moving_time=moving_time), side)
 
     return app
 
