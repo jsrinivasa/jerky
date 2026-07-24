@@ -175,3 +175,78 @@ registration-level problem.
   map-free testing plus many older `building16*`/`floorplan*` variants
   from tuning `svg_to_map.py`. Harmless to leave, but don't assume
   everything in there is current/meaningful.
+- **Any new node added to the nav launch graph needs a matching kill
+  pattern in `demo_ops.sh`'s `cmd_stop`.** Found again 2026-07-24 with the
+  new `depth_border_mask` node: it launched fine but wasn't covered by any
+  `pkill -f` pattern, so it silently survived `stop` and leaked across
+  restarts (same class of bug as the `gravity_compensation`/
+  `robot_pose_marker`/transform-broadcaster leaks above). Fixed by adding
+  it to the big `pkill` pattern list. Check `demo_ops.sh status` after
+  `stop` any time a new node is added, not just after this one.
+- **`maps/frame_b_to_floorplan_calibration.json` is dead.** A leftover
+  3-point least-squares calibration fit from an earlier session, holding
+  the OLD `FLOORPLAN_SCALE` (1.0849674771110611, superseded 2026-07-22 by
+  the current 1.028762 -- see that constant's own comment in
+  `nav_web_viewer.py`). Nothing in the current codebase reads this file
+  (`[CALIBRATION-CLICK]` is just a log line for a human to read off
+  coordinates by hand, not a writer of this file). Confirmed inert
+  2026-07-24; left in place rather than deleted in case it's wanted as a
+  reference, but don't mistake its presence for it being live-loaded.
+
+## 2026-07-24: depth border mask added; anchor rotation/translation inconsistency still open
+
+Two changes shipped this session (both live in `nav_web_viewer.py`/
+`arm_gestures.py`/`rtabmap_mapping.launch.py` as of commit `20a9352`):
+
+- `arm_gestures.py`'s `wave()` no longer forces the arm down to sleep pose
+  before waving (was `sleep -> wave -> sleep`, a visible "turn on, turn
+  off, then wave" stutter) -- it now waves from wherever the arm already
+  is, skipping the raise move if it's already raised/extended, and folds
+  down once at the end (`wave -> sleep`). `/api/arm/wave` is correspondingly
+  faster (~15-20s, was ~25-30s).
+- New `depth_border_mask.py` node blanks the outer 5% of columns on each
+  side of the front camera's depth image before `depthimage_to_laserscan`
+  sees them, so the robot's own arm/hand sitting near the frame edges
+  doesn't register as a false obstacle in `/scan`/the occupancy grid. Only
+  feeds `depthimage_to_laserscan`; RTAB-Map's own registration/loop-closure
+  depth stream (`aligned_depth_to_color` via `rgbd_sync`) is untouched.
+
+**Open issue, NOT resolved**: later the same session, the anchor step
+(`/api/anchor`, clicking "robot is here" + "facing this way" on the
+floorplan) produced a position/rotation that didn't match what was
+clicked, inconsistently across attempts -- and per the user, this is a
+recent regression, not something seen before this week. Investigated and
+ruled out, with evidence:
+- No exception/error anywhere in `viewer.log` or `mapfree.log` across the
+  session where it was reported.
+- `compute_anchor_transform`'s algebra is self-consistent (checked by
+  hand); `mapToPx`/`pxToMap` in the frontend JS are exact inverses; click
+  coordinates are computed fresh off `getBoundingClientRect()` each click,
+  so zoom/pan shouldn't skew them.
+- No dual `map->odom` TF publisher conflict -- confirmed `rtabmap`'s own
+  `publish_tf` is correctly forced `false` when `use_odom_locked_map:=true`
+  (the default), so RTAB-Map structurally cannot be fighting the anchor's
+  static broadcast for that transform.
+- Only one `/api/anchor` call in the session logs (no second/stale
+  `/api/set_pose` call from another client silently overwriting it).
+- `maps/frame_b_to_floorplan_calibration.json` (see above) is dead code,
+  not the cause.
+- This session's own edits (depth border mask, wave fix) don't touch
+  `set_anchor`/`compute_anchor_transform`/the frontend click math at all
+  (verified via `git diff`).
+
+**Leading unverified hypothesis**: EKF/odometry settle time. This
+session did an unusually high number of rapid `stop`/`bringup`/`mapfree`
+cycles back to back (testing iteration, not normal usage), and
+`set_anchor` reads `odom->base_link` via a single TF lookup at click time
+-- if `robot_localization`'s EKF hasn't fully converged yet (fresh IMU
+bias estimate, few samples fused), that single sample could be
+transiently wrong, giving a bad `theta`/translation for that session
+specifically, without ever throwing an error. **Not yet verified against
+real data** -- next session, before re-anchoring, watch `/odometry/filtered`
+for a few seconds (`ros2 topic echo /odometry/filtered`) to confirm it's
+stable, and if the bug still reproduces after a longer settle window,
+this hypothesis is wrong and the bug is somewhere else (worth then
+checking whether the *heading* click or the *position* click is the one
+landing wrong -- that would point at different code than a shared TF
+timing issue).
